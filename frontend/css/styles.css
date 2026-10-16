@@ -1,0 +1,849 @@
+/* ====================================================================
+   HỆ THỐNG DESIGN TOKENS & UTILITIES - BAN HỌC THUẬT (CLB TIN HỌC VNUF2)
+   Phong cách: Editorial / Minimalist Modern / Zero-FOUC Theme System
+==================================================================== */
+
+/* 1. HỆ THỐNG BIẾN MÀU TRUNG TÂM (LIGHT & DARK TOKENS) */
+:root {
+  --bg-canvas: #FAF8F5;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F2EFE9;
+  --bg-elevated: #FFFFFF;
+  --text-primary: #1C201E;
+  --text-secondary: #575E5A;
+  --text-faint: #878E89;
+  --border-subtle: #E5E0D8;
+  --border-strong: #C8C2B8;
+  --accent-base: #0F6256;
+  --accent-hover: #0B4B41;
+  --accent-fg: #FFFFFF;
+  --accent-soft: #E6F2F0;
+  --accent-glow: rgba(15, 98, 86, 0.16);
+
+  /* Bổ sung các dải màu trạng thái học vụ phong phú */
+  --accent-emerald: #059669;
+  --accent-emerald-soft: #ECFDF5;
+  --accent-amber: #D97706;
+  --accent-amber-soft: #FFFBEB;
+  --accent-coral: #DC2626;
+  --accent-coral-soft: #FEF2F2;
+  --accent-indigo: #4F46E5;
+  --accent-indigo-soft: #EEF2FF;
+  --accent-purple: #7C3AED;
+  --accent-purple-soft: #F5F3FF;
+
+  --status-ok-bg: #E8F5E9;
+  --status-ok-text: #1B6E38;
+  --status-warn-bg: #FEF3C7;
+  --status-warn-text: #B45309;
+  --status-err-bg: #FEE2E2;
+  --status-err-text: #BE123C;
+  --shadow-card: 0 1px 2px rgba(28, 32, 30, 0.04);
+  --shadow-float: 0 12px 32px -4px rgba(28, 32, 30, 0.12);
+  --shadow-glow: 0 0 20px -2px rgba(15, 98, 86, 0.2);
+}
+
+html.dark {
+  --bg-canvas: #0B0F17;
+  --bg-surface: #0F172A;
+  --bg-subtle: #172033;
+  --bg-elevated: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-faint: #64748B;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --accent-base: #10B981;
+  --accent-hover: #059669;
+  --accent-fg: #022C22;
+  --accent-soft: rgba(16, 185, 129, 0.12);
+  --accent-glow: rgba(16, 185, 129, 0.25);
+
+  /* Trạng thái học vụ Dark Mode */
+  --accent-emerald: #10B981;
+  --accent-emerald-soft: rgba(16, 185, 129, 0.15);
+  --accent-amber: #F59E0B;
+  --accent-amber-soft: rgba(245, 158, 11, 0.15);
+  --accent-coral: #EF4444;
+  --accent-coral-soft: rgba(239, 68, 68, 0.15);
+  --accent-indigo: #6366F1;
+  --accent-indigo-soft: rgba(99, 102, 241, 0.15);
+  --accent-purple: #8B5CF6;
+  --accent-purple-soft: rgba(139, 92, 246, 0.15);
+
+  --status-ok-bg: rgba(16, 185, 129, 0.12);
+  --status-ok-text: #34D399;
+  --status-warn-bg: rgba(245, 158, 11, 0.12);
+  --status-warn-text: #FBBF24;
+  --status-err-bg: rgba(239, 68, 68, 0.12);
+  --status-err-text: #F87171;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 16px 36px -4px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 24px -2px rgba(16, 185, 129, 0.25);
+}
+
+/* Glassmorphism & Bento Utilities */
+.glass-bento-card {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-bento-interactive {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-bento-interactive:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(23, 31, 51, 0.8);
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
+.emerald-glow-box {
+  box-shadow: 0 0 30px -4px rgba(16, 185, 129, 0.22);
+}
+
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-subtle);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+}
+
+/* 2. HỆ THỐNG BUTTON TẬP TRUNG (.bht-btn) */
+.bht-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.bht-btn:active:not(:disabled) { transform: translateY(0.5px); }
+.bht-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.bht-btn.bht-btn-loading {
+  cursor: wait !important;
+  pointer-events: none !important;
+  opacity: 0.82;
+}
+
+.bht-btn-xs { height: 1.75rem; padding: 0 0.625rem; font-size: 0.75rem; border-radius: 0.375rem; }
+.bht-btn-sm { height: 2.125rem; padding: 0 0.75rem; font-size: 0.8125rem; border-radius: 0.5rem; }
+.bht-btn-md { height: 2.5rem; padding: 0 1rem; font-size: 0.875rem; border-radius: 0.5rem; }
+.bht-btn-lg { height: 2.875rem; padding: 0 1.25rem; font-size: 0.9375rem; border-radius: 0.625rem; }
+.bht-btn-icon { width: 2.25rem; height: 2.25rem; padding: 0; border-radius: 0.5rem; flex-shrink: 0; }
+
+.bht-btn-primary {
+  background-color: var(--accent-base);
+  color: var(--accent-fg);
+}
+.bht-btn-primary:hover:not(:disabled) { background-color: var(--accent-hover); }
+
+.bht-btn-secondary {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-card);
+}
+.bht-btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-subtle);
+  border-color: var(--border-strong);
+}
+
+.bht-btn-soft {
+  background-color: var(--accent-soft);
+  color: var(--accent-base);
+}
+.bht-btn-soft:hover:not(:disabled) { filter: brightness(0.95); }
+
+.bht-btn-ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+.bht-btn-ghost:hover:not(:disabled) {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.bht-btn-success {
+  background-color: var(--status-ok-bg);
+  color: var(--status-ok-text);
+  border-color: color-mix(in srgb, var(--status-ok-text) 25%, transparent);
+}
+.bht-btn-danger {
+  background-color: var(--status-err-bg);
+  color: var(--status-err-text);
+  border-color: color-mix(in srgb, var(--status-err-text) 25%, transparent);
+}
+
+/* 3. HỆ THỐNG INPUT & FORM CONTROLS (.bht-input) */
+.bht-input, .bht-select, .bht-textarea {
+  width: 100%;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+.bht-input, .bht-select { height: 2.5rem; }
+.bht-input::placeholder, .bht-textarea::placeholder { color: var(--text-faint); }
+.bht-input:focus, .bht-select:focus, .bht-textarea:focus {
+  border-color: var(--accent-base);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.bht-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin-bottom: 0.375rem;
+}
+
+/* 4. HỆ THỐNG CARD, CALLOUT, BADGE & EDITORIAL PROSE */
+.bht-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.625rem;
+  box-shadow: var(--shadow-card);
+}
+.bht-card-interactive {
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.bht-card-interactive:hover {
+  border-color: var(--border-strong);
+}
+
+.bht-callout {
+  border-left: 3px solid var(--accent-base);
+  background-color: var(--bg-subtle);
+  padding: 0.75rem 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.bht-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.1875rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  line-height: 1.2;
+}
+.bht-badge-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  padding: 0.125rem 0.4375rem;
+  border-radius: 0.3125rem;
+}
+.bht-badge-ok { background-color: var(--status-ok-bg); color: var(--status-ok-text); }
+.bht-badge-warn { background-color: var(--status-warn-bg); color: var(--status-warn-text); }
+.bht-badge-err { background-color: var(--status-err-bg); color: var(--status-err-text); }
+
+.bht-heading-serif {
+  font-family: 'Newsreader', Georgia, Cambria, serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+
+.bht-prose {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--text-primary);
+}
+.bht-prose p { margin-bottom: 0.75rem; }
+.bht-prose pre, .bht-prose code {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: var(--bg-subtle);
+  border-radius: 0.375rem;
+}
+.bht-prose pre { padding: 0.875rem 1rem; overflow-x: auto; border: 1px solid var(--border-subtle); margin: 0.75rem 0; }
+.bht-prose code { padding: 0.125rem 0.375rem; font-size: 0.8125rem; }
+
+/* 5. DATA TABLES & NAVIGATION */
+.bht-table-container {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.625rem;
+  overflow-x: auto;
+  box-shadow: var(--shadow-card);
+}
+.bht-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.bht-table th {
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.bht-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+.bht-table tr:hover td {
+  background-color: var(--bg-subtle);
+}
+
+.bht-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+}
+.bht-nav-item:hover {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+}
+.bht-nav-item.active {
+  background-color: var(--accent-soft);
+  color: var(--accent-base);
+  font-weight: 600;
+  border-color: color-mix(in srgb, var(--accent-base) 20%, transparent);
+}
+
+.bht-skeleton {
+  background-color: var(--bg-subtle);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 6. HỆ THỐNG HIỆU ỨNG CHUYỂN ĐỘNG & KEYFRAMES (MICRO-ANIMATIONS) */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--accent-glow);
+  }
+}
+
+@keyframes badgePulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s infinite;
+}
+
+.animate-badge-dot {
+  animation: badgePulseDot 1.8s infinite;
+}
+
+/* 7. DÒNG THỜI GIAN LỘ TRÌNH HỌC TẬP (ROADMAP TIMELINE) */
+.bht-timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+.bht-timeline::before {
+  content: '';
+  position: absolute;
+  top: 1rem;
+  bottom: 1rem;
+  left: 0.6875rem;
+  width: 2px;
+  background-color: var(--border-subtle);
+  border-radius: 9999px;
+}
+.bht-timeline-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+.bht-timeline-node {
+  position: absolute;
+  left: -2rem;
+  top: 1.25rem;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 9999px;
+  background-color: var(--bg-surface);
+  border: 2px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  z-index: 2;
+  transition: all 0.2s ease;
+}
+.bht-timeline-node.active {
+  border-color: var(--accent-base);
+  background-color: var(--accent-base);
+  color: var(--accent-fg);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.bht-timeline-node.completed {
+  border-color: var(--status-ok-text);
+  background-color: var(--status-ok-bg);
+  color: var(--status-ok-text);
+}
+
+/* 8. THẺ ĐIỂM DANH NỔI BẬT (SMART ATTENDANCE BANNER) */
+.bht-attendance-banner {
+  background: linear-gradient(135deg, var(--bg-surface) 0%, var(--accent-soft) 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s ease;
+}
+.bht-attendance-banner:hover {
+  border-color: var(--accent-base);
+  box-shadow: var(--shadow-glow);
+}
+
+/* 9. AVATAR CHỮ CÁI ĐẦU (INITIALS AVATAR) */
+.bht-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  user-select: none;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+/* 10. NGĂN KÉO CHẤM BÀI TRƯỢT PHẢI (REVIEW STATION DRAWER) */
+.bht-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.bht-drawer-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.bht-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 520px;
+  background-color: var(--bg-surface);
+  border-left: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-float);
+  z-index: 51;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+.bht-drawer.active {
+  transform: translateX(0);
+}
+
+/* 11. ĐỊNH DẠNG TÀI LIỆU KHO HỌC LIỆU (RICH MEDIA BADGES) */
+.bht-media-badge-pdf {
+  background-color: var(--accent-coral-soft);
+  color: var(--accent-coral);
+  border: 1px solid color-mix(in srgb, var(--accent-coral) 20%, transparent);
+}
+.bht-media-badge-code {
+  background-color: var(--accent-emerald-soft);
+  color: var(--accent-emerald);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 20%, transparent);
+}
+.bht-media-badge-book {
+  background-color: var(--accent-indigo-soft);
+  color: var(--accent-indigo);
+  border: 1px solid color-mix(in srgb, var(--accent-indigo) 20%, transparent);
+}
+.bht-media-badge-quiz {
+  background-color: var(--accent-amber-soft);
+  color: var(--accent-amber);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 20%, transparent);
+}
+
+/* ====================================================================
+   12. HỆ THỐNG SIDEBAR & CHẾ ĐỘ THU NHỎ (COLLAPSIBLE SIDEBAR SYSTEM)
+   ==================================================================== */
+.bht-sidebar {
+  width: 15rem; /* w-60 */
+  height: 100vh;
+  max-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  position: sticky;
+  top: 0;
+  overflow-x: hidden;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), padding 0.22s ease;
+  will-change: width;
+}
+@media (min-width: 1024px) {
+  .bht-sidebar {
+    width: 16rem; /* lg:w-64 */
+  }
+}
+
+.bht-sidebar nav {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Trạng thái thu nhỏ (Collapsed State) */
+.bht-sidebar.is-collapsed {
+  width: 4.5rem !important; /* 72px */
+  min-width: 4.5rem !important;
+}
+
+.bht-sidebar.is-collapsed .sidebar-header {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  justify-content: center;
+  position: relative;
+}
+
+.bht-sidebar.is-collapsed .sidebar-brand-box {
+  justify-content: center;
+  width: 100%;
+}
+
+.bht-sidebar.is-collapsed .sidebar-logo {
+  margin: 0 auto;
+}
+
+/* Ẩn text và nhãn tiêu đề khi thu nhỏ */
+.bht-sidebar.is-collapsed .sidebar-text,
+.bht-sidebar.is-collapsed .sidebar-section-title {
+  display: none !important;
+}
+
+/* Nút toggle khi thu nhỏ: đặt gọn gàng ở góc header */
+.bht-sidebar.is-collapsed .sidebar-toggle-btn {
+  position: absolute;
+  right: 0.25rem;
+  top: 0.375rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0.7;
+}
+.bht-sidebar.is-collapsed .sidebar-toggle-btn:hover {
+  opacity: 1;
+}
+
+/* Navigation items khi thu nhỏ */
+.bht-sidebar.is-collapsed nav {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.bht-sidebar.is-collapsed .bht-nav-item {
+  justify-content: center !important;
+  padding: 0 !important;
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  border-radius: 0.625rem !important;
+  position: relative !important;
+}
+
+.bht-sidebar.is-collapsed .bht-nav-item .sidebar-nav-content {
+  justify-content: center;
+  margin: 0;
+}
+
+.bht-sidebar.is-collapsed .bht-nav-item i {
+  margin: 0 !important;
+  font-size: 1rem;
+}
+
+/* Badge số lượng khi thu nhỏ */
+.bht-sidebar.is-collapsed .bht-nav-item .bht-badge-mono {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  margin: 0;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.25rem;
+  font-size: 0.625rem;
+  line-height: 1rem;
+  border-radius: 9999px;
+  text-align: center;
+}
+
+/* Footer khi thu nhỏ */
+.bht-sidebar.is-collapsed .sidebar-footer {
+  padding: 0.625rem 0.5rem;
+}
+
+.bht-sidebar.is-collapsed .sidebar-footer-profile {
+  justify-content: center;
+  padding: 0.25rem 0;
+}
+
+.bht-sidebar.is-collapsed .sidebar-footer-profile > div:first-child {
+  margin: 0 auto;
+}
+
+.bht-sidebar.is-collapsed .sidebar-footer-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.375rem !important;
+  border-top: none !important;
+  padding-top: 0.25rem !important;
+}
+
+.bht-sidebar.is-collapsed .sidebar-footer-actions button {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  justify-content: center !important;
+  border-radius: 0.5rem !important;
+}
+
+.bht-sidebar.is-collapsed .sidebar-footer-actions button i {
+  margin: 0 !important;
+}
+
+.bht-sidebar.is-collapsed .sidebar-logout-btn {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  padding: 0 !important;
+  margin: 0.375rem auto 0 auto !important;
+  justify-content: center !important;
+  border-radius: 0.5rem !important;
+}
+
+.bht-sidebar.is-collapsed .sidebar-logout-btn i {
+  margin: 0 !important;
+}
+
+/* ====================================================================
+   13. TIỆN ÍCH TIẾN ĐỘ ĐIỂM RÈN LUYỆN & HỌC THUẬT (MEMBER ACADEMIC WIDGETS)
+   ==================================================================== */
+.bht-drl-card {
+  background: linear-gradient(135deg, var(--bg-surface) 0%, var(--accent-soft) 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s ease;
+}
+
+.bht-drl-progress-track {
+  height: 0.625rem;
+  background-color: var(--bg-subtle);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border-subtle);
+}
+
+.bht-drl-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--accent-base) 0%, var(--accent-emerald) 100%);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Category Filter Pills */
+.bht-category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.bht-category-pill:hover {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.bht-category-pill.active {
+  background-color: var(--accent-base);
+  color: var(--accent-fg);
+  border-color: var(--accent-base);
+  box-shadow: 0 1px 3px rgba(15, 98, 86, 0.2);
+}
+
+/* Mentor Feedback Card */
+.bht-mentor-feedback {
+  border-left: 3px solid var(--accent-base);
+  background-color: var(--bg-subtle);
+  padding: 0.875rem 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* ====================================================================
+   6. HỆ THỐNG PHÂN TRANG (EDITORIAL ACADEMIC PAGINATION)
+   ==================================================================== */
+.bht-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.bht-pagination-info {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.bht-pagination-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.bht-pagination-btn {
+  min-width: 1.875rem;
+  height: 1.875rem;
+  padding: 0 0.375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bht-pagination-btn:hover:not(:disabled):not(.active) {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.bht-pagination-btn.active {
+  background-color: var(--accent-base);
+  color: var(--accent-fg);
+  border-color: var(--accent-base);
+  font-weight: 700;
+  box-shadow: 0 1px 3px var(--accent-glow);
+}
+
+.bht-pagination-btn:disabled,
+.bht-pagination-btn.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  background-color: transparent;
+}
+
+.bht-pagination-select {
+  height: 1.875rem;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.375rem;
+  padding: 0 0.5rem;
+  font-size: 0.6875rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  outline: none;
+  transition: border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.bht-pagination-select:focus {
+  border-color: var(--accent-base);
+}
+

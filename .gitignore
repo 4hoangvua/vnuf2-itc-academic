@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Local Google Clasp auth credentials (chống lộ OAuth token)
+.clasprc.json
+
+# Logs & temp
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables
+.env
+.env.local

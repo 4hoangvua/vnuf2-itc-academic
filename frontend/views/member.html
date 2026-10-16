@@ -1,0 +1,643 @@
+<!-- GIAO DIỆN THÀNH VIÊN (VIEW MEMBER - EDITORIAL APP SHELL) -->
+<div id="view-member" class="hidden min-h-screen bg-canvas flex flex-col md:flex-row pb-20 md:pb-0">
+  
+  <!-- ==================== SIDEBAR TRÁI (DESKTOP / TABLET >= 768px) ==================== -->
+  <aside class="bht-sidebar hidden md:flex flex-col h-screen max-h-screen sticky top-0 bg-surface border-r border-hairline flex-shrink-0 z-30 select-none overflow-hidden">
+    <!-- Brand Header -->
+    <div class="h-16 px-4 border-b border-hairline flex items-center justify-between gap-2 overflow-hidden sidebar-header shrink-0">
+      <div class="flex items-center gap-3 min-w-0 sidebar-brand-box">
+        <div class="w-9 h-9 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm sidebar-logo">
+          <img src="./assets/images/logo-clb.png" alt="CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <i class="fa-solid fa-code text-accent text-sm hidden"></i>
+        </div>
+        <div class="overflow-hidden sidebar-text">
+          <h1 class="bht-heading-serif text-base font-semibold leading-tight text-ink truncate">Ban Học Thuật</h1>
+          <p class="text-[11px] text-ink-muted truncate">CLB Tin Học VNUF2</p>
+        </div>
+      </div>
+      <button 
+        data-action="toggle-sidebar" 
+        class="bht-btn bht-btn-ghost w-7 h-7 p-0 flex items-center justify-center rounded-md shrink-0 text-ink-muted hover:text-ink hover:bg-subtle sidebar-toggle-btn" 
+        title="Thu nhỏ thanh điều hướng"
+      >
+        <i class="fa-solid fa-angles-left text-xs sidebar-toggle-icon transition-transform duration-200"></i>
+      </button>
+    </div>
+
+    <!-- Navigation Menu (Notion-style vertical menu) -->
+    <nav class="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
+      <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-faint sidebar-section-title">Phân hệ học vụ</div>
+      
+      <button 
+        data-action="switch-member-tab"
+        data-tab="dashboard"
+        id="tab-btn-dashboard" 
+        class="bht-nav-item active justify-between"
+        title="Tổng quan & Nhật ký"
+      >
+        <div class="flex items-center gap-2.5 truncate sidebar-nav-content">
+          <i class="fa-solid fa-gauge-high w-4 text-center text-accent shrink-0"></i>
+          <span class="truncate sidebar-text">Tổng quan & Nhật ký</span>
+        </div>
+      </button>
+
+      <button 
+        data-action="switch-member-tab"
+        data-tab="sessions"
+        id="tab-btn-sessions" 
+        class="bht-nav-item justify-between"
+        title="Lộ trình Chuyên đề"
+      >
+        <div class="flex items-center gap-2.5 truncate sidebar-nav-content">
+          <i class="fa-solid fa-route w-4 text-center text-ink-muted shrink-0"></i>
+          <span class="truncate sidebar-text">Lộ trình Chuyên đề</span>
+        </div>
+      </button>
+
+      <button 
+        data-action="switch-member-tab"
+        data-tab="docs"
+        id="tab-btn-docs" 
+        class="bht-nav-item justify-between"
+        title="Kho học liệu & Slide"
+      >
+        <div class="flex items-center gap-2.5 truncate sidebar-nav-content">
+          <i class="fa-solid fa-book-bookmark w-4 text-center text-ink-muted shrink-0"></i>
+          <span class="truncate sidebar-text">Kho học liệu & Slide</span>
+        </div>
+      </button>
+    </nav>
+
+    <!-- User Profile & Footer Controls -->
+    <div class="p-3 border-t border-hairline bg-subtle/40 sidebar-footer shrink-0">
+      <div class="flex items-center gap-3 px-2 py-2 mb-2 sidebar-footer-profile">
+        <div class="w-8 h-8 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-bold border border-hairline shrink-0">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="overflow-hidden flex-1 leading-tight sidebar-text">
+          <p id="member-display-name" class="text-xs font-semibold text-ink truncate">Thành viên</p>
+          <p id="member-display-mssv" class="text-[11px] text-ink-muted font-mono truncate">225112xxxx</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-hairline text-ink-muted sidebar-footer-actions">
+        <button 
+          data-action="toggle-theme"
+          id="btn-theme-toggle"
+          title="Đổi giao diện Sáng / Tối"
+          class="bht-btn bht-btn-ghost bht-btn-xs text-xs w-full"
+        >
+          <i class="fa-solid fa-moon js-theme-icon mr-1"></i>
+          <span class="js-theme-label sidebar-text">Giao diện</span>
+        </button>
+
+        <button 
+          data-action="refresh-member-data"
+          title="Làm mới dữ liệu"
+          class="bht-btn bht-btn-ghost bht-btn-xs text-xs w-full"
+        >
+          <i class="fa-solid fa-rotate mr-1"></i>
+          <span class="sidebar-text">Làm mới</span>
+        </button>
+      </div>
+
+      <!-- Nút Đăng Xuất To Rõ Ràng -->
+      <button 
+        data-action="logout"
+        title="Đăng xuất khỏi tài khoản"
+        class="bht-btn bht-btn-danger bht-btn-sm w-full mt-2 font-semibold text-xs justify-center shadow-sm sidebar-logout-btn"
+      >
+        <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+        <span class="sidebar-text">Đăng xuất</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MOBILE TOPBAR (< 768px) ==================== -->
+  <header class="md:hidden sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-hairline px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+        <img src="./assets/images/logo-clb.png" alt="CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <i class="fa-solid fa-code text-accent text-xs hidden"></i>
+      </div>
+      <div>
+        <h1 class="bht-heading-serif text-sm font-semibold text-ink leading-tight">Ban Học Thuật</h1>
+        <p class="text-[10px] text-ink-muted">CLB Tin Học VNUF2</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-1.5">
+      <button data-action="toggle-theme" class="bht-btn bht-btn-ghost bht-btn-icon text-xs" title="Đổi giao diện">
+        <i class="fa-solid fa-moon js-theme-icon"></i>
+      </button>
+      <button data-action="refresh-member-data" class="bht-btn bht-btn-ghost bht-btn-icon text-xs" title="Làm mới">
+        <i class="fa-solid fa-rotate"></i>
+      </button>
+      <button data-action="logout" class="bht-btn bht-btn-ghost bht-btn-icon text-xs hover:text-err" title="Đăng xuất">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== BOTTOM TAB BAR (MOBILE < 768px) ==================== -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 h-16 bg-surface/95 backdrop-blur border-t border-hairline grid grid-cols-3 px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+    <button 
+      data-action="switch-member-tab"
+      data-tab="dashboard"
+      class="flex flex-col items-center justify-center gap-1 py-1 text-xs text-accent font-semibold transition-colors"
+      data-mobile-tab="dashboard"
+    >
+      <i class="fa-solid fa-gauge-high text-base"></i>
+      <span class="text-[11px]">Tổng quan</span>
+    </button>
+    <button 
+      data-action="switch-member-tab"
+      data-tab="sessions"
+      class="flex flex-col items-center justify-center gap-1 py-1 text-xs text-ink-muted hover:text-ink font-medium transition-colors"
+      data-mobile-tab="sessions"
+    >
+      <i class="fa-solid fa-route text-base"></i>
+      <span class="text-[11px]">Chuyên đề</span>
+    </button>
+    <button 
+      data-action="switch-member-tab"
+      data-tab="docs"
+      class="flex flex-col items-center justify-center gap-1 py-1 text-xs text-ink-muted hover:text-ink font-medium transition-colors"
+      data-mobile-tab="docs"
+    >
+      <i class="fa-solid fa-book-bookmark text-base"></i>
+      <span class="text-[11px]">Học liệu</span>
+    </button>
+  </nav>
+
+  <!-- ==================== VÙNG NỘI DUNG CHÍNH (EDITORIAL CANVAS) ==================== -->
+  <main class="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 max-w-5xl mx-auto w-full pb-24 md:pb-8">
+    
+    <!-- ==================== TAB 1: TỔNG QUAN & NHẬT KÝ RÈN LUYỆN (BENTO GRID 12-COL) ==================== -->
+    <section id="member-tab-dashboard" class="space-y-6">
+      <!-- 1. Header Row (Breadcrumb + 1-Line Clean Sans-Serif Greeting) -->
+      <div class="pb-4 border-b border-hairline space-y-1">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <span class="w-1.5 h-1.5 rounded-full bg-accent animate-ping shrink-0"></span>
+          <p class="text-[10px] font-mono uppercase tracking-widest text-ink-muted truncate">
+            HỌC KỲ I • NĂM HỌC 2026-2027 • BAN HỌC THUẬT
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-ink font-sans">
+            Xin chào, <span id="member-welcome-name">Bạn</span>
+          </h1>
+          <span id="member-welcome-mssv" class="font-mono text-xs text-accent font-semibold px-2.5 py-0.5 rounded-full bg-accent-soft border border-hairline shrink-0">
+            2351120015
+          </span>
+          <span class="px-2.5 py-0.5 rounded-full bg-accent-soft border border-hairline text-accent font-mono text-[11px] hidden sm:inline-flex items-center gap-1.5 font-medium shrink-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
+            Thành viên chính thức
+          </span>
+        </div>
+      </div>
+
+      <!-- 2. Hàng 1: Bento Grid (Tỷ lệ 7 : 5) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        <!-- Cột trái (7/12) - Thẻ Sự kiện đang diễn ra (Featured Live Event Card) -->
+        <div id="member-spotlight-container" class="lg:col-span-7 flex flex-col">
+          <!-- Rendered dynamically via renderMemberSpotlightCard() -->
+        </div>
+
+        <!-- Cột phải (5/12) - Cụm 3 thẻ KPI trực quan (Bento Stats) -->
+        <div id="member-drl-widget-container" class="lg:col-span-5 flex flex-col justify-between gap-3">
+          <!-- Rendered dynamically via renderMemberDrlWidget() -->
+        </div>
+      </div>
+
+      <!-- 3. Hàng 2 (12 cột) - Bảng Nhật Ký Tham Gia Học Vụ & Điểm Danh (High-Density Stream) -->
+      <div class="bht-card p-0 overflow-hidden border border-hairline bg-surface/90">
+        <!-- Header bảng rút gọn & Filter Tabs nhỏ gọn bên phải -->
+        <div class="p-4 sm:p-5 border-b border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center text-sm border border-hairline">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-ink font-sans flex items-center gap-2">
+                <span>Nhật ký tham gia học vụ &amp; Điểm danh</span>
+                <span id="member-audit-count" class="font-mono text-xs font-semibold px-2 py-0.5 rounded-full bg-subtle text-accent border border-hairline">
+                  04 hoạt động
+                </span>
+              </h3>
+            </div>
+          </div>
+
+          <!-- Filter Tabs nhỏ gọn: Tất cả, Đang mở, Đã kết thúc -->
+          <div class="flex items-center gap-1 p-1 rounded-lg bg-subtle/80 border border-hairline self-start sm:self-auto text-xs overflow-x-auto scrollbar-hide min-w-0 max-w-full" id="member-audit-filter-tabs">
+            <button 
+              data-action="filter-member-audit" 
+              data-filter="ALL" 
+              class="bht-audit-filter-btn px-2.5 py-1 rounded-md font-semibold text-accent bg-surface border border-hairline shadow-xs transition-all active"
+            >
+              Tất cả
+            </button>
+            <button 
+              data-action="filter-member-audit" 
+              data-filter="OPEN" 
+              class="bht-audit-filter-btn px-2.5 py-1 rounded-md font-medium text-ink-muted hover:text-ink transition-all"
+            >
+              Đang mở
+            </button>
+            <button 
+              data-action="filter-member-audit" 
+              data-filter="CLOSED" 
+              class="bht-audit-filter-btn px-2.5 py-1 rounded-md font-medium text-ink-muted hover:text-ink transition-all"
+            >
+              Đã kết thúc
+            </button>
+          </div>
+        </div>
+
+        <!-- Bảng mật độ cao (High-density stream) -->
+        <div class="overflow-x-auto -mx-0">
+          <table class="bht-table w-full text-xs min-w-[480px]">
+            <thead>
+              <tr class="text-ink-muted border-b border-hairline text-left bg-subtle/40">
+                <th class="w-28 py-2.5 px-3 sm:px-4 font-mono font-semibold">Thời gian</th>
+                <th class="py-2.5 px-3 sm:px-4 font-semibold">Chuyên đề &amp; Địa điểm</th>
+                <th class="w-24 py-2.5 px-3 sm:px-4 text-center font-semibold hidden sm:table-cell">Trạng thái</th>
+                <th class="w-24 py-2.5 px-3 sm:px-4 text-center font-semibold">Điểm danh</th>
+                <th class="w-14 py-2.5 px-3 sm:px-4 text-center font-semibold">Chi tiết</th>
+              </tr>
+            </thead>
+            <tbody id="member-attendance-audit-tbody" class="divide-y divide-hairline">
+              <!-- Rendered via renderMemberAttendanceAuditTable() -->
+            </tbody>
+          </table>
+        </div>
+        <div id="member-attendance-audit-pagination" class="pt-2 px-3 sm:px-4"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: LỘ TRÌNH CHUYÊN ĐỀ & BÀI TẬP ==================== -->
+    <section id="member-tab-sessions" class="hidden space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-hairline">
+        <div>
+          <h3 class="bht-heading-serif text-lg font-semibold text-ink flex items-center gap-2">
+            <i class="fa-solid fa-route text-accent text-sm"></i>
+            <span>Lộ trình Chuyên đề Học thuật</span>
+          </h3>
+          <p class="text-xs text-ink-muted">Toàn bộ chuyên đề chuẩn bị chứng chỉ MOS/IC3, kỹ năng viết luận văn Word, xử lý dữ liệu Excel và ứng dụng AI</p>
+        </div>
+        <span class="text-xs text-ink-muted font-mono hidden sm:inline">Học kỳ 2026-2027</span>
+      </div>
+
+      <!-- Roadmap Timeline Container -->
+      <div id="member-session-feed" class="bht-timeline space-y-2">
+        <!-- Rendered dynamically via renderSessionCard() -->
+      </div>
+      <div id="member-sessions-pagination"></div>
+    </section>
+
+    <!-- ==================== SUB-VIEW CHI TIẾT CHUYÊN ĐỀ CHO THÀNH VIÊN (RỘNG RÃI & TẬP TRUNG HỌC LIỆU) ==================== -->
+    <section id="member-tab-session-detail" class="hidden space-y-4">
+      <!-- Breadcrumb Navigation -->
+      <div class="flex items-center justify-between pb-3 border-b border-hairline">
+        <button data-action="back-to-member-sessions" class="bht-btn bht-btn-ghost bht-btn-sm text-xs font-semibold flex items-center gap-2 text-ink hover:text-accent">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Quay lại tất cả buổi học</span>
+        </button>
+      </div>
+
+      <!-- Banner Thông Tin Chuyên Đề -->
+      <div class="bht-card p-4 sm:p-5 bg-surface border border-hairline flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1.5">
+            <span id="member-detail-session-tag"></span>
+            <span id="member-detail-attendance-badge" class="bht-badge text-xs"></span>
+            <button 
+              id="member-detail-pin-cta-btn" 
+              data-action="open-quick-pin-modal" 
+              class="bht-btn bht-btn-primary bht-btn-xs font-semibold hidden animate-pulse shadow-sm"
+              title="Nhập mã PIN để điểm danh có mặt ngay"
+            >
+              <i class="fa-solid fa-key text-[10px]"></i>
+              <span>Nhập PIN điểm danh ngay</span>
+            </button>
+          </div>
+          <h2 id="member-detail-session-title" class="bht-heading-serif text-xl sm:text-2xl font-bold text-ink">Tên chuyên đề</h2>
+          <div class="text-xs text-ink-muted font-mono mt-1 flex flex-wrap items-center gap-y-1 gap-x-3">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-regular fa-calendar-check text-accent"></i>
+              <span id="member-detail-session-date">Chưa xếp lịch</span>
+            </span>
+            <span class="flex items-center gap-1.5 font-sans">
+              <i class="fa-solid fa-location-dot text-rose-500"></i>
+              <span id="member-detail-session-room">Phòng Lab 02 - Nhà A3</span>
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button 
+            id="member-detail-banner-pin-btn" 
+            data-action="open-quick-pin-modal" 
+            class="bht-btn bht-btn-primary bht-btn-sm font-semibold hidden"
+            title="Bấm để điểm danh có mặt"
+          >
+            <i class="fa-solid fa-qrcode text-xs"></i>
+            <span>Điểm danh</span>
+          </button>
+          <a id="member-detail-slide-link" href="#" target="_blank" class="bht-btn bht-btn-secondary bht-btn-sm">
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+            <span>Mở Slide Drive</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Thanh Sub-tabs Điều hướng Rộng Rãi: Chỉ còn Info, Task, Quiz (Bỏ Subtab Checkin) -->
+      <div class="flex items-center gap-2 border-b border-hairline pb-2 overflow-x-auto text-xs sm:text-sm">
+        <button 
+          id="btn-member-subtab-info" 
+          data-action="switch-member-session-subtab"
+          data-tab="info" 
+          class="px-3.5 py-2 rounded-lg font-semibold text-accent bg-accent-soft border border-hairline flex items-center gap-2 shrink-0 transition-colors"
+        >
+          <i class="fa-solid fa-book-open-reader"></i>
+          <span>Bài học & Học liệu</span>
+        </button>
+        <button 
+          id="btn-member-subtab-task" 
+          data-action="switch-member-session-subtab"
+          data-tab="task" 
+          class="px-3.5 py-2 rounded-lg font-medium text-ink-muted hover:text-ink flex items-center gap-2 shrink-0 transition-colors"
+        >
+          <i class="fa-solid fa-list-check"></i>
+          <span>Bài tập & Nhận xét</span>
+        </button>
+        <button 
+          id="btn-member-subtab-quiz" 
+          data-action="switch-member-session-subtab"
+          data-tab="quiz" 
+          class="px-3.5 py-2 rounded-lg font-medium text-ink-muted hover:text-ink flex items-center gap-2 shrink-0 transition-colors"
+        >
+          <i class="fa-solid fa-circle-question"></i>
+          <span>Trắc nghiệm ôn tập</span>
+          <span class="bht-badge text-[9px] bg-subtle text-ink-faint">Mở rộng</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: BÀI HỌC & HỌC LIỆU -->
+      <div id="member-subtab-info-content" class="space-y-4">
+        <div class="bht-card p-5 bg-surface border border-hairline space-y-3.5">
+          <div class="flex items-center justify-between pb-2 border-b border-hairline">
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-info text-accent"></i>
+              <span>Tóm tắt nội dung bài học & Hướng dẫn</span>
+            </h4>
+          </div>
+          <div id="member-detail-desc" class="text-xs text-ink-muted leading-relaxed whitespace-pre-line py-1">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: BÀI TẬP THỰC HÀNH -->
+      <div id="member-subtab-task-content" class="space-y-4 hidden">
+        <div class="bht-card p-5 bg-surface border border-hairline space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-hairline">
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
+              <i class="fa-solid fa-list-check text-accent"></i>
+              <span>Yêu cầu bài tập & Tình trạng nộp bài</span>
+            </h4>
+            <span id="member-detail-task-badge" class="bht-badge text-[10px]">Chưa nộp</span>
+          </div>
+
+          <div id="member-detail-task-content" class="space-y-3">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: TRẮC NGHIỆM ÔN TẬP (MỞ RỘNG) -->
+      <div id="member-subtab-quiz-content" class="space-y-4 hidden">
+        <div class="bht-card p-8 text-center bg-surface border border-dashed border-hairline space-y-3">
+          <div class="w-14 h-14 rounded-2xl bg-accent-soft text-accent mx-auto flex items-center justify-center text-2xl shadow-sm">
+            <i class="fa-solid fa-circle-question"></i>
+          </div>
+          <h3 class="bht-heading-serif text-lg font-bold text-ink">Trắc Nghiệm Ôn Tập & Củng Cố Kiến Thức</h3>
+          <p class="text-xs text-ink-muted max-w-md mx-auto leading-relaxed">
+            Hệ thống câu hỏi trắc nghiệm kiểm tra nhanh kiến thức buổi học sẽ được mở sau khi kết thúc phần giảng bài.
+          </p>
+          <div class="pt-2">
+            <button class="bht-btn bht-btn-secondary bht-btn-sm" disabled>
+              <span>Chưa mở đề trắc nghiệm</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: KHO HỌC LIỆU ==================== -->
+    <section id="member-tab-docs" class="hidden space-y-4">
+      <!-- Docs Header & Filter Row -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-hairline">
+        <div>
+          <h3 class="bht-heading-serif text-lg font-semibold text-ink flex items-center gap-2">
+            <i class="fa-solid fa-book-bookmark text-accent text-sm"></i>
+            <span>Kho Học Liệu & Slide Đa Phương Tiện</span>
+          </h3>
+          <p class="text-xs text-ink-muted">Tài liệu chính thức, template luận văn VNUF2, đề thi MOS và cẩm nang AI</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative w-full sm:w-72">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-faint">
+            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+          </div>
+          <input 
+            type="text" 
+            id="input-search-docs" 
+            placeholder="Tìm kiếm tài liệu, slide, template..." 
+            class="bht-input pl-8 text-xs sm:text-sm"
+          >
+        </div>
+      </div>
+
+      <!-- Category Filter Pills (Chuẩn đầu ra, Word, Excel, AI, Olympic) -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs select-none scrollbar-none" id="member-docs-categories">
+        <button 
+          data-action="filter-docs-category" 
+          data-category="ALL"
+          class="bht-category-pill active"
+        >
+          <i class="fa-solid fa-shapes"></i>
+          <span>Tất cả</span>
+        </button>
+        <button 
+          data-action="filter-docs-category" 
+          data-category="CHUAN_DAU_RA"
+          class="bht-category-pill"
+        >
+          <i class="fa-solid fa-certificate"></i>
+          <span>Chuẩn đầu ra MOS/IC3</span>
+        </button>
+        <button 
+          data-action="filter-docs-category" 
+          data-category="WORD_DO_AN"
+          class="bht-category-pill"
+        >
+          <i class="fa-solid fa-file-word"></i>
+          <span>Word Khóa luận & Đồ án</span>
+        </button>
+        <button 
+          data-action="filter-docs-category" 
+          data-category="EXCEL_DATA"
+          class="bht-category-pill"
+        >
+          <i class="fa-solid fa-file-excel"></i>
+          <span>Excel & Xử lý số liệu</span>
+        </button>
+        <button 
+          data-action="filter-docs-category" 
+          data-category="AI_TOOLS"
+          class="bht-category-pill"
+        >
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>Prompt AI & Kỹ năng</span>
+        </button>
+        <button 
+          data-action="filter-docs-category" 
+          data-category="OLYMPIC"
+          class="bht-category-pill"
+        >
+          <i class="fa-solid fa-award"></i>
+          <span>Olympic & Thuật toán</span>
+        </button>
+      </div>
+
+      <div id="member-doc-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <!-- Rendered dynamically via JavaScript -->
+      </div>
+      <div id="member-docs-pagination"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ==================== MODAL NỘP BÀI TẬP ==================== -->
+<div id="modal-submit-task" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-lg w-full p-6 shadow-[var(--shadow-float)] border border-hairline relative animate-fade-in">
+    <div class="flex items-start justify-between pb-4 border-b border-hairline">
+      <div>
+        <span class="bht-badge-mono text-[10px] text-accent">NỘP SẢN PHẨM HỌC THUẬT</span>
+        <h3 class="bht-heading-serif text-lg font-semibold text-ink mt-1" id="modal-submit-task-title">Nộp bài tập</h3>
+        <p class="text-xs text-ink-muted font-mono mt-0.5" id="modal-submit-task-deadline">Hạn chót: ...</p>
+      </div>
+      <button id="modal-submit-task-close-btn" data-action="close-submit-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form id="form-submit-file" data-action="submit-assignment" class="mt-4 space-y-4">
+      <input type="hidden" id="submit-task-id">
+
+      <!-- Drag & Drop Box -->
+      <div>
+        <label class="bht-label">
+          File đính kèm từ thiết bị <span class="text-err">*</span>
+        </label>
+        <div 
+          id="dropzone"
+          data-action="trigger-file-select"
+          class="border-2 border-dashed border-hairline hover:border-accent rounded-xl p-6 text-center cursor-pointer transition-colors bg-subtle/40 hover:bg-accent-soft/20"
+        >
+          <div class="w-10 h-10 rounded-lg bg-accent-soft text-accent mx-auto flex items-center justify-center text-lg mb-2">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <p class="text-xs font-semibold text-ink" id="file-chosen-name">Bấm hoặc kéo thả file vào đây</p>
+          <p class="text-[11px] text-ink-muted mt-1">Hỗ trợ file Word (.docx), PDF, Excel (.xlsx), ZIP, CPP, PY (Tối đa 20MB)</p>
+          <input 
+            type="file" 
+            id="file-upload-input" 
+            class="hidden" 
+            accept=".docx,.doc,.pdf,.xlsx,.xls,.zip,.rar,.7z,.cpp,.py,.java,.sql,.txt,.c,.cs,.ipynb,.pptx,.ppt"
+            required
+          >
+        </div>
+      </div>
+
+      <!-- Upload Progress Bar -->
+      <div id="submit-upload-progress" class="hidden space-y-1.5">
+        <div class="flex items-center justify-between text-xs text-ink-muted">
+          <span id="upload-status-text">Đang tải lên Google Drive...</span>
+          <span id="upload-status-pct" class="font-mono font-semibold text-accent">0%</span>
+        </div>
+        <div class="w-full bg-subtle rounded-full h-1.5 overflow-hidden">
+          <div id="upload-progress-bar" class="bg-accent h-1.5 rounded-full transition-all duration-300" style="width: 20%"></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
+        <button 
+          type="button" 
+          id="btn-cancel-upload"
+          data-action="close-submit-modal"
+          class="bht-btn bht-btn-secondary bht-btn-sm"
+        >
+          Hủy bỏ
+        </button>
+        <button 
+          type="submit" 
+          id="btn-confirm-upload"
+          class="bht-btn bht-btn-primary bht-btn-sm"
+        >
+          <span>Xác nhận Nộp bài</span>
+          <i class="fa-solid fa-paper-plane text-xs"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Popup Nhập PIN Điểm Danh Nhanh Cho Thành Viên -->
+<div id="modal-member-quick-pin" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-sm w-full p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)] text-center space-y-4">
+    <div class="flex items-center justify-between pb-2 border-b border-hairline text-left">
+      <div>
+        <h3 class="bht-heading-serif text-base font-bold text-ink">Điểm Danh Buổi Sinh Hoạt</h3>
+      </div>
+      <button data-action="close-quick-pin-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <div class="w-12 h-12 rounded-2xl bg-accent-soft text-accent mx-auto flex items-center justify-center text-xl shadow-sm">
+      <i class="fa-solid fa-qrcode"></i>
+    </div>
+
+    <div>
+      <h4 id="quick-pin-session-title" class="text-sm font-semibold text-ink leading-snug">Tên buổi sinh hoạt</h4>
+      <p class="text-xs text-ink-muted mt-1 leading-relaxed">
+        Nhập mã PIN 6 chữ số đang hiển thị trên màn hình chiếu hội trường:
+      </p>
+    </div>
+
+    <form id="form-quick-pin-modal" data-action="submit-quick-pin-modal" class="space-y-3.5 max-w-xs mx-auto">
+      <input 
+        type="text" 
+        id="quick-pin-input-code" 
+        maxlength="6" 
+        minlength="6"
+        inputmode="numeric"
+        pattern="[0-9]{6}"
+        placeholder="------" 
+        required
+        autocomplete="one-time-code"
+        class="bht-input font-mono text-center font-black tracking-[0.3em] text-2xl h-12 text-accent"
+      >
+      <button type="submit" id="btn-submit-quick-pin-modal" class="bht-btn bht-btn-primary bht-btn-md w-full justify-center shadow-sm">
+        <span>Xác nhận điểm danh</span>
+        <i class="fa-solid fa-check text-xs ml-1"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+
+

@@ -1,0 +1,95 @@
+# QUY TRÌNH 6 BƯỚC PHÁT TRIỂN TÍNH NĂNG MỚI (`add-feature-workflow.md`)
+> **Dự án:** Cổng Quản Lý Ban Học Thuật - CLB Tin Học VNUF2  
+> **Áp dụng:** Mọi yêu cầu thêm mới màn hình, API, chức năng hay phân hệ nghiệp vụ.
+
+---
+
+## TỔNG QUAN LUỒNG PHÁT TRIỂN
+
+```text
+[Bước 1: Config.js]       ──> Khai báo tên Action, quyền hạn & hằng số hệ thống
+         │
+[Bước 2: Service_*.js]    ──> Xử lý nghiệp vụ, tách Drive/Mail ra ngoài Lock
+         │
+[Bước 3: Router.js]        ──> Middleware kiểm tra Token, Guard Role, tiêm currentUser
+         │
+[Bước 4: Mock & Api.js]   ──> Giả lập mockData.js, cấu hình MUTATION_INVALIDATION_MAP
+         │
+[Bước 5: Store & Template]──> Cập nhật store.js, viết pure template trong templates.js (escapeHTML)
+         │
+[Bước 6: Controller & App]──> Viết controller, withButtonLock, đăng ký CENTRAL_ACTION_MAP
+```
+
+---
+
+## CHI TIẾT TỪNG BƯỚC THỰC HIỆN
+
+### BƯỚC 1: KHAI BÁO CẤU HÌNH (`gas-backend/Config.js`)
+1. Xác định phân loại quyền cho Action mới và thêm vào đúng mảng:
+   - `PUBLIC_ACTIONS`: Người dùng vãng lai, chưa đăng nhập (`ping`, `requestLoginOtp`, `verifyLoginOtp`, `getAuthStatus`).
+   - `MEMBER_ACTIONS`: Thành viên CLB, bắt buộc Session Token (`checkInAttendance`, `submitTaskAssignment`...).
+   - `ADMIN_ACTIONS`: Quản trị viên, bắt buộc Token và `role === 'ADMIN'` (`createAttendanceSession`, `reviewSubmission`...).
+   - `QUERY_ACTIONS`: Hành động đọc dữ liệu (`getAttendanceSessions`, `getAllTasks`...).
+2. Khai báo thêm tên Sheet, ID Thư mục hoặc hằng số TTL Cache nếu cần thiết.
+
+---
+
+### BƯỚC 2: XÂY DỰNG LOGIC DỊCH VỤ (`gas-backend/Service_*.js`)
+1. **Quy tắc vàng về ScriptLock:**
+   - **TUYỆT ĐỐI KHÔNG** gọi `DriveApp.createFile()`, `DriveApp.createFolder()`, `GmailApp.sendEmail()`, `UrlFetchApp.fetch()` nằm bên trong `withScriptLock()`.
+   - Phải xử lý file Drive hoặc gửi email trước, khi có link/kết quả mới mở khóa để ghi Sheet.
+2. **Quy tắc tối ưu I/O Google Sheets:**
+   - Dùng `DbHelper.readSheetData(sheetName)` đọc theo lô qua `getDataRange().getValues()`.
+   - Tuyệt đối không dùng vòng lặp gọi `getValue()`/`setValue()` từng ô.
+   - Thao tác ghi bọc trong `withScriptLock(10000)`. Nếu timeout, hệ thống tự trả về `{ success: false, errorCode: 'LOCK_TIMEOUT' }`.
+   - Gọi `DbHelper.invalidateSheetCache(sheetName)` ngay sau khi ghi dữ liệu thành công.
+
+---
+
+### BƯỚC 3: ĐỊNH TUYẾN & BẢO MẬT PHÂN QUYỀN (`gas-backend/Router.js`)
+1. Tiếp nhận Action mới trong hàm `doPost(e)` hoặc các route phụ trợ.
+2. **Chống giả mạo danh tính:**
+   - Nếu là `MEMBER_ACTIONS`: Lấy `currentUser.mssv` đã được Router chứng thực qua Token để truyền vào Service. **Cấm lấy `payload.mssv` từ Client.**
+   - Nếu là `ADMIN_ACTIONS`: Router tự động chặn với mã lỗi `403 FORBIDDEN` nếu `currentUser.role !== 'ADMIN'`.
+3. Trả về đúng JSON Envelope chuẩn: `{ success: true, data: ..., message: ... }`.
+
+---
+
+### BƯỚC 4: ĐỒNG BỘ MOCK DATA & API SERVICE (`frontend/services/`)
+1. **Cập nhật `frontend/services/mockData.js`:**
+   - Thêm case xử lý trong hàm `mockCallApi(action, payload)`.
+   - Cấu trúc các trường dữ liệu (Schema) của Mock **phải khớp 100%** với dữ liệu Google Sheets thật.
+   - Cập nhật state nội bộ và ghi vào `localStorage.setItem('bht_mock_store', ...)` để dữ liệu không bị mất khi F5.
+2. **Cập nhật `frontend/services/api.js`:**
+   - Nếu Action là Mutation (thay đổi dữ liệu): Thêm vào `MUTATION_INVALIDATION_MAP` để tự động xóa cache các danh mục liên quan.
+   - Kiểm tra cơ chế Auto-Retry với Jitter hoạt động khi backend phản hồi `LOCK_TIMEOUT`.
+
+---
+
+### BƯỚC 5: STATE PHẢN ỨNG & HTML TEMPLATES (`frontend/modules/`)
+1. **Cập nhật Store (`modules/store.js`):**
+   - Nếu dữ liệu mới cần dùng chung ở nhiều nơi, khai báo state trong `store.js` và cập nhật bằng `store.setState({ ... })`.
+2. **Tách biệt Template vào `modules/templates.js`:**
+   - Viết các hàm Template Literals xuất ra chuỗi HTML tinh gọn.
+   - **BẮT BUỘC** bọc mọi biến dữ liệu người dùng qua hàm `escapeHTML(str)` từ `utils/dom.js`.
+   - **BẮT BUỘC** dùng thuộc tính `data-action="..."` và `data-id="..."`, **CẤM** gắn `onclick` inline.
+
+---
+
+### BƯỚC 6: CONTROLLER & EVENT DELEGATION (`modules/*.js` & `app.js`)
+1. **Viết Controller logic:**
+   - Đặt hàm nghiệp vụ trong module tương ứng (`admin.js`, `member.js`, `auth.js`).
+   - Gọi API qua `await callApi(action, payload)`. Cấm dùng `fetch()` trực tiếp.
+   - Dùng helper `withButtonLock(btnEl, asyncFn)` để tự động disable nút và hiện spinner khi gọi API, ngăn double-click.
+2. **Đăng ký Action vào `frontend/app.js`:**
+   - Mở `CENTRAL_ACTION_MAP` trong `app.js` và ánh xạ tên `data-action`:
+     ```javascript
+     'ten-action-moi': (el, ev, ds) => handleTenActionMoi(ds.id, ds.status),
+     ```
+   - Nếu là Form submit, đăng ký vào `CENTRAL_FORM_MAP`:
+     ```javascript
+     'ten-form-moi': (form, ev) => handleFormSubmitMoi(ev),
+     ```
+3. **Kiểm thử nghiệm thu:**
+   - Chạy lệnh `node test_core.mjs` để đảm bảo không vi phạm các quy tắc cốt lõi.
+   - Kiểm tra trên trình duyệt ở cả 2 vai trò Admin và Member.

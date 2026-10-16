@@ -1,0 +1,16 @@
+{
+  "scriptId": "18dMYdY5SdOgAVPs_ROlykt7rXQoDcHgKTVHrQE1if1rSnErtjMVIdMsS",
+  "rootDir": "./gas-backend",
+  "scriptExtensions": [
+    ".js",
+    ".gs"
+  ],
+  "htmlExtensions": [
+    ".html"
+  ],
+  "jsonExtensions": [
+    ".json"
+  ],
+  "filePushOrder": [],
+  "skipSubdirectories": false
+}

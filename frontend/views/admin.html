@@ -1,0 +1,1245 @@
+<!-- GIAO DIỆN QUẢN TRỊ VIÊN (VIEW ADMIN - EDITORIAL APP SHELL) -->
+<div id="view-admin" class="hidden min-h-screen bg-canvas flex flex-col md:flex-row pb-20 md:pb-0">
+
+  <!-- ==================== SIDEBAR TRÁI (DESKTOP / TABLET >= 768px) ==================== -->
+  <aside class="bht-sidebar hidden md:flex flex-col h-screen max-h-screen sticky top-0 bg-surface border-r border-hairline flex-shrink-0 z-30 select-none overflow-hidden">
+    <!-- Brand Header -->
+    <div class="h-16 px-4 border-b border-hairline flex items-center justify-between gap-2 overflow-hidden sidebar-header shrink-0">
+      <div class="flex items-center gap-3 min-w-0 sidebar-brand-box">
+        <div class="w-9 h-9 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm sidebar-logo">
+          <img src="./assets/images/logo-clb.png" alt="Admin Portal - CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <i class="fa-solid fa-crown text-accent text-sm hidden"></i>
+        </div>
+        <div class="overflow-hidden sidebar-text">
+          <div class="flex items-center gap-1.5">
+            <h1 class="bht-heading-serif text-base font-semibold leading-tight text-ink truncate">Admin Portal</h1>
+          </div>
+          <p class="text-[11px] text-ink-muted truncate">Ban Học Thuật · VNUF2</p>
+        </div>
+      </div>
+      <button 
+        data-action="toggle-sidebar" 
+        class="bht-btn bht-btn-ghost w-7 h-7 p-0 flex items-center justify-center rounded-md shrink-0 text-ink-muted hover:text-ink hover:bg-subtle sidebar-toggle-btn" 
+        title="Thu nhỏ thanh điều hướng"
+      >
+        <i class="fa-solid fa-angles-left text-xs sidebar-toggle-icon transition-transform duration-200"></i>
+      </button>
+    </div>
+
+    <!-- Navigation Menu (Notion-style vertical tabs) -->
+    <nav class="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
+      <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-faint sidebar-section-title">Quản trị học thuật</div>
+
+      <button 
+        data-action="switch-admin-tab"
+        data-tab="submissions"
+        id="admin-tab-btn-submissions" 
+        class="bht-nav-item active justify-between"
+        title="Duyệt bài nộp"
+      >
+        <div class="flex items-center gap-2.5 truncate sidebar-nav-content">
+          <i class="fa-solid fa-file-signature w-4 text-center text-accent shrink-0"></i>
+          <span class="truncate sidebar-text">Duyệt bài nộp</span>
+        </div>
+        <span id="admin-badge-pending-count" class="bht-badge-mono text-[10px] bg-warn-soft text-warn font-bold ml-1">0</span>
+      </button>
+
+      <button 
+        data-action="switch-admin-tab"
+        data-tab="attendance"
+        id="admin-tab-btn-attendance" 
+        class="bht-nav-item justify-between"
+        title="Buổi học & Chuyên đề"
+      >
+        <div class="flex items-center gap-2.5 truncate sidebar-nav-content">
+          <i class="fa-solid fa-chalkboard-user w-4 text-center text-ink-muted shrink-0"></i>
+          <span class="truncate sidebar-text">Buổi học & Chuyên đề</span>
+        </div>
+      </button>
+
+      <button 
+        data-action="switch-admin-tab"
+        data-tab="members"
+        id="admin-tab-btn-members" 
+        class="bht-nav-item justify-between"
+        title="Nhân sự Thành viên"
+      >
+        <div class="flex items-center gap-2.5 truncate sidebar-nav-content">
+          <i class="fa-solid fa-users-gear w-4 text-center text-ink-muted shrink-0"></i>
+          <span class="truncate sidebar-text">Nhân sự Thành viên</span>
+        </div>
+      </button>
+    </nav>
+
+    <!-- Admin Profile & Footer Controls -->
+    <div class="p-3 border-t border-hairline bg-subtle/40 sidebar-footer shrink-0">
+      <div class="flex items-center gap-2.5 px-2 py-2 mb-2 sidebar-footer-profile">
+        <div class="w-8 h-8 rounded-full bg-accent text-accent-fg flex items-center justify-center text-xs font-bold shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="overflow-hidden flex-1 leading-tight sidebar-text">
+          <p id="admin-display-name" class="text-xs font-semibold text-ink truncate">Admin</p>
+          <p id="admin-display-email" class="text-[11px] text-ink-muted font-mono truncate">admin@gmail.com</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-hairline text-ink-muted sidebar-footer-actions">
+        <button 
+          data-action="toggle-theme"
+          title="Đổi giao diện Sáng / Tối"
+          class="bht-btn bht-btn-ghost bht-btn-xs text-xs w-full"
+        >
+          <i class="fa-solid fa-moon js-theme-icon mr-1"></i>
+          <span class="js-theme-label sidebar-text">Giao diện</span>
+        </button>
+
+        <button 
+          data-action="refresh-admin-data"
+          title="Làm mới toàn bộ dữ liệu"
+          class="bht-btn bht-btn-ghost bht-btn-xs text-xs w-full"
+        >
+          <i class="fa-solid fa-rotate mr-1"></i>
+          <span class="sidebar-text">Làm mới</span>
+        </button>
+      </div>
+
+      <!-- Nút Đăng Xuất To Rõ Ràng -->
+      <button 
+        data-action="logout"
+        title="Đăng xuất khỏi tài khoản"
+        class="bht-btn bht-btn-danger bht-btn-sm w-full mt-2 font-semibold text-xs justify-center shadow-sm sidebar-logout-btn"
+      >
+        <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+        <span class="sidebar-text">Đăng xuất</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MOBILE TOPBAR (< 768px) ==================== -->
+  <header class="md:hidden sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-hairline px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+        <img src="./assets/images/logo-clb.png" alt="Admin Portal - CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <i class="fa-solid fa-crown text-accent text-xs hidden"></i>
+      </div>
+      <div>
+        <h1 class="bht-heading-serif text-sm font-semibold text-ink leading-tight">Admin Portal</h1>
+        <p class="text-[10px] text-ink-muted">Ban Học Thuật VNUF2</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-1">
+      <button data-action="toggle-theme" class="bht-btn bht-btn-ghost bht-btn-icon text-xs" title="Đổi giao diện">
+        <i class="fa-solid fa-moon js-theme-icon"></i>
+      </button>
+      <button data-action="refresh-admin-data" class="bht-btn bht-btn-ghost bht-btn-icon text-xs" title="Làm mới">
+        <i class="fa-solid fa-rotate"></i>
+      </button>
+      <button data-action="logout" class="bht-btn bht-btn-ghost bht-btn-icon text-xs hover:text-err" title="Đăng xuất">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== BOTTOM TAB BAR (MOBILE < 768px) ==================== -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 h-16 bg-surface/95 backdrop-blur border-t border-hairline grid grid-cols-3 px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+    <button 
+      data-action="switch-admin-tab"
+      data-tab="submissions"
+      class="flex flex-col items-center justify-center gap-1 py-1 text-xs text-accent font-semibold transition-colors relative"
+      data-mobile-admin-tab="submissions"
+    >
+      <i class="fa-solid fa-file-signature text-base"></i>
+      <span class="text-[11px]">Duyệt bài</span>
+    </button>
+    <button 
+      data-action="switch-admin-tab"
+      data-tab="attendance"
+      class="flex flex-col items-center justify-center gap-1 py-1 text-xs text-ink-muted hover:text-ink font-medium transition-colors"
+      data-mobile-admin-tab="attendance"
+    >
+      <i class="fa-solid fa-chalkboard-user text-base"></i>
+      <span class="text-[11px]">Buổi học</span>
+    </button>
+    <button 
+      data-action="switch-admin-tab"
+      data-tab="members"
+      class="flex flex-col items-center justify-center gap-1 py-1 text-xs text-ink-muted hover:text-ink font-medium transition-colors"
+      data-mobile-admin-tab="members"
+    >
+      <i class="fa-solid fa-users-gear text-base"></i>
+      <span class="text-[11px]">Thành viên</span>
+    </button>
+  </nav>
+
+  <!-- ==================== VÙNG NỘI DUNG CHÍNH (ADMIN CANVAS) ==================== -->
+  <main class="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 max-w-6xl mx-auto w-full pb-24 md:pb-8">
+
+    <!-- Editorial Metric Strip (4-cell continuous ledger) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-hairline bht-card bg-surface overflow-hidden mb-6">
+      <div class="p-4 sm:p-5">
+        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-muted font-semibold">Nhân sự Ban</p>
+        <p id="admin-stat-members" class="font-mono text-2xl sm:text-3xl font-bold text-ink mt-1">0</p>
+      </div>
+
+      <div class="p-4 sm:p-5">
+        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-muted font-semibold">Task Active</p>
+        <p id="admin-stat-tasks" class="font-mono text-2xl sm:text-3xl font-bold text-ink mt-1">0</p>
+      </div>
+
+      <div class="p-4 sm:p-5">
+        <div class="flex items-center justify-between">
+          <p class="text-[11px] font-mono uppercase tracking-wider text-warn font-semibold">Chờ duyệt</p>
+          <span class="w-2 h-2 rounded-full bg-warn animate-pulse"></span>
+        </div>
+        <p id="admin-stat-pending" class="font-mono text-2xl sm:text-3xl font-bold text-warn mt-1">0</p>
+      </div>
+
+      <div class="p-4 sm:p-5">
+        <p class="text-[11px] font-mono uppercase tracking-wider text-ok font-semibold">Đã duyệt đạt</p>
+        <p id="admin-stat-approved" class="font-mono text-2xl sm:text-3xl font-bold text-ok mt-1">0</p>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 1: DUYỆT BÀI NỘP ==================== -->
+    <section id="admin-tab-submissions" class="space-y-4">
+      <!-- Search & Filters Toolbar -->
+      <div class="bht-card p-3.5 bg-surface flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[260px]">
+          <div class="relative flex-1 min-w-[180px] max-w-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-faint">
+              <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            </div>
+            <input 
+              type="text" 
+              id="admin-search-submission" 
+              placeholder="Tìm theo MSSV, Họ tên hoặc file..." 
+              class="bht-input pl-8 text-xs"
+            >
+          </div>
+          
+          <select 
+            id="admin-filter-task" 
+            class="bht-select text-xs w-auto min-w-[160px]"
+          >
+            <option value="ALL">Tất cả nhiệm vụ</option>
+          </select>
+        </div>
+
+        <!-- Filter Status Buttons (Segmented Control) -->
+        <div class="bg-subtle p-1 rounded-lg inline-flex items-center gap-1 border border-hairline">
+          <button 
+            data-action="filter-submission-status"
+            data-status="ALL"
+            id="btn-sub-filter-all"
+            class="bht-btn bht-btn-xs bht-btn-primary"
+          >
+            Tất cả
+          </button>
+          <button 
+            data-action="filter-submission-status"
+            data-status="Pending"
+            id="btn-sub-filter-pending"
+            class="bht-btn bht-btn-xs bht-btn-ghost text-ink-muted"
+          >
+            Chờ duyệt
+          </button>
+          <button 
+            data-action="filter-submission-status"
+            data-status="Approved"
+            id="btn-sub-filter-approved"
+            class="bht-btn bht-btn-xs bht-btn-ghost text-ink-muted"
+          >
+            Đạt
+          </button>
+          <button 
+            data-action="filter-submission-status"
+            data-status="Rejected"
+            id="btn-sub-filter-rejected"
+            class="bht-btn bht-btn-xs bht-btn-ghost text-ink-muted"
+          >
+            Cần sửa
+          </button>
+        </div>
+      </div>
+
+      <!-- Submissions Table Container -->
+      <div class="bht-table-container">
+        <table class="bht-table min-w-[650px]">
+          <thead>
+            <tr>
+              <th class="w-1/4">Thành viên</th>
+              <th class="w-1/5">Nhiệm vụ</th>
+              <th class="w-1/4">File nộp & Thời gian</th>
+              <th class="text-center w-24">Trạng thái</th>
+              <th>Nhận xét & Thao tác duyệt</th>
+            </tr>
+          </thead>
+          <tbody id="admin-submissions-table-body" class="divide-y divide-hairline">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="admin-submissions-pagination"></div>
+    </section>
+
+    <!-- ==================== TAB 2: QUẢN LÝ BUỔI HỌC & CHUYÊN ĐỀ ==================== -->
+    <section id="admin-tab-attendance" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-hairline">
+        <div>
+          <h3 class="bht-heading-serif text-lg font-semibold text-ink">Quản lý Buổi học & Chuyên đề</h3>
+          <p class="text-xs text-ink-muted">Quản lý nội dung học thuật, link slide, mã PIN điểm danh và bài tập thực hành đính kèm</p>
+        </div>
+        <button 
+          data-action="open-create-attendance-modal"
+          class="bht-btn bht-btn-primary bht-btn-sm self-start sm:self-auto shrink-0"
+        >
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Tạo buổi sinh hoạt</span>
+        </button>
+      </div>
+
+      <div id="admin-attendance-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-4.5">
+        <!-- Rendered via JS -->
+      </div>
+      <div id="admin-attendance-pagination"></div>
+    </section>
+
+    <!-- ==================== SUB-VIEW CHI TIẾT BUỔI HỌC (FULL PAGE TABS KHÔNG GIAN RỘNG RÃI) ==================== -->
+    <section id="admin-tab-session-detail" class="hidden space-y-4">
+      <!-- Top Navigation & Breadcrumb -->
+      <div class="flex items-center pb-3 border-b border-hairline">
+        <button data-action="back-to-admin-sessions" class="bht-btn bht-btn-ghost bht-btn-sm text-xs font-semibold flex items-center gap-2 text-ink hover:text-accent">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Quay lại danh sách buổi học</span>
+        </button>
+      </div>
+
+      <!-- Banner Thông Tin Buổi Học -->
+      <div class="bht-card p-4 sm:p-5 bg-surface border border-hairline flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1.5">
+            <span id="admin-detail-session-tag"></span>
+            <span id="admin-detail-session-status" class="bht-badge bht-badge-ok text-xs">Đang mở</span>
+          </div>
+          <h2 id="admin-detail-session-title" class="bht-heading-serif text-xl sm:text-2xl font-bold text-ink">Tên buổi sinh hoạt</h2>
+          <div class="text-xs text-ink-muted font-mono mt-1 flex flex-wrap items-center gap-y-1 gap-x-3">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-regular fa-calendar-check text-accent"></i>
+              <span id="admin-detail-session-date">Chưa xếp lịch</span>
+            </span>
+            <span class="flex items-center gap-1.5 font-sans">
+              <i class="fa-solid fa-location-dot text-rose-500"></i>
+              <span id="admin-detail-session-room">Phòng Lab 02 - Nhà A3</span>
+            </span>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <button data-action="open-admin-pin-modal" class="bht-btn bht-btn-primary bht-btn-sm">
+            <i class="fa-solid fa-key text-xs"></i>
+            <span>Xem PIN & Chiếu</span>
+          </button>
+          <button id="btn-detail-toggle-pin" data-action="toggle-pin-from-detail" class="bht-btn bht-btn-secondary bht-btn-sm">
+            <i class="fa-solid fa-lock text-xs"></i>
+            <span id="admin-detail-pin-btn-text">Khóa điểm danh</span>
+          </button>
+          <button data-action="open-edit-session-modal" class="bht-btn bht-btn-secondary bht-btn-sm" title="Sửa thông tin buổi học">
+            <i class="fa-solid fa-pen text-xs"></i>
+            <span>Sửa</span>
+          </button>
+          <button data-action="delete-session-from-detail" class="bht-btn bht-btn-danger bht-btn-sm" title="Xóa buổi học này">
+            <i class="fa-solid fa-trash text-xs"></i>
+            <span>Xóa</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Thanh Sub-tabs Điều hướng Rộng Rãi -->
+      <div class="flex items-center gap-2 border-b border-hairline pb-2 overflow-x-auto scrollbar-hide text-xs sm:text-sm">
+        <button 
+          id="btn-admin-subtab-info" 
+          data-action="switch-admin-session-subtab"
+          data-tab="info" 
+          class="px-3.5 py-2 rounded-lg font-semibold text-accent bg-accent-soft border border-hairline flex items-center gap-2 shrink-0 transition-colors"
+        >
+          <i class="fa-solid fa-book-open-reader"></i>
+          <span>Nội dung & Slide bài giảng</span>
+        </button>
+        <button 
+          id="btn-admin-subtab-pin" 
+          data-action="switch-admin-session-subtab"
+          data-tab="pin" 
+          class="px-3.5 py-2 rounded-lg font-medium text-ink-muted hover:text-ink flex items-center gap-2 shrink-0 transition-colors"
+        >
+          <i class="fa-solid fa-users-viewfinder"></i>
+          <span>Danh sách Điểm danh (<span id="admin-detail-attended-count">0</span>)</span>
+        </button>
+        <button 
+          id="btn-admin-subtab-task" 
+          data-action="switch-admin-session-subtab"
+          data-tab="task" 
+          class="px-3.5 py-2 rounded-lg font-medium text-ink-muted hover:text-ink flex items-center gap-2 shrink-0 transition-colors"
+        >
+          <i class="fa-solid fa-list-check"></i>
+          <span>Bài tập & Chấm bài</span>
+        </button>
+        <button 
+          id="btn-admin-subtab-quiz" 
+          data-action="switch-admin-session-subtab"
+          data-tab="quiz" 
+          class="px-3.5 py-2 rounded-lg font-medium text-ink-muted hover:text-ink flex items-center gap-2 shrink-0 transition-colors"
+        >
+          <i class="fa-solid fa-circle-question"></i>
+          <span>Trắc nghiệm & Ôn tập</span>
+          <span class="bht-badge text-[9px] bg-subtle text-ink-faint">Mở rộng</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: BÀI GIẢNG & SLIDE (RỘNG RÃI) -->
+      <div id="admin-subtab-info-content" class="space-y-4">
+        <div class="bht-card p-5 bg-surface border border-hairline space-y-4">
+          <div>
+            <label class="bht-label">Link Slide bài giảng / Tài liệu Google Drive</label>
+            <div class="flex items-center gap-2">
+              <input type="url" id="detail-info-link" placeholder="https://drive.google.com/..." class="bht-input text-xs font-mono flex-1">
+              <a id="btn-open-slide-external" href="#" target="_blank" class="bht-btn bht-btn-secondary bht-btn-sm shrink-0">
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                <span>Mở Drive</span>
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <label class="bht-label">Nội dung tóm tắt chuyên đề / Ghi chú buổi sinh hoạt</label>
+            <textarea id="detail-info-desc" rows="5" placeholder="Nhập nội dung tóm tắt kiến thức, tài liệu tham khảo, ghi chú sinh hoạt..." class="bht-textarea text-xs"></textarea>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button data-action="update-session-info-in-detail" class="bht-btn bht-btn-primary bht-btn-sm">
+              <i class="fa-solid fa-floppy-disk text-xs"></i>
+              <span>Lưu thông tin chuyên đề</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: DANH SÁCH ĐIỂM DANH (FULL WIDTH RỘNG RÃI) -->
+      <div id="admin-subtab-pin-content" class="space-y-4 hidden">
+        <!-- Quick PIN Banner -->
+        <div class="bht-card p-4 bg-subtle/50 border border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-accent-soft text-accent flex items-center justify-center text-xl shrink-0">
+              <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <div>
+              <p class="text-[10px] text-ink-faint uppercase font-bold tracking-wider">Mã PIN Điểm Danh Hiện Tại</p>
+              <div class="flex items-center gap-2.5 mt-0.5">
+                <span id="admin-detail-pin-display" class="font-mono font-extrabold text-accent text-2xl sm:text-3xl tracking-widest">------</span>
+                <button data-action="regenerate-pin-in-detail" class="bht-btn bht-btn-ghost bht-btn-xs text-xs" title="Đổi PIN mới">
+                  <i class="fa-solid fa-arrows-rotate mr-1"></i> Đổi PIN
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button data-action="open-admin-pin-modal" class="bht-btn bht-btn-primary bht-btn-sm">
+              <i class="fa-solid fa-expand text-xs"></i>
+              <span>Mở Popup PIN & Chiếu</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bảng Danh Sách Sinh Viên Đã Điểm Danh Rộng Rãi -->
+        <div class="bht-card p-0 overflow-hidden border border-hairline">
+          <div class="p-3.5 bg-surface border-b border-hairline flex flex-wrap items-center justify-between gap-2.5">
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
+              <i class="fa-solid fa-users text-accent"></i>
+              <span>Danh sách sinh viên có mặt</span>
+            </h4>
+            <div class="relative w-full max-w-xs">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-faint">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+              </div>
+              <input 
+                type="text" 
+                id="admin-detail-search-attendees" 
+                placeholder="Tìm sinh viên theo MSSV, Họ tên..." 
+                class="bht-input pl-8 text-xs py-1.5 h-8"
+              >
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="bht-table w-full text-xs min-w-[500px]">
+              <thead>
+                <tr>
+                  <th class="w-32">MSSV</th>
+                  <th>Họ và Tên</th>
+                  <th class="w-48">Thời gian điểm danh</th>
+                  <th class="text-center w-28">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="admin-detail-attendance-tbody" class="divide-y divide-hairline">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="admin-detail-attendance-pagination" class="p-3 border-t border-hairline bg-surface/50"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: BÀI TẬP & CHẤM BÀI (RỘNG RÃI) -->
+      <div id="admin-subtab-task-content" class="space-y-4 hidden">
+        <!-- Thông tin bài tập hiện tại -->
+        <div id="admin-detail-task-exist-panel" class="space-y-3">
+          <!-- Rendered via JS -->
+        </div>
+
+        <!-- Form thiết lập bài tập -->
+        <div id="admin-detail-task-create-panel" class="bht-card p-5 bg-surface border border-hairline space-y-3">
+          <h4 class="text-sm font-semibold text-ink flex items-center gap-1.5 border-b border-hairline pb-2.5">
+            <i class="fa-solid fa-list-check text-accent"></i>
+            <span>Thiết lập bài tập thực hành cho buổi này</span>
+          </h4>
+          <div class="space-y-3">
+            <div>
+              <label class="bht-label">Tiêu đề bài tập <span class="text-err">*</span></label>
+              <input type="text" id="detail-task-input-title" placeholder="VD: Bài tập Tuần: Cài đặt thuật toán DFS/BFS" class="bht-input text-xs">
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="bht-label">Hạn nộp (Deadline) <span class="text-err">*</span></label>
+                <input type="datetime-local" id="detail-task-input-deadline" class="bht-input text-xs font-mono">
+              </div>
+              <div>
+                <label class="bht-label">Người nhận</label>
+                <input type="text" id="detail-task-input-assignee" value="ALL" placeholder="ALL hoặc MSSV..." class="bht-input text-xs font-mono">
+              </div>
+            </div>
+            <div>
+              <label class="bht-label">Yêu cầu chi tiết & Định dạng nộp</label>
+              <textarea id="detail-task-input-desc" rows="3" placeholder="Yêu cầu định dạng tệp, cấu trúc thư mục nộp..." class="bht-textarea text-xs"></textarea>
+            </div>
+            <div class="flex justify-end pt-1">
+              <button data-action="save-task-in-detail" id="btn-save-task-in-detail" class="bht-btn bht-btn-primary bht-btn-sm">
+                <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                <span>Lưu & Giao bài tập</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng bài nộp của sinh viên cho bài tập này -->
+        <div id="admin-detail-submissions-panel" class="bht-card p-0 overflow-hidden border border-hairline space-y-0">
+          <div class="p-3.5 bg-surface border-b border-hairline flex items-center justify-between">
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
+              <i class="fa-solid fa-file-signature text-accent"></i>
+              <span>Danh sách bài nộp của sinh viên</span>
+            </h4>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="bht-table w-full text-xs min-w-[620px]">
+              <thead>
+                <tr>
+                  <th class="w-32">MSSV</th>
+                  <th>Họ và Tên</th>
+                  <th class="w-48">File bài nộp</th>
+                  <th class="text-center w-28">Trạng thái</th>
+                  <th>Nhận xét & Thao tác duyệt</th>
+                </tr>
+              </thead>
+              <tbody id="admin-detail-submissions-tbody" class="divide-y divide-hairline">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="admin-detail-submissions-pagination" class="p-3 border-t border-hairline bg-surface/50"></div>
+        </div>
+      </div>
+
+      <!-- TAB 4: TRẮC NGHIỆM & ÔN TẬP (MỞ RỘNG TƯƠNG LAI) -->
+      <div id="admin-subtab-quiz-content" class="space-y-4 hidden">
+        <div class="bht-card p-8 text-center bg-surface border border-dashed border-hairline space-y-3">
+          <div class="w-14 h-14 rounded-2xl bg-accent-soft text-accent mx-auto flex items-center justify-center text-2xl shadow-sm">
+            <i class="fa-solid fa-circle-question"></i>
+          </div>
+          <h3 class="bht-heading-serif text-lg font-bold text-ink">Mô-đun Trắc Nghiệm & Kiểm Tra Nhanh</h3>
+          <p class="text-xs text-ink-muted max-w-md mx-auto leading-relaxed">
+            Hệ thống ngân hàng câu hỏi trắc nghiệm, tạo đề kiểm tra 10 phút cuối buổi và chấm điểm tự động cho buổi học này đang được chuẩn bị kích hoạt.
+          </p>
+          <div class="pt-2">
+            <button class="bht-btn bht-btn-secondary bht-btn-sm" disabled>
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>Thêm câu hỏi trắc nghiệm (Coming Soon)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: QUẢN LÝ THÀNH VIÊN ==================== -->
+    <section id="admin-tab-members" class="hidden space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-hairline">
+        <div class="relative w-full max-w-xs">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-faint">
+            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+          </div>
+          <input 
+            type="text" 
+            id="admin-search-members" 
+            placeholder="Tìm theo MSSV, Họ tên..." 
+            class="bht-input pl-8 text-xs"
+          >
+        </div>
+
+        <button 
+          data-action="open-add-member-modal"
+          class="bht-btn bht-btn-primary bht-btn-sm"
+        >
+          <i class="fa-solid fa-user-plus text-xs"></i>
+          <span>Thêm thành viên</span>
+        </button>
+      </div>
+
+      <div class="bht-table-container">
+        <table class="bht-table min-w-[550px]">
+          <thead>
+            <tr>
+              <th class="w-32">MSSV</th>
+              <th>Họ và Tên</th>
+              <th class="hidden md:table-cell">Email liên kết</th>
+              <th class="hidden sm:table-cell w-28">Vai trò</th>
+              <th class="text-center w-28">Trạng thái</th>
+              <th class="text-center w-36">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="admin-members-table-body" class="divide-y divide-hairline">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="admin-members-pagination"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Modal Tạo Nhiệm Vụ Mới -->
+<div id="modal-create-task" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-lg w-full p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)] max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-hairline">
+      <div>
+        <span class="bht-badge-mono text-[10px] text-accent">GIAO BÀI TẬP</span>
+        <h3 class="bht-heading-serif text-lg font-semibold text-ink mt-0.5">Nhiệm Vụ Học Thuật Mới</h3>
+      </div>
+      <button id="modal-create-task-close-btn" data-action="close-create-task-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form id="form-create-task" data-action="create-task" class="mt-4 space-y-3.5">
+      <div>
+        <label class="bht-label">Thuộc buổi sinh hoạt nào?</label>
+        <select id="task-input-session" class="bht-select text-xs">
+          <option value="GENERAL">Nhiệm vụ chung (Không thuộc buổi nào)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="bht-label">Tiêu đề bài tập / nhiệm vụ <span class="text-err">*</span></label>
+        <input type="text" id="task-input-title" required placeholder="VD: Bài tập Tuần 1: Thực hành viết hàm Python" class="bht-input text-xs">
+      </div>
+
+      <div>
+        <label class="bht-label">Mô tả yêu cầu chi tiết</label>
+        <textarea id="task-input-desc" rows="3" placeholder="Yêu cầu nộp file .py hoặc .ipynb, link Github..." class="bht-textarea text-xs"></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="bht-label">Người nhận <span class="text-err">*</span></label>
+          <input type="text" id="task-input-assignee" value="ALL" placeholder="ALL hoặc MSSV1, MSSV2..." class="bht-input text-xs font-mono">
+        </div>
+        <div>
+          <label class="bht-label">Hạn nộp (Deadline) <span class="text-err">*</span></label>
+          <input type="datetime-local" id="task-input-deadline" required class="bht-input text-xs font-mono">
+        </div>
+      </div>
+
+      <div class="bht-callout text-[11px] text-ink-muted">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-folder-plus text-accent text-sm shrink-0"></i>
+          <span>Hệ thống tự động cấp phát thư mục Google Drive riêng cho bài nộp của nhiệm vụ này.</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
+        <button type="button" id="btn-cancel-create-task" data-action="close-create-task-modal" class="bht-btn bht-btn-secondary bht-btn-sm">Hủy</button>
+        <button type="submit" id="btn-submit-create-task" class="bht-btn bht-btn-primary bht-btn-sm">Tạo nhiệm vụ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Thêm Thành Viên -->
+<div id="modal-add-member" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-md w-full p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)]">
+    <div class="flex items-center justify-between pb-3 border-b border-hairline">
+      <div>
+        <span class="bht-badge-mono text-[10px] text-accent">QUẢN LÝ NHÂN SỰ</span>
+        <h3 class="bht-heading-serif text-lg font-semibold text-ink mt-0.5">Thêm Thành Viên Mới</h3>
+      </div>
+      <button id="modal-add-member-close-btn" data-action="close-add-member-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form id="form-add-member" data-action="add-member" class="mt-4 space-y-3.5">
+      <div>
+        <label class="bht-label">Mã số sinh viên (MSSV) <span class="text-err">*</span></label>
+        <input 
+          type="text" 
+          id="member-input-mssv" 
+          required 
+          inputmode="numeric"
+          pattern="[0-9]{8,20}"
+          minlength="8"
+          maxlength="20"
+          placeholder="VD: 2251120000 (8-20 chữ số)" 
+          class="bht-input text-xs font-mono"
+        >
+      </div>
+
+      <div>
+        <label class="bht-label">Họ và Tên <span class="text-err">*</span></label>
+        <input type="text" id="member-input-hoten" required placeholder="VD: Nguyễn Văn A" class="bht-input text-xs">
+      </div>
+
+      <div>
+        <label class="bht-label">Vai trò thành viên</label>
+        <select id="member-input-role" class="bht-select text-xs">
+          <option value="MEMBER">MEMBER (Thành viên)</option>
+          <option value="ADMIN">ADMIN (Trưởng / Phó ban)</option>
+        </select>
+      </div>
+
+      <p class="text-[11px] text-ink-faint">
+        * Gmail để trống ban đầu. Khi thành viên đăng nhập lần đầu bằng OTP, Gmail sẽ tự động được liên kết.
+      </p>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
+        <button type="button" id="btn-cancel-add-member" data-action="close-add-member-modal" class="bht-btn bht-btn-secondary bht-btn-sm">Hủy</button>
+        <button type="submit" id="btn-submit-add-member" class="bht-btn bht-btn-primary bht-btn-sm">Lưu thành viên</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Tạo Buổi Sinh Hoạt Mới & Post Chuyên Đề -->
+<div id="modal-create-attendance" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-lg w-full p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)] max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-hairline">
+      <div>
+        <span class="bht-badge-mono text-[10px] text-accent">CHUYÊN ĐỀ HỌC THUẬT</span>
+        <h3 class="bht-heading-serif text-lg font-semibold text-ink mt-0.5">Tạo Buổi Sinh Hoạt Mới</h3>
+      </div>
+      <button id="modal-create-attendance-close-btn" data-action="close-create-attendance-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form id="form-create-attendance" data-action="create-attendance-session" class="mt-4 space-y-3.5">
+      <div>
+        <label class="bht-label">Tên buổi sinh hoạt / Chuyên đề <span class="text-err">*</span></label>
+        <input type="text" id="att-input-title" required placeholder="VD: Lập trình Python & Xử lý Dữ liệu Pandas" class="bht-input text-xs sm:text-sm">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="bht-label">Phân loại chuyên đề <span class="text-err">*</span></label>
+          <select id="att-input-tag" class="bht-select text-xs">
+            <option value="GENERAL">Sinh hoạt & Học vụ chung</option>
+            <option value="CHUAN_DAU_RA">Chuẩn đầu ra MOS / IC3</option>
+            <option value="WORD_DO_AN">Đồ án & Luận văn Word</option>
+            <option value="EXCEL_DATA">Excel & Xử lý số liệu</option>
+            <option value="AI_TOOLS">Kỹ năng AI thực chiến</option>
+            <option value="OLYMPIC">Olympic & Thuật toán</option>
+          </select>
+        </div>
+        <div>
+          <label class="bht-label">Địa điểm / Phòng học</label>
+          <input type="text" id="att-input-room" placeholder="VD: Phòng Lab 02 - Tầng 3 Nhà A3" class="bht-input text-xs">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="bht-label">Ngày giờ tổ chức</label>
+          <input type="datetime-local" id="att-input-date" class="bht-input text-xs font-mono">
+        </div>
+        <div>
+          <label class="bht-label flex items-center justify-between">
+            <span>Mã PIN điểm danh (6 số) <span class="text-err">*</span></span>
+            <button type="button" data-action="regen-create-att-pin" class="text-[10px] text-accent hover:underline font-mono">
+              <i class="fa-solid fa-arrows-rotate mr-0.5"></i>Tạo mã mới
+            </button>
+          </label>
+          <input 
+            type="text" 
+            id="att-input-pin" 
+            required 
+            inputmode="numeric" 
+            pattern="[0-9]{6}" 
+            minlength="6" 
+            maxlength="6" 
+            placeholder="6 chữ số..." 
+            class="bht-input text-xs font-mono font-bold tracking-widest text-accent text-center"
+          >
+        </div>
+      </div>
+
+      <div>
+        <label class="bht-label">Link Slide / Source Code / Drive</label>
+        <input type="url" id="att-input-link" placeholder="https://drive.google.com/..." class="bht-input text-xs font-mono">
+      </div>
+
+      <div>
+        <label class="bht-label">Nội dung tóm tắt chuyên đề / Ghi chú</label>
+        <textarea id="att-input-desc" rows="3" placeholder="Tóm tắt ngắn gọn chủ đề của buổi học, các mục tiêu kiến thức cần đạt..." class="bht-textarea text-xs"></textarea>
+      </div>
+
+      <div class="p-2.5 rounded-lg bg-subtle/50 border border-hairline text-[11px] text-ink-muted flex items-center gap-2">
+        <i class="fa-solid fa-lightbulb text-accent text-xs"></i>
+        <span>Sau khi tạo, bạn có thể nhấp vào buổi học để mở mã PIN điểm danh và giao bài tập.</span>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
+        <button type="button" id="btn-cancel-create-attendance" data-action="close-create-attendance-modal" class="bht-btn bht-btn-secondary bht-btn-sm">Hủy</button>
+        <button type="submit" id="btn-submit-attendance" class="bht-btn bht-btn-primary bht-btn-sm">
+          <span>Tạo buổi sinh hoạt</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Popup PIN Điểm Danh Nhanh & Trình Chiếu Cho Admin (Compact & Focused PIN Hub) -->
+<div id="modal-admin-pin-quickview" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-md w-full p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)] text-center space-y-5">
+    <div class="flex items-center justify-between pb-3 border-b border-hairline text-left">
+      <div>
+        <span class="bht-badge-mono text-[10px] text-accent font-bold" id="admin-pin-modal-session-id">MEET_ID</span>
+        <h3 class="bht-heading-serif text-lg font-bold text-ink mt-0.5">Mã PIN Điểm Danh</h3>
+      </div>
+      <button data-action="close-admin-pin-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <!-- Hộp hiển thị mã PIN siêu to -->
+    <div class="p-6 rounded-2xl bg-subtle/70 border border-hairline flex flex-col items-center justify-center space-y-2">
+      <p class="text-xs text-ink-muted uppercase font-semibold tracking-wider">Mã điểm danh buổi học</p>
+      <div id="admin-modal-pin-display" class="font-mono text-5xl font-black text-accent tracking-[0.25em] py-2 select-all">
+        ------
+      </div>
+      <div class="flex items-center gap-2 pt-1">
+        <button data-action="regenerate-pin-in-detail" class="bht-btn bht-btn-ghost bht-btn-xs text-xs">
+          <i class="fa-solid fa-arrows-rotate mr-1"></i>
+          <span>Tạo mã mới</span>
+        </button>
+        <span class="text-ink-faint">·</span>
+        <span id="admin-modal-pin-status-badge" class="bht-badge bht-badge-ok text-[10px]">Đang mở</span>
+      </div>
+    </div>
+
+    <!-- Các nút thao tác điều hành PIN -->
+    <div class="grid grid-cols-2 gap-3 pt-1">
+      <button data-action="open-projector-from-detail" class="bht-btn bht-btn-primary bht-btn-sm justify-center">
+        <i class="fa-solid fa-expand text-xs"></i>
+        <span>Chiếu máy chiếu</span>
+      </button>
+      <button id="btn-admin-modal-toggle-pin" data-action="toggle-pin-from-detail" class="bht-btn bht-btn-secondary bht-btn-sm justify-center">
+        <i class="fa-solid fa-lock text-xs"></i>
+        <span id="admin-modal-pin-toggle-text">Khóa điểm danh</span>
+      </button>
+    </div>
+
+    <p class="text-[11px] text-ink-muted leading-relaxed">
+      Sinh viên đăng nhập cổng thành viên và nhập mã PIN trên để ghi nhận có mặt.
+    </p>
+  </div>
+</div>
+
+<!-- Modal Trình Chiếu Mã PIN Điểm Danh (High-Contrast Projector Mode) -->
+<div id="modal-projector-mode" class="fixed inset-0 z-50 bg-[#0D0F0E] flex flex-col justify-between text-[#F3F1EC] p-6 sm:p-12 hidden animate-fade-in">
+  <!-- Top Bar -->
+  <div class="flex items-center justify-between border-b border-[#2A2F2C] pb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-[#2DD4BF] text-[#08201D] flex items-center justify-center font-bold text-xl shadow-lg">
+        <i class="fa-solid fa-chalkboard-user"></i>
+      </div>
+      <div>
+        <h3 class="bht-heading-serif text-base sm:text-lg font-bold text-white tracking-tight">Cổng Điểm Danh Sinh Hoạt</h3>
+        <p class="text-xs text-[#A3A8A4] font-mono">CLB Tin Học VNUF2 · Ban Học Thuật</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#102A1E] text-[#4ADE80] border border-[#4ADE80]/30 animate-pulse">
+        <span class="w-2 h-2 rounded-full bg-[#4ADE80]"></span>
+        <span>ĐANG MỞ ĐIỂM DANH</span>
+      </span>
+      <button data-action="close-projector-mode" class="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 text-[#ECEAE4] flex items-center justify-center transition-colors" title="Thoát chế độ trình chiếu">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Center Content: Giant PIN Canvas -->
+  <div class="text-center my-auto py-8">
+    <p class="text-xs sm:text-sm uppercase tracking-widest text-[#2DD4BF] font-mono font-semibold mb-3">Chuyên đề buổi sinh hoạt</p>
+    <h2 id="projector-title" class="bht-heading-serif text-2xl sm:text-4xl md:text-5xl font-bold text-[#F3F1EC] max-w-4xl mx-auto leading-tight mb-8">
+      Chủ đề buổi họp
+    </h2>
+
+    <p class="text-xs sm:text-sm text-[#A3A8A4] mb-4">Nhập mã PIN bên dưới trên điện thoại hoặc máy tính cá nhân:</p>
+    
+    <div class="inline-block py-6 px-10 sm:px-16 rounded-2xl bg-[#161A18] border-2 border-[#2DD4BF]/50 shadow-2xl mb-6">
+      <p id="projector-pin" class="font-mono text-7xl sm:text-9xl font-black tracking-[0.2em] text-[#FBBF24] select-all">
+        ------
+      </p>
+    </div>
+
+    <p class="text-xs sm:text-sm text-[#A3A8A4] max-w-md mx-auto">
+      Mở Cổng Thành Viên &rarr; Nhập mã PIN ở mục Điểm danh nhanh để xác nhận có mặt.
+    </p>
+  </div>
+
+  <!-- Bottom Bar: Live Counter Strip -->
+  <div class="flex flex-col sm:flex-row items-center justify-between border-t border-[#2A2F2C] pt-4 gap-3">
+    <div class="flex items-center gap-2.5 text-sm text-[#ECEAE4]">
+      <i class="fa-solid fa-users text-[#2DD4BF]"></i>
+      <span>Đã có mặt:</span>
+      <span id="projector-attendee-count" class="font-extrabold text-[#4ADE80] text-xl font-mono">0</span>
+      <span class="text-xs text-[#A3A8A4]">thành viên</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button data-action="refresh-projector-count" class="bht-btn bht-btn-secondary bht-btn-sm text-xs bg-[#1A1C1A] text-[#ECEAE4] border-[#2A2F2C] hover:bg-[#232623]">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>Làm mới số lượng</span>
+      </button>
+      <button data-action="close-projector-mode" class="bht-btn bht-btn-ghost bht-btn-sm text-xs text-[#A3A8A4] hover:text-white">
+        Thu nhỏ
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SIDE DRAWER CHẤM BÀI CHUYÊN SÂU (REVIEW STATION) ==================== -->
+<div id="drawer-review-backdrop" data-action="close-review-drawer" class="bht-drawer-backdrop"></div>
+<aside id="drawer-review" class="bht-drawer">
+  <!-- Drawer Header -->
+  <div class="p-5 border-b border-hairline flex items-center justify-between bg-surface">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center font-bold text-sm">
+        <i class="fa-solid fa-file-signature"></i>
+      </div>
+      <div>
+        <h3 class="bht-heading-serif text-base font-bold text-ink">Thẩm Định & Chấm Bài Tập</h3>
+        <p class="text-xs text-ink-muted">Ban Học Thuật · CLB Tin Học VNUF2</p>
+      </div>
+    </div>
+    <button data-action="close-review-drawer" class="bht-btn bht-btn-ghost bht-btn-icon text-ink-muted hover:text-ink" title="Đóng">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+  </div>
+
+  <!-- Drawer Body -->
+  <div class="flex-1 p-5 overflow-y-auto space-y-4 text-xs">
+    <input type="hidden" id="drawer-sub-id">
+
+    <!-- Card Thông tin Sinh viên & Nhiệm vụ -->
+    <div class="bht-card p-4 bg-subtle/40 space-y-2 border border-hairline">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Sinh viên</span>
+        <span id="drawer-sub-status" class="bht-badge bht-badge-warn text-[10px]">Chờ duyệt</span>
+      </div>
+      <div class="flex items-center gap-3 pt-1">
+        <div id="drawer-member-avatar" class="w-10 h-10 rounded-full bg-accent-soft text-accent font-mono font-bold flex items-center justify-center text-sm border border-hairline">
+          SV
+        </div>
+        <div>
+          <p id="drawer-member-name" class="font-semibold text-sm text-ink">Họ và Tên</p>
+          <p id="drawer-member-mssv" class="font-mono text-ink-muted">225112xxxx</p>
+        </div>
+      </div>
+      <div class="pt-2 border-t border-hairline/60 flex items-center justify-between text-ink-muted">
+        <span>Mã nhiệm vụ:</span>
+        <span id="drawer-task-id" class="font-mono font-bold text-accent">TASK_ID</span>
+      </div>
+    </div>
+
+    <!-- Tệp nộp & Thời gian -->
+    <div class="bht-card p-4 bg-surface space-y-2.5 border border-hairline">
+      <span class="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Tệp sản phẩm</span>
+      <div class="p-3 rounded-lg bg-subtle/50 border border-hairline flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 overflow-hidden">
+          <i class="fa-solid fa-file-code text-accent text-lg shrink-0"></i>
+          <div class="overflow-hidden">
+            <p id="drawer-file-name" class="font-semibold text-ink truncate text-xs">Tên file</p>
+            <p id="drawer-submit-time" class="text-[10px] text-ink-faint font-mono">Thời gian nộp</p>
+          </div>
+        </div>
+        <a id="drawer-drive-link" href="#" target="_blank" rel="noopener noreferrer" class="bht-btn bht-btn-primary bht-btn-xs shrink-0">
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          <span>Mở Drive</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Khung Nhận Xét Chuyên Sâu -->
+    <div class="space-y-1.5">
+      <label class="bht-label flex items-center justify-between">
+        <span>Nhận xét & Hướng dẫn sửa bài</span>
+        <span class="text-[10px] text-ink-faint font-normal">Gửi phản hồi trực tiếp tới sinh viên</span>
+      </label>
+      <textarea 
+        id="drawer-feedback-input" 
+        rows="4" 
+        placeholder="Viết nhận xét chi tiết, khen ngợi giải thuật tối ưu hoặc hướng dẫn cách khắc phục lỗi..."
+        class="bht-textarea text-xs leading-relaxed"
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- Drawer Footer Actions -->
+  <div class="p-4 border-t border-hairline bg-subtle/30 flex items-center gap-2.5">
+    <button 
+      id="drawer-btn-approve"
+      data-action="drawer-review-submit"
+      data-status="Approved"
+      class="bht-btn bht-btn-success bht-btn-md flex-1 font-semibold text-xs shadow-sm"
+    >
+      <i class="fa-solid fa-check"></i>
+      <span>Duyệt Đạt Yêu Cầu</span>
+    </button>
+    <button 
+      id="drawer-btn-reject"
+      data-action="drawer-review-submit"
+      data-status="Rejected"
+      class="bht-btn bht-btn-danger bht-btn-md flex-1 font-semibold text-xs shadow-sm"
+    >
+      <i class="fa-solid fa-xmark"></i>
+      <span>Yêu Cầu Sửa Lại</span>
+    </button>
+  </div>
+</aside>
+
+<!-- Modal Sửa Buổi Sinh Hoạt -->
+<div id="modal-edit-attendance" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-lg w-full p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)] max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-hairline">
+      <div>
+        <span class="bht-badge-mono text-[10px] text-accent">CHỈNH SỬA BUỔI HỌC</span>
+        <h3 class="bht-heading-serif text-lg font-semibold text-ink mt-0.5">Cập Nhật Thông Tin Buổi Học</h3>
+      </div>
+      <button data-action="close-edit-attendance-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form id="form-edit-attendance" data-action="update-attendance-session" class="mt-4 space-y-3.5">
+      <input type="hidden" id="edit-att-id">
+      
+      <div>
+        <label class="bht-label">Tên buổi sinh hoạt / Chuyên đề <span class="text-err">*</span></label>
+        <input type="text" id="edit-att-title" required class="bht-input text-xs sm:text-sm">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="bht-label">Phân loại chuyên đề</label>
+          <select id="edit-att-tag" class="bht-select text-xs">
+            <option value="GENERAL">Sinh hoạt & Học vụ chung</option>
+            <option value="CHUAN_DAU_RA">Chuẩn đầu ra MOS / IC3</option>
+            <option value="WORD_DO_AN">Đồ án & Luận văn Word</option>
+            <option value="EXCEL_DATA">Excel & Xử lý số liệu</option>
+            <option value="AI_TOOLS">Kỹ năng AI thực chiến</option>
+            <option value="OLYMPIC">Olympic & Thuật toán</option>
+          </select>
+        </div>
+        <div>
+          <label class="bht-label">Địa điểm / Phòng học</label>
+          <input type="text" id="edit-att-room" placeholder="VD: Phòng Lab 02 - Nhà A3" class="bht-input text-xs">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="bht-label">Ngày giờ tổ chức</label>
+          <input type="datetime-local" id="edit-att-date" class="bht-input text-xs font-mono">
+        </div>
+        <div>
+          <label class="bht-label flex items-center justify-between">
+            <span>Mã PIN điểm danh (6 số) <span class="text-err">*</span></span>
+            <button type="button" data-action="regen-edit-att-pin" class="text-[10px] text-accent hover:underline font-mono">
+              <i class="fa-solid fa-arrows-rotate mr-0.5"></i>Tạo mã mới
+            </button>
+          </label>
+          <input 
+            type="text" 
+            id="edit-att-pin" 
+            required
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            minlength="6"
+            maxlength="6" 
+            class="bht-input text-xs font-mono font-bold tracking-widest text-accent text-center"
+          >
+        </div>
+      </div>
+
+      <div>
+        <label class="bht-label">Link Slide / Source Code / Drive</label>
+        <input type="url" id="edit-att-link" placeholder="https://drive.google.com/..." class="bht-input text-xs font-mono">
+      </div>
+
+      <div>
+        <label class="bht-label">Nội dung tóm tắt chuyên đề / Ghi chú</label>
+        <textarea id="edit-att-desc" rows="3" class="bht-textarea text-xs"></textarea>
+      </div>
+
+      <div>
+        <label class="bht-label">Trạng thái điểm danh</label>
+        <select id="edit-att-status" class="bht-select text-xs">
+          <option value="Open">Open (Đang mở điểm danh)</option>
+          <option value="Closed">Closed (Đã khóa)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
+        <button type="button" data-action="close-edit-attendance-modal" class="bht-btn bht-btn-secondary bht-btn-sm">Hủy</button>
+        <button type="submit" id="btn-submit-edit-attendance" class="bht-btn bht-btn-primary bht-btn-sm">
+          <i class="fa-solid fa-floppy-disk text-xs mr-1"></i>
+          <span>Lưu thay đổi</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Sửa Bài Tập / Nhiệm Vụ -->
+<div id="modal-edit-task" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-lg w-full p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)] max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-hairline">
+      <div>
+        <span class="bht-badge-mono text-[10px] text-accent">CHỈNH SỬA BÀI TẬP</span>
+        <h3 class="bht-heading-serif text-lg font-semibold text-ink mt-0.5">Cập Nhật Yêu Cầu Nhiệm Vụ</h3>
+      </div>
+      <button data-action="close-edit-task-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form id="form-edit-task" data-action="update-task" class="mt-4 space-y-3.5">
+      <input type="hidden" id="edit-task-id">
+
+      <div>
+        <label class="bht-label">Tiêu đề bài tập <span class="text-err">*</span></label>
+        <input type="text" id="edit-task-title" required class="bht-input text-xs sm:text-sm">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="bht-label">Người nhận</label>
+          <input type="text" id="edit-task-assignee" value="ALL" class="bht-input text-xs font-mono">
+        </div>
+        <div>
+          <label class="bht-label">Hạn nộp (Deadline) <span class="text-err">*</span></label>
+          <input type="datetime-local" id="edit-task-deadline" required class="bht-input text-xs font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="bht-label">Mô tả yêu cầu chi tiết</label>
+        <textarea id="edit-task-desc" rows="3" class="bht-textarea text-xs"></textarea>
+      </div>
+
+      <div>
+        <label class="bht-label">Trạng thái bài tập</label>
+        <select id="edit-task-status" class="bht-select text-xs">
+          <option value="Open">Open (Đang nhận bài nộp)</option>
+          <option value="Closed">Closed (Khóa nộp bài)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
+        <button type="button" data-action="close-edit-task-modal" class="bht-btn bht-btn-secondary bht-btn-sm">Hủy</button>
+        <button type="submit" id="btn-submit-edit-task" class="bht-btn bht-btn-primary bht-btn-sm">
+          <i class="fa-solid fa-floppy-disk text-xs mr-1"></i>
+          <span>Lưu bài tập</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Thêm / Sửa Tài Liệu Học Thuật -->
+<div id="modal-edit-doc" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-lg w-full p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)] max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-hairline">
+      <div>
+        <span class="bht-badge-mono text-[10px] text-accent">KHO HỌC LIỆU</span>
+        <h3 id="modal-doc-heading" class="bht-heading-serif text-lg font-semibold text-ink mt-0.5">Tài Liệu Học Thuật</h3>
+      </div>
+      <button data-action="close-edit-doc-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form id="form-edit-doc" data-action="save-document" class="mt-4 space-y-3.5">
+      <input type="hidden" id="edit-doc-id">
+
+      <div>
+        <label class="bht-label">Tên tài liệu / Slide / Giáo trình <span class="text-err">*</span></label>
+        <input type="text" id="edit-doc-title" required placeholder="VD: Slide Chuyên đề MOS Excel 2026" class="bht-input text-xs sm:text-sm">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="bht-label">Phân loại học liệu</label>
+          <select id="edit-doc-category" class="bht-select text-xs">
+            <option value="Slide">Slide bài giảng</option>
+            <option value="Chuẩn đầu ra MOS/IC3">Chuẩn đầu ra MOS/IC3</option>
+            <option value="Word & Đồ án">Word & Đồ án</option>
+            <option value="Excel & Số liệu">Excel & Số liệu</option>
+            <option value="Prompt AI & Tools">Prompt AI & Tools</option>
+            <option value="Olympic & Thuật toán">Olympic & Thuật toán</option>
+            <option value="Ebook & Sách">Ebook & Sách</option>
+          </select>
+        </div>
+        <div>
+          <label class="bht-label">Link Google Drive / Tải về <span class="text-err">*</span></label>
+          <input type="url" id="edit-doc-link" required placeholder="https://drive.google.com/..." class="bht-input text-xs font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="bht-label">Mô tả tóm tắt nội dung</label>
+        <textarea id="edit-doc-desc" rows="3" placeholder="Mô tả tóm tắt học liệu, đối tượng sử dụng..." class="bht-textarea text-xs"></textarea>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
+        <button type="button" data-action="close-edit-doc-modal" class="bht-btn bht-btn-secondary bht-btn-sm">Hủy</button>
+        <button type="submit" id="btn-submit-edit-doc" class="bht-btn bht-btn-primary bht-btn-sm">
+          <i class="fa-solid fa-floppy-disk text-xs mr-1"></i>
+          <span>Lưu tài liệu</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

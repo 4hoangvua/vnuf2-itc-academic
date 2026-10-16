@@ -1,0 +1,19 @@
+{
+  "name": "clb-tinhoc-bht",
+  "version": "2.2.0",
+  "type": "module",
+  "description": "Cổng Quản Lý Ban Học Thuật - CLB Tin Học VNUF2",
+  "main": "frontend/app.js",
+  "scripts": {
+    "test": "node test_core.mjs",
+    "push": "clasp push --force",
+    "pull": "clasp pull",
+    "deploy": "clasp deploy",
+    "deployments": "clasp deployments",
+    "open": "clasp open",
+    "status": "clasp status"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.4.1"
+  }
+}

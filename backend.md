@@ -1,0 +1,136 @@
+# HƯỚNG DẪN KIẾN TRÚC & DỊCH VỤ BACKEND (`backend.md`)
+> **Nền tảng:** Google Apps Script (GAS) kết hợp Google Sheets & Google Drive  
+> **Mô hình:** Headless JSON RESTful API (Phục vụ độc lập cho Web App GitHub Pages / Localhost)  
+> **Khả năng chịu tải:** Tối ưu hóa xử lý đồng thời 30–50 thành viên thao tác cùng lúc (Điểm danh PIN, Nộp bài tập).
+
+---
+
+## 1. Cấu Trúc Thư Mục Backend (`gas-backend/`)
+
+```text
+gas-backend/
+├── appsscript.json             # File cấu hình quyền truy cập (OAuth Scopes, V8 Engine)
+├── Config.js                   # Cấu hình ID Spreadsheet, Root Drive Folder, hằng số tên Sheet, phân loại quyền Action
+├── DbHelper.js                 # Helper xử lý Batch I/O Sheet, Server CacheService và Khóa đồng thời withScriptLock
+├── Router.js                   # Bộ định tuyến tập trung: Xử lý doGet, doPost và Middleware xác thực Token/Phân quyền Role
+├── Service_Auth.js             # Dịch vụ xác thực: Sinh sessionToken (UUID), Cache OTP 5 phút, gửi mã qua Gmail
+├── Service_Member.js           # Dịch vụ nhân sự & Buổi sinh hoạt: Điểm danh PIN tốc độ cao (OPEN_SESSION_CACHE)
+├── Service_Task.js             # Dịch vụ nhiệm vụ: Tạo bài tập, tự động cấp phát Folder trên Google Drive
+└── Service_Submit.js           # Dịch vụ nộp bài: Lưu tệp Base64 vào Google Drive TRƯỚC khi khóa, duyệt bài, kho học liệu
+```
+
+---
+
+## 2. Cấu Trúc Cơ Sở Dữ Liệu Google Sheets
+
+Hệ thống lưu trữ trên Google Spreadsheet thông qua 5 sheet tiêu chuẩn:
+
+| Tên Sheet | Mục đích | Các cột dữ liệu (Schema) |
+| :--- | :--- | :--- |
+| `ThanhVien` | Quản lý nhân sự | `MSSV`, `HoTen`, `Email`, `Role` (ADMIN/MEMBER), `TrangThai` (Active/Inactive), `NgayThamGia` |
+| `DiemDanh` | Buổi học & Chuyên đề | `SessionID`, `TenBuoiHop`, `MaPin`, `TrangThai` (Open/Closed), `DS_CoMat` (JSON array MSSV), `NgayDienRa`, `NoiDungChuyenDe`, `LinkTaiLieu` |
+| `NhiemVu` | Danh mục bài tập | `TaskID`, `TieuDe`, `MoTa`, `NguoiNhan` (ALL hoặc MSSV), `Deadline`, `FolderID`, `TrangThai` (Open/Closed), `SessionID` |
+| `BaiNop` | Danh sách nộp bài | `SubID`, `TaskID`, `MSSV`, `HoTen`, `Email`, `TenFile`, `DriveLink`, `ThoiGianNop`, `TrangThaiDuyet` (Pending/Approved/Rejected), `Feedback` |
+| `TaiLieu` | Kho học liệu CLB | `DocID`, `TenTaiLieu`, `PhanLoai`, `LinkDrive`, `MoTa` |
+
+---
+
+## 3. Cơ Chế Xử Lý JSON API & Vượt Rào Cản CORS
+
+### 3.1. Điểm Tiếp Nhận Request (`Router.js`)
+- `doGet(e)`: Nhận request qua URL parameter (dùng để ping kiểm tra kết nối hoặc lấy dữ liệu công khai).
+- `doPost(e)`: Nhận request qua body JSON từ `fetch()` của Frontend với cấu trúc chuẩn:
+  ```json
+  {
+    "action": "tên_hành_động",
+    "token": "mã_session_token_uuid",
+    "payload": { ... }
+  }
+  ```
+
+### 3.2. Chống Lỗi CORS Preflight (OPTIONS Request)
+- Trình duyệt web tự động gửi yêu cầu preflight `OPTIONS` khi fetch có header `Content-Type: application/json`.
+- Google Apps Script **không hỗ trợ** xử lý `OPTIONS` preflight, dẫn đến lỗi CORS.
+- **Giải pháp chuẩn:** Frontend bắt buộc gửi với header `Content-Type: text/plain;charset=utf-8`. Backend nhận dữ liệu thô từ `e.postData.contents` và parse bằng `JSON.parse()`.
+- Phản hồi từ Backend luôn trả về qua `ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON)`.
+
+---
+
+## 4. Các Dịch Vụ Nghiệp Vụ & Bảo Mật Middleware
+
+### 4.1. Xác Thực Token-Based & Middleware Phân Quyền (`Service_Auth.js` & `Router.js`)
+1. **Quy trình cấp phát Token an toàn:**
+   - Khi sinh viên gọi `verifyLoginOtp(mssv, otp)` thành công, Backend sinh một `sessionToken = Utilities.getUuid()`.
+   - Lưu thông tin phiên vào `CacheService` với key `AUTH_TOKEN_<token>` trong thời hạn 6 tiếng, đồng thời lưu dự phòng vào `PropertiesService`.
+   - Đối tượng phiên lưu trữ bao gồm: `{ mssv, hoTen, email, role, trangThai, createdAt }`.
+2. **Middleware Phân quyền tại `Router.js`:**
+   - **`PUBLIC_ACTIONS`** (`ping`, `requestLoginOtp`, `verifyLoginOtp`, `getAuthStatus`): Cho phép truy cập không cần token.
+   - **`MEMBER_ACTIONS`** (`checkInAttendance`, `submitTaskAssignment`, `getMemberSubmissions`, `logoutUser`): Bắt buộc có token hợp lệ. Router tự động tiêm `currentUser.mssv`, `currentUser.hoTen`, `currentUser.email` vào payload. **Tuyệt đối không tin tưởng hay nhận MSSV giả mạo từ client.**
+   - **`ADMIN_ACTIONS`** (`createAttendanceSession`, `createTask`, `reviewSubmission`, `getAllMembers`...): Bắt buộc token hợp lệ và `currentUser.role === 'ADMIN'`. Nếu vi phạm, trả về mã lỗi `403 FORBIDDEN`.
+   - **`QUERY_ACTIONS`** (`getAttendanceSessions`, `getAllTasks`, `getAllDocuments`): Cho phép mọi người dùng đã xác thực truy vấn.
+
+### 4.2. Buổi Sinh Hoạt & Điểm Danh PIN Tốc Độ Cao (`Service_Member.js`)
+- `getAttendanceSessions()`: Tải danh sách buổi họp, kết hợp `CacheService` phía máy chủ để giảm tải I/O.
+- `createAttendanceSession(data)`: Tạo buổi họp mới, tự động sinh mã PIN ngẫu nhiên, vô hiệu hóa cache cũ.
+- `checkInAttendance(pinCode, mssv)`:
+  - **Tối ưu chịu tải 30–50 người cùng lúc:** Sử dụng `CacheService` lưu thông tin phiên đang mở (`OPEN_SESSION_CACHE`) để kiểm tra mã PIN tức thì trong RAM mà không cần đọc Sheet mỗi lượt.
+  - Khi khớp mã PIN, mở micro-lock `withScriptLock(10000)` trong vài chục mili-giây để đọc và ghi danh sách MSSV vào cột `DS_CoMat`.
+
+### 4.3. Quản Lý Nhiệm Vụ & Nộp Bài Thực Hành (`Service_Task.js` & `Service_Submit.js`)
+- `createTask(data)`: Tạo thư mục nhiệm vụ trên Google Drive trước, sau đó lock ghi dòng mới vào sheet `NhiemVu`.
+- `submitTaskAssignment(data, currentUser)`:
+  - **Quy tắc sống còn:** Giải mã Base64 và gọi `DriveApp.createFile()` **HOÀN TOÀN BÊN NGOÀI KHÓA SCRIPT LOCK** để tránh block luồng của các thành viên khác.
+  - Sau khi có URL tệp thành công, chỉ mở `withScriptLock(10000)` trong vài chục mili-giây để append một dòng ghi nhận vào sheet `BaiNop` rồi nhả khóa ngay.
+  - MSSV, Họ tên, Email luôn được lấy trực tiếp từ `currentUser` (Session Token) bảo đảm chính chủ.
+- `reviewSubmission(data)`: Quản trị viên cập nhật trạng thái duyệt bài (`Approved` / `Rejected`) và lưu nhận xét phản hồi.
+
+---
+
+## 5. An Toàn Dữ Liệu & Khóa Đồng Thời (`withScriptLock`)
+
+Mọi thao tác ghi/sửa dữ liệu trên Google Sheets đều được quản lý tập trung trong `DbHelper.js`:
+
+```javascript
+function withScriptLock(callback, timeoutMs = CONFIG.LOCK_TIMEOUT_MS) {
+  const lock = LockService.getScriptLock();
+  let acquired = false;
+  try {
+    acquired = lock.tryLock(timeoutMs); // Chờ tối đa 10 giây
+    if (!acquired) {
+      // Trả về mã lỗi chuẩn để Frontend tự động kích hoạt Retry + Jitter
+      return {
+        success: false,
+        errorCode: 'LOCK_TIMEOUT',
+        message: 'Hệ thống đang bận xử lý nhiều yêu cầu đồng thời, vui lòng thử lại sau vài giây!'
+      };
+    }
+    const result = callback();
+    SpreadsheetApp.flush();
+    return result;
+  } catch (error) {
+    console.error('[LockService] Lỗi thực thi thao tác có khóa:', error);
+    return {
+      success: false,
+      errorCode: 'LOCK_EXECUTION_ERROR',
+      message: 'Lỗi ghi nhận dữ liệu: ' + (error.message || error.toString())
+    };
+  } finally {
+    if (acquired) {
+      try { lock.releaseLock(); } catch (e) {}
+    }
+  }
+}
+```
+
+---
+
+## 6. Hướng Dẫn Triển Khai (Deploy Web App)
+
+1. Mở thư mục `gas-backend/` và đẩy code lên dự án Apps Script bằng clasp: `npx @google/clasp push` hoặc sao chép trực tiếp vào Script Editor.
+2. Trên giao diện Apps Script: Chọn **Deploy** -> **New Deployment**.
+3. Chọn loại: **Web App**.
+4. Thiết lập quan trọng:
+   - **Execute as:** `Me (tài khoản Google của bạn)`.
+   - **Who has access:** `Anyone (Bất kỳ ai)`.
+5. Bấm **Deploy** và sao chép đường dẫn **Web App URL** (có dạng `https://script.google.com/macros/s/.../exec`).
+6. Dán URL này vào Frontend thông qua giao diện hoặc lưu vào `bht_gas_api_url` trong `localStorage` để kết nối hệ thống thật.

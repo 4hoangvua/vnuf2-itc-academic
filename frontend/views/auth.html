@@ -1,0 +1,167 @@
+<!-- MÀN HÌNH ĐĂNG NHẬP XÁC THỰC OTP GMAIL (EDITORIAL ZERO-PASSWORD AUTH) -->
+<div id="view-bind-account" class="hidden min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-canvas relative overflow-hidden">
+  
+  <!-- Subtle Background Radial Glow -->
+  <div class="absolute -top-40 -left-40 w-96 h-96 bg-accent-soft rounded-full filter blur-3xl opacity-60 pointer-events-none"></div>
+  <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-accent/10 rounded-full filter blur-3xl opacity-50 pointer-events-none"></div>
+
+  <!-- Top Utility Bar: Theme Toggle -->
+  <div class="w-full max-w-md flex items-center justify-between mb-4 px-2 relative z-10">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+        <img src="./assets/images/logo-clb.png" alt="CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <i class="fa-solid fa-code text-accent text-xs hidden"></i>
+      </div>
+      <span class="text-xs font-bold tracking-wider uppercase text-ink">CLB Tin Học VNUF2</span>
+    </div>
+    <button data-action="toggle-theme" class="bht-btn bht-btn-ghost bht-btn-sm text-xs" title="Đổi giao diện Sáng / Tối">
+      <i class="fa-solid fa-moon js-theme-icon"></i>
+      <span class="js-theme-label hidden sm:inline">Giao diện</span>
+    </button>
+  </div>
+
+  <!-- Main Auth Card -->
+  <div class="max-w-md w-full bht-card p-6 sm:p-8 relative border border-hairline bg-surface/95 backdrop-blur-sm shadow-[var(--shadow-float)] z-10 animate-fade-slide-up">
+    <!-- Brand Title -->
+    <div class="text-center pb-5 mb-5 border-b border-hairline">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-surface p-1 mb-3 border-2 border-hairline shadow-md hover:scale-105 transition-transform">
+        <img src="./assets/images/logo-clb.png" alt="Logo CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <i class="fa-solid fa-code text-accent text-2xl hidden"></i>
+      </div>
+      <div>
+        <span class="bht-badge-mono text-[10px] uppercase tracking-widest text-accent mb-1 inline-block">Ban Học Thuật</span>
+      </div>
+      <h2 id="bind-title" class="bht-heading-serif text-2xl sm:text-3xl font-bold text-ink mt-1">Cổng Đăng Nhập</h2>
+      <p id="bind-desc" class="hidden text-xs sm:text-sm text-ink-muted mt-1 leading-relaxed"></p>
+    </div>
+
+    <!-- ==================== BƯỚC 1: NHẬP MSSV & GMAIL ==================== -->
+    <form id="form-request-otp" data-action="request-otp" class="space-y-4">
+      <div>
+        <label for="input-bind-mssv" class="bht-label flex items-center justify-between">
+          <span>Mã số sinh viên (MSSV) <span class="text-err">*</span></span>
+          <span class="text-[10px] font-normal text-ink-faint">Chỉ nhập số</span>
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-faint">
+            <i class="fa-regular fa-id-card text-sm"></i>
+          </div>
+          <input 
+            type="text" 
+            id="input-bind-mssv" 
+            required 
+            inputmode="numeric"
+            pattern="[0-9]{8,20}"
+            minlength="8"
+            maxlength="20"
+            placeholder="Ví dụ: 2351120015"
+            class="bht-input pl-10 font-mono tracking-wider text-sm font-semibold h-11"
+          >
+        </div>
+      </div>
+
+      <!-- Ô nhập Gmail (Hiển thị nếu là thành viên mới chưa có email trong Sheet) -->
+      <div id="box-input-email" class="hidden">
+        <div class="bg-subtle p-3.5 rounded-lg border border-hairline space-y-2">
+          <label for="input-bind-email" class="bht-label">
+            Địa chỉ Gmail cá nhân <span class="text-err">*</span>
+          </label>
+          <input 
+            type="email" 
+            id="input-bind-email" 
+            placeholder="sinhvien@gmail.com"
+            class="bht-input text-sm"
+          >
+          <p class="text-[11px] text-accent leading-tight">
+            * Gmail sẽ được liên kết với hồ sơ thành viên của bạn để nhận mã OTP xác thực.
+          </p>
+        </div>
+      </div>
+
+      <!-- Alert thông báo lỗi -->
+      <div id="bind-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="bind-error-msg" class="leading-relaxed"></span>
+        </div>
+      </div>
+
+      <button 
+        type="submit" 
+        id="btn-request-otp"
+        class="bht-btn bht-btn-primary bht-btn-lg w-full mt-2"
+      >
+        <span>Gửi mã xác thực OTP</span>
+        <i class="fa-solid fa-paper-plane text-xs"></i>
+      </button>
+    </form>
+
+    <!-- ==================== BƯỚC 2: NHẬP MÃ OTP ==================== -->
+    <form id="form-verify-otp" data-action="verify-otp" class="space-y-4 hidden">
+      <div class="bg-subtle border border-hairline rounded-lg p-3.5 text-center">
+        <p class="text-xs text-ink-muted">Mã OTP 6 số đã được gửi tới:</p>
+        <p id="otp-sent-email" class="text-sm font-semibold text-accent font-mono mt-0.5">ho***@gmail.com</p>
+        <p class="text-[11px] text-ink-faint mt-1">Kiểm tra hộp thư đến hoặc mục Thư rác (Spam).</p>
+      </div>
+
+      <div>
+        <label for="input-otp-code" class="bht-label text-center">
+          Nhập mã OTP (đúng 6 chữ số)
+        </label>
+        <input 
+          type="text" 
+          id="input-otp-code" 
+          required 
+          maxlength="6" 
+          minlength="6"
+          inputmode="numeric"
+          pattern="[0-9]{6}"
+          placeholder="••••••" 
+          autocomplete="one-time-code"
+          class="bht-input h-14 text-center font-mono text-2xl font-bold tracking-[0.4em] bg-subtle/50"
+        >
+        <div class="flex items-center justify-between text-xs text-ink-muted mt-2 px-1">
+          <span>Thời hạn mã:</span>
+          <span id="otp-countdown" class="font-mono font-semibold text-warn">05:00</span>
+        </div>
+      </div>
+
+      <!-- Alert thông báo lỗi OTP -->
+      <div id="otp-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="otp-error-msg" class="leading-relaxed"></span>
+        </div>
+      </div>
+
+      <button 
+        type="submit" 
+        id="btn-verify-otp"
+        class="bht-btn bht-btn-primary bht-btn-lg w-full mt-2"
+      >
+        <span>Xác nhận & Vào hệ thống</span>
+        <i class="fa-solid fa-arrow-right text-xs"></i>
+      </button>
+
+      <div class="flex items-center justify-between pt-2 text-xs">
+        <button type="button" data-action="back-to-mssv-step" class="bht-btn bht-btn-ghost bht-btn-xs text-ink-muted hover:text-ink">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Đổi MSSV
+        </button>
+        <button type="button" id="btn-resend-otp" data-action="resend-otp" class="bht-btn bht-btn-ghost bht-btn-xs text-accent">
+          Gửi lại mã OTP
+        </button>
+      </div>
+    </form>
+
+
+    <!-- Support Help Footer -->
+    <div class="mt-4 pt-3 border-t border-hairline text-center">
+      <p class="text-xs text-ink-faint">
+        Gặp sự cố đăng nhập? 
+        <a href="mailto:vnuf2.clbtinhoc@gmail.com" class="text-accent hover:underline font-medium ml-1">
+          Liên hệ Trưởng ban
+        </a>
+      </p>
+    </div>
+  </div>
+</div>

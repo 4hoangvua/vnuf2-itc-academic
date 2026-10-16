@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Quản Lý Ban Học Thuật - CLB Tin Học VNUF2</title>
+
+  <!-- Favicon & Brand Icons -->
+  <link rel="icon" type="image/x-icon" href="./assets/images/favicon.ico">
+  <link rel="icon" type="image/png" href="./assets/images/logo-clb.png">
+  <link rel="apple-touch-icon" href="./assets/images/logo-clb.png">
+
+  <!-- Anti-FOUC Theme Script (Chống chớp trắng giao diện khi tải trang) -->
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('bht_theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = saved ? saved : (prefersDark ? 'dark' : 'light');
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts: Newsreader, Plus Jakarta Sans, JetBrains Mono & Font Awesome 6 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Tailwind CSS CDN v3 Configuration -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+            serif: ['"Newsreader"', 'Georgia', 'Cambria', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            canvas: 'var(--bg-canvas)',
+            surface: 'var(--bg-surface)',
+            subtle: 'var(--bg-subtle)',
+            elevated: 'var(--bg-elevated)',
+            ink: {
+              DEFAULT: 'var(--text-primary)',
+              muted: 'var(--text-secondary)',
+              faint: 'var(--text-faint)',
+            },
+            hairline: 'var(--border-subtle)',
+            'border-strong': 'var(--border-strong)',
+            accent: {
+              DEFAULT: 'var(--accent-base)',
+              hover: 'var(--accent-hover)',
+              fg: 'var(--accent-fg)',
+              soft: 'var(--accent-soft)',
+            },
+            ok: {
+              DEFAULT: 'var(--status-ok-text)',
+              soft: 'var(--status-ok-bg)',
+            },
+            warn: {
+              DEFAULT: 'var(--status-warn-text)',
+              soft: 'var(--status-warn-bg)',
+            },
+            err: {
+              DEFAULT: 'var(--status-err-text)',
+              soft: 'var(--status-err-bg)',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Custom Design Tokens Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css?v=20261017_1">
+</head>
+<body class="bg-canvas text-ink min-h-screen selection:bg-accent selection:text-white">
+
+  <!-- 1. OVERLAY LOADING TOÀN CỤC -->
+  <div id="global-loading-overlay" class="fixed inset-0 z-50 bg-canvas/85 backdrop-blur-sm hidden flex flex-col items-center justify-center">
+    <div class="bht-card px-6 py-5 flex items-center gap-4 shadow-lg border border-hairline bg-surface">
+      <i class="fa-solid fa-circle-notch fa-spin text-accent text-xl"></i>
+      <div class="flex flex-col">
+        <span id="global-loading-text" class="text-sm font-semibold text-ink">Đang tải ứng dụng...</span>
+        <span class="text-[11px] text-ink-muted">Ban Học Thuật · CLB Tin Học VNUF2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. TOAST NOTIFICATION TOÀN CỤC (Editorial Float Notification) -->
+  <div id="global-toast" class="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-50 px-4 py-3.5 rounded-lg shadow-[var(--shadow-float)] flex items-center gap-3 transition-all duration-300 transform translate-y-8 opacity-0 pointer-events-none bg-elevated text-ink max-w-sm sm:max-w-md border border-hairline backdrop-blur-md">
+    <i id="global-toast-icon" class="fa-solid fa-circle-info text-accent text-base flex-shrink-0"></i>
+    <span id="global-toast-text" class="text-xs font-medium leading-relaxed flex-1">Thông báo</span>
+    <button data-action="hide-toast" class="text-ink-muted hover:text-ink transition-colors ml-1 p-1 flex-shrink-0" title="Đóng">
+      <i class="fa-solid fa-xmark text-xs"></i>
+    </button>
+  </div>
+
+  <!-- 3. MÀN HÌNH BÁO LỖI PHIÊN HẾT HẠN HOẶC TẠM KHÓA -->
+  <div id="view-unauthenticated" class="hidden min-h-screen flex items-center justify-center p-4 bg-canvas relative">
+    <div class="absolute top-4 right-4 sm:top-6 sm:right-6">
+      <button data-action="toggle-theme" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đổi giao diện Sáng / Tối">
+        <i class="fa-solid fa-moon js-theme-icon"></i>
+      </button>
+    </div>
+
+    <div class="max-w-md w-full bht-card p-8 text-center animate-fade-in relative border border-hairline shadow-sm bg-surface">
+      <div class="mx-auto w-12 h-12 rounded-lg bg-warn-soft text-warn flex items-center justify-center text-xl mb-4 border border-hairline">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <span class="bht-badge bht-badge-warn mb-3">TRUY CẬP HẠN CHẾ</span>
+      <h2 class="bht-heading-serif text-2xl font-semibold text-ink mb-2">Yêu cầu Xác thực</h2>
+      <p id="unauth-desc" class="text-xs text-ink-muted leading-relaxed mb-6">
+        Hệ thống không nhận diện được tài khoản của bạn hoặc phiên đăng nhập đã hết hạn. Vui lòng đăng nhập để tiếp tục.
+      </p>
+      <div class="flex flex-col gap-2.5">
+        <button data-action="show-view" data-view="view-bind-account" class="bht-btn bht-btn-primary bht-btn-md w-full">
+          <i class="fa-solid fa-right-to-bracket mr-1"></i> Đăng nhập bằng MSSV
+        </button>
+        <button data-action="reload-page" class="bht-btn bht-btn-secondary bht-btn-md w-full">
+          <i class="fa-solid fa-rotate-right mr-1"></i> Tải lại trang
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. APP ROOT: NƠI CÁC VIEW (AUTH, MEMBER, ADMIN) ĐƯỢC TẢI ĐỘNG VÀO ĐÂY -->
+  <main id="app-root"></main>
+
+  <!-- 5. JAVASCRIPT ENTRY POINT MODULE -->
+  <script type="module" src="app.js?v=20261017_1"></script>
+</body>
+</html>
