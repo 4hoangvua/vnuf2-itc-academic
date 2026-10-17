@@ -3,7 +3,7 @@
 // ====================================================================
 
 import { callApi, isMockMode, setToken, clearToken, getToken } from '../services/api.js';
-import { appState, store, showToast, showView, showGlobalLoading, hideGlobalLoading, setButtonLoading } from './ui.js';
+import { appState, store, showToast, showView, showGlobalLoading, hideGlobalLoading, setButtonLoading, showFormError, clearFormError } from './ui.js';
 import { initMemberView } from './member.js';
 import { initAdminView } from './admin.js';
 
@@ -104,39 +104,34 @@ export async function handleRequestOtp(e) {
   const emailInput = document.getElementById('input-bind-email');
   // Hỗ trợ cả 2 ID nút gửi
   const btn = document.getElementById('btn-request-otp') || document.getElementById('btn-submit-mssv');
-  const errAlert = document.getElementById('bind-error-alert');
-  const errMsg = document.getElementById('bind-error-msg');
   const boxEmail = document.getElementById('box-input-email');
 
   const mssv = mssvInput ? mssvInput.value.trim().toUpperCase() : '';
   const email = emailInput ? emailInput.value.trim() : '';
 
+  clearFormError('form-request-otp');
+
   if (!mssv) {
-    showToast('Vui lòng nhập Mã số sinh viên (MSSV)!', 'warning');
-    if (mssvInput) mssvInput.focus();
+    showFormError('form-request-otp', 'Vui lòng nhập Mã số sinh viên (MSSV)!', mssvInput);
     return;
   }
 
   if (!/^\d{8,20}$/.test(mssv)) {
-    showToast('Mã số sinh viên (MSSV) phải gồm từ 8 đến 20 chữ số!', 'warning');
-    if (mssvInput) mssvInput.focus();
+    showFormError('form-request-otp', 'Mã số sinh viên (MSSV) phải gồm từ 8 đến 20 chữ số!', mssvInput);
     return;
   }
 
   if (boxEmail && !boxEmail.classList.contains('hidden')) {
     if (!email) {
-      showToast('Vui lòng nhập địa chỉ Gmail cá nhân!', 'warning');
-      if (emailInput) emailInput.focus();
+      showFormError('form-request-otp', 'Vui lòng nhập địa chỉ Gmail cá nhân!', emailInput);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showToast('Địa chỉ Gmail không đúng định dạng!', 'warning');
-      if (emailInput) emailInput.focus();
+      showFormError('form-request-otp', 'Địa chỉ Gmail không đúng định dạng (VD: sinhvien@gmail.com)!', emailInput);
       return;
     }
   }
 
-  if (errAlert) errAlert.classList.add('hidden');
   if (btn) setButtonLoading(btn, true);
   if (mssvInput) mssvInput.disabled = true;
   if (emailInput) emailInput.disabled = true;
@@ -149,8 +144,7 @@ export async function handleRequestOtp(e) {
     if (emailInput) emailInput.disabled = false;
 
     if (!res) {
-      if (errMsg) errMsg.textContent = 'Không nhận được phản hồi từ máy chủ!';
-      if (errAlert) errAlert.classList.remove('hidden');
+      showFormError('form-request-otp', 'Không nhận được phản hồi từ máy chủ!');
       return;
     }
 
@@ -158,10 +152,8 @@ export async function handleRequestOtp(e) {
       if (boxEmail) boxEmail.classList.remove('hidden');
       if (emailInput) {
         emailInput.required = true;
-        emailInput.focus();
       }
-      if (errMsg) errMsg.textContent = res.message || 'Vui lòng nhập Gmail cá nhân của bạn!';
-      if (errAlert) errAlert.classList.remove('hidden');
+      showFormError('form-request-otp', res.message || 'Vui lòng nhập Gmail cá nhân của bạn!', emailInput);
       return;
     }
 
@@ -196,16 +188,14 @@ export async function handleRequestOtp(e) {
 
       startOtpCountdown(300); // 5 phút đếm ngược
     } else {
-      if (errMsg) errMsg.textContent = res.message || 'Không thể gửi mã xác thực!';
-      if (errAlert) errAlert.classList.remove('hidden');
+      showFormError('form-request-otp', res.message || 'Không thể gửi mã xác thực!', mssvInput);
     }
 
   } catch (err) {
     if (btn) setButtonLoading(btn, false);
     if (mssvInput) mssvInput.disabled = false;
     if (emailInput) emailInput.disabled = false;
-    if (errMsg) errMsg.textContent = 'Lỗi hệ thống: ' + (err.message || err.toString());
-    if (errAlert) errAlert.classList.remove('hidden');
+    showFormError('form-request-otp', 'Lỗi hệ thống: ' + (err.message || err.toString()));
   }
 }
 
@@ -217,17 +207,15 @@ export async function handleVerifyOtp(e) {
 
   const otpInput = document.getElementById('input-otp-code') || document.getElementById('input-verify-otp');
   const btn = document.getElementById('btn-verify-otp') || document.getElementById('btn-submit-otp');
-  const errAlert = document.getElementById('otp-error-alert') || document.getElementById('bind-error-alert');
-  const errMsg = document.getElementById('otp-error-msg') || document.getElementById('bind-error-msg');
+
+  clearFormError('form-verify-otp');
 
   const otp = otpInput ? otpInput.value.trim() : '';
   if (!/^\d{6}$/.test(otp)) {
-    showToast('Mã OTP phải gồm đúng 6 chữ số!', 'warning');
-    if (otpInput) otpInput.focus();
+    showFormError('form-verify-otp', 'Mã OTP phải gồm đúng 6 chữ số!', otpInput);
     return;
   }
 
-  if (errAlert) errAlert.classList.add('hidden');
   if (btn) setButtonLoading(btn, true);
   if (otpInput) otpInput.disabled = true;
 
@@ -248,16 +236,13 @@ export async function handleVerifyOtp(e) {
       }
       handleAuthSuccess(res.user, res.token);
     } else {
-      if (errMsg) errMsg.textContent = (res && res.message) ? res.message : 'Mã xác thực không chính xác hoặc đã hết hạn!';
-      if (errAlert) errAlert.classList.remove('hidden');
-      if (otpInput) otpInput.focus();
+      showFormError('form-verify-otp', (res && res.message) ? res.message : 'Mã xác thực không chính xác hoặc đã hết hạn!', otpInput);
     }
 
   } catch (err) {
     if (btn) setButtonLoading(btn, false);
     if (otpInput) otpInput.disabled = false;
-    if (errMsg) errMsg.textContent = 'Lỗi xác thực: ' + (err.message || err.toString());
-    if (errAlert) errAlert.classList.remove('hidden');
+    showFormError('form-verify-otp', 'Lỗi xác thực: ' + (err.message || err.toString()), otpInput);
   }
 }
 

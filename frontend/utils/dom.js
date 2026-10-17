@@ -107,11 +107,20 @@ export function attachFormDelegation(container, formActionMap) {
   const rootEl = typeof container === 'string' ? $(container) : container;
   if (!rootEl) return () => {};
 
+  // Vô hiệu hóa HTML5 validation tự động của browser (Không dùng popup tooltip mặc định)
+  const forms = rootEl.querySelectorAll ? rootEl.querySelectorAll('form') : [];
+  forms.forEach(f => { f.noValidate = true; });
+
   const submitListener = (event) => {
     const formEl = event.target.closest('form[data-action]');
     if (!formEl || !rootEl.contains(formEl)) return;
 
+    formEl.noValidate = true;
     event.preventDefault();
+
+    // Xóa thông báo lỗi cũ của form trước khi xử lý submit
+    clearFormError(formEl);
+
     const actionName = formEl.getAttribute('data-action');
     const handler = formActionMap[actionName];
 
@@ -127,6 +136,83 @@ export function attachFormDelegation(container, formActionMap) {
 
   rootEl.addEventListener('submit', submitListener);
   return () => rootEl.removeEventListener('submit', submitListener);
+}
+
+// --------------------------------------------------------------------
+// ĐIỀU KHIỂN THÔNG BÁO LỖI FORM CHUYÊN DỤNG (DEDICATED FORM VALIDATION ERRORS)
+// --------------------------------------------------------------------
+
+/**
+ * Hiển thị lỗi form riêng biệt (Dedicated Form Error Alert)
+ * Thay thế hoàn toàn popup tooltip tự động mặc định của trình duyệt.
+ * 
+ * @param {HTMLFormElement|string} form Form phần tử hoặc Selector / ID
+ * @param {string} message Thông báo lỗi hiển thị cho người dùng
+ * @param {HTMLElement|string} [invalidInput] Phần tử input bị lỗi để highlight và focus
+ */
+export function showFormError(form, message, invalidInput = null) {
+  const formEl = typeof form === 'string' ? (document.getElementById(form) || $(form)) : form;
+  if (!formEl) return;
+
+  // 1. Tìm hoặc tạo khối thông báo lỗi riêng biệt cho Form
+  let errBox = formEl.querySelector('.js-form-error, [id$="-error"], [id$="-error-alert"]');
+  let errMsg = null;
+
+  if (errBox) {
+    errMsg = errBox.querySelector('.js-error-msg, [id$="-error-msg"]') || errBox;
+  } else {
+    // Tự động tạo khối thông báo lỗi chuẩn BHT nếu form chưa có sẵn
+    errBox = document.createElement('div');
+    errBox.className = 'bht-form-error-alert js-form-error mb-3';
+    errBox.innerHTML = `
+      <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0 text-sm"></i>
+      <span class="leading-relaxed js-error-msg"></span>
+    `;
+    formEl.prepend(errBox);
+    errMsg = errBox.querySelector('.js-error-msg');
+  }
+
+  if (errMsg) {
+    errMsg.textContent = message;
+  }
+  errBox.classList.remove('hidden');
+
+  // 2. Highlight trường nhập liệu bị lỗi (nếu có)
+  const inputEl = typeof invalidInput === 'string' 
+    ? (document.getElementById(invalidInput) || formEl.querySelector(invalidInput)) 
+    : invalidInput;
+
+  if (inputEl) {
+    inputEl.classList.add('has-error');
+    try {
+      inputEl.focus();
+    } catch (_) {}
+
+    // Tự động xóa lỗi ngay khi người dùng bắt đầu nhập / sửa giá trị
+    const clearHandler = () => {
+      inputEl.classList.remove('has-error');
+      if (errBox) errBox.classList.add('hidden');
+      inputEl.removeEventListener('input', clearHandler);
+      inputEl.removeEventListener('change', clearHandler);
+    };
+    inputEl.addEventListener('input', clearHandler);
+    inputEl.addEventListener('change', clearHandler);
+  }
+}
+
+/**
+ * Xóa thông báo lỗi và bỏ highlight tất cả các trường trong form
+ * @param {HTMLFormElement|string} form Form phần tử hoặc Selector / ID
+ */
+export function clearFormError(form) {
+  const formEl = typeof form === 'string' ? (document.getElementById(form) || $(form)) : form;
+  if (!formEl) return;
+
+  const errBoxes = formEl.querySelectorAll('.js-form-error, [id$="-error"], [id$="-error-alert"]');
+  errBoxes.forEach(b => b.classList.add('hidden'));
+
+  const inputs = formEl.querySelectorAll('.has-error');
+  inputs.forEach(i => i.classList.remove('has-error'));
 }
 
 // --------------------------------------------------------------------

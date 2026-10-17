@@ -640,7 +640,14 @@
       </button>
     </div>
 
-    <form id="form-create-task" data-action="create-task" class="mt-4 space-y-3.5">
+    <form id="form-create-task" data-action="create-task" novalidate class="mt-4 space-y-3.5">
+      <!-- Dedicated Form Error Alert -->
+      <div id="create-task-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="create-task-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
       <div>
         <label class="bht-label">Thuộc buổi sinh hoạt nào?</label>
         <select id="task-input-session" class="bht-select text-xs">
@@ -697,7 +704,14 @@
       </button>
     </div>
 
-    <form id="form-add-member" data-action="add-member" class="mt-4 space-y-3.5">
+    <form id="form-add-member" data-action="add-member" novalidate class="mt-4 space-y-3.5">
+      <!-- Dedicated Form Error Alert -->
+      <div id="add-member-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="add-member-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
       <div>
         <label class="bht-label">Mã số sinh viên (MSSV) <span class="text-err">*</span></label>
         <input 
@@ -751,7 +765,14 @@
       </button>
     </div>
 
-    <form id="form-create-attendance" data-action="create-attendance-session" class="mt-4 space-y-3.5">
+    <form id="form-create-attendance" data-action="create-attendance-session" novalidate class="mt-4 space-y-3.5">
+      <!-- Dedicated Form Error Alert -->
+      <div id="create-attendance-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="create-attendance-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
       <div>
         <label class="bht-label">Tên buổi sinh hoạt / Chuyên đề <span class="text-err">*</span></label>
         <input type="text" id="att-input-title" required placeholder="VD: Lập trình Python & Xử lý Dữ liệu Pandas" class="bht-input text-xs sm:text-sm">
@@ -1051,8 +1072,16 @@
       </button>
     </div>
 
-    <form id="form-edit-attendance" data-action="update-attendance-session" class="mt-4 space-y-3.5">
+    <form id="form-edit-attendance" data-action="update-attendance-session" novalidate class="mt-4 space-y-3.5">
       <input type="hidden" id="edit-att-id">
+
+      <!-- Dedicated Form Error Alert -->
+      <div id="edit-attendance-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="edit-attendance-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
       
       <div>
         <label class="bht-label">Tên buổi sinh hoạt / Chuyên đề <span class="text-err">*</span></label>
@@ -1144,8 +1173,16 @@
       </button>
     </div>
 
-    <form id="form-edit-task" data-action="update-task" class="mt-4 space-y-3.5">
+    <form id="form-edit-task" data-action="update-task" novalidate class="mt-4 space-y-3.5">
       <input type="hidden" id="edit-task-id">
+
+      <!-- Dedicated Form Error Alert -->
+      <div id="edit-task-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="edit-task-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
 
       <div>
         <label class="bht-label">Tiêu đề bài tập <span class="text-err">*</span></label>
@@ -1200,8 +1237,16 @@
       </button>
     </div>
 
-    <form id="form-edit-doc" data-action="save-document" class="mt-4 space-y-3.5">
+    <form id="form-edit-doc" data-action="save-document" novalidate class="mt-4 space-y-3.5">
       <input type="hidden" id="edit-doc-id">
+
+      <!-- Dedicated Form Error Alert -->
+      <div id="edit-doc-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="edit-doc-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
 
       <div>
         <label class="bht-label">Tên tài liệu / Slide / Giáo trình <span class="text-err">*</span></label>

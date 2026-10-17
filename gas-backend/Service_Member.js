@@ -205,6 +205,8 @@ function updateAttendanceSession(sessionData) {
     const linkTaiLieu = String(sessionData.linkTaiLieu || '').trim();
     const tagChuyenDe = String(sessionData.tagChuyenDe || '').trim();
     const phongHoc = String(sessionData.phongHoc || '').trim();
+    const maPin = String(sessionData.maPin || '').trim();
+    const trangThai = String(sessionData.trangThai || sessionData.status || '').trim();
 
     const lockResult = withScriptLock(() => {
       const sheet = ensureSheetHeaders(CONFIG.SHEET_NAMES.DIEM_DANH);
@@ -213,6 +215,8 @@ function updateAttendanceSession(sessionData) {
       for (let i = 1; i < data.length; i++) {
         if (String(data[i][0] || '').trim() === sessionId) {
           if (tenBuoiHop) sheet.getRange(i + 1, 2).setValue(tenBuoiHop);
+          if (maPin) sheet.getRange(i + 1, 3).setValue(maPin);
+          if (trangThai) sheet.getRange(i + 1, 4).setValue(trangThai);
           sheet.getRange(i + 1, 6).setValue(ngayDienRa);
           sheet.getRange(i + 1, 7).setValue(noiDungChuyenDe);
           sheet.getRange(i + 1, 8).setValue(linkTaiLieu);

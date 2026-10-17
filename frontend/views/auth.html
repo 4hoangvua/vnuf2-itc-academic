@@ -36,7 +36,7 @@
     </div>
 
     <!-- ==================== BƯỚC 1: NHẬP MSSV & GMAIL ==================== -->
-    <form id="form-request-otp" data-action="request-otp" class="space-y-4">
+    <form id="form-request-otp" data-action="request-otp" novalidate class="space-y-4">
       <div>
         <label for="input-bind-mssv" class="bht-label flex items-center justify-between">
           <span>Mã số sinh viên (MSSV) <span class="text-err">*</span></span>
@@ -79,10 +79,10 @@
       </div>
 
       <!-- Alert thông báo lỗi -->
-      <div id="bind-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md">
+      <div id="bind-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error">
         <div class="flex items-start gap-2">
           <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
-          <span id="bind-error-msg" class="leading-relaxed"></span>
+          <span id="bind-error-msg" class="leading-relaxed js-error-msg"></span>
         </div>
       </div>
 
@@ -97,7 +97,7 @@
     </form>
 
     <!-- ==================== BƯỚC 2: NHẬP MÃ OTP ==================== -->
-    <form id="form-verify-otp" data-action="verify-otp" class="space-y-4 hidden">
+    <form id="form-verify-otp" data-action="verify-otp" novalidate class="space-y-4 hidden">
       <div class="bg-subtle border border-hairline rounded-lg p-3.5 text-center">
         <p class="text-xs text-ink-muted">Mã OTP 6 số đã được gửi tới:</p>
         <p id="otp-sent-email" class="text-sm font-semibold text-accent font-mono mt-0.5">ho***@gmail.com</p>
@@ -127,10 +127,10 @@
       </div>
 
       <!-- Alert thông báo lỗi OTP -->
-      <div id="otp-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md">
+      <div id="otp-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error">
         <div class="flex items-start gap-2">
           <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
-          <span id="otp-error-msg" class="leading-relaxed"></span>
+          <span id="otp-error-msg" class="leading-relaxed js-error-msg"></span>
         </div>
       </div>
 

@@ -205,6 +205,7 @@ function handleActionRoute(action, token, payload) {
         return reviewSubmission(data);
 
       case 'addDocument':
+      case 'createDocument':
         return addDocument(data);
 
       case 'updateDocument':

@@ -3,7 +3,7 @@
 // ====================================================================
 
 import { callApi } from '../services/api.js';
-import { appState, showToast, showView, showGlobalLoading, hideGlobalLoading, escapeHtml, setFormControlsDisabled, setButtonLoading } from './ui.js';
+import { appState, showToast, showView, showGlobalLoading, hideGlobalLoading, escapeHtml, setFormControlsDisabled, setButtonLoading, showFormError, clearFormError } from './ui.js';
 import { 
   memberSessionCardTemplate, 
   memberDocCardTemplate, 
@@ -1184,25 +1184,28 @@ export async function handleUploadSubmission(e) {
   const progressBox = document.getElementById('submit-upload-progress');
   const progressBar = document.getElementById('upload-progress-bar');
   const progressPct = document.getElementById('upload-status-pct');
+  const dropzoneEl = document.getElementById('dropzone');
+
+  clearFormError(form);
 
   if (!taskId) {
-    showToast('Vui lòng chọn bài tập / nhiệm vụ cần nộp!', 'warning');
+    showFormError(form, 'Vui lòng chọn bài tập / nhiệm vụ cần nộp!');
     return;
   }
 
   if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-    showToast('Vui lòng chọn một tệp để nộp bài!', 'warning');
+    showFormError(form, 'Vui lòng chọn một tệp để nộp bài!', dropzoneEl);
     return;
   }
 
   const file = fileInput.files[0];
   if (file.size === 0) {
-    showToast('Tệp đã chọn rỗng (0 bytes)! Vui lòng kiểm tra lại.', 'warning');
+    showFormError(form, 'Tệp đã chọn rỗng (0 bytes)! Vui lòng kiểm tra lại.', dropzoneEl);
     return;
   }
 
   if (file.size > 20 * 1024 * 1024) {
-    showToast('Tệp quá lớn! Vui lòng chọn tệp nhỏ hơn 20MB.', 'warning');
+    showFormError(form, 'Tệp quá lớn! Vui lòng chọn tệp nhỏ hơn 20MB.', dropzoneEl);
     return;
   }
 
@@ -1210,7 +1213,7 @@ export async function handleUploadSubmission(e) {
   const extMatch = file.name.match(/\.[^.]+$/);
   const ext = extMatch ? extMatch[0].toLowerCase() : '';
   if (!allowedExts.includes(ext)) {
-    showToast(`Định dạng tệp ${ext || 'này'} không được hỗ trợ. Vui lòng nộp: docx, pdf, xlsx, zip, cpp, py...`, 'warning');
+    showFormError(form, `Định dạng tệp ${ext || 'này'} không được hỗ trợ. Vui lòng nộp: docx, pdf, xlsx, zip, cpp, py...`, dropzoneEl);
     return;
   }
 
@@ -1253,13 +1256,13 @@ export async function handleUploadSubmission(e) {
         closeSubmitModal();
         refreshMemberData();
       } else {
-        showToast((res && res.message) ? res.message : 'Lỗi khi nộp bài!', 'error');
+        showFormError(form, (res && res.message) ? res.message : 'Lỗi khi nộp bài!');
       }
     } catch (err) {
       setFormControlsDisabled(form, false);
       if (cancelBtn) cancelBtn.disabled = false;
       if (btn) setButtonLoading(btn, false);
-      showToast('Lỗi nộp bài: ' + (err.message || err.toString()), 'error');
+      showFormError(form, 'Lỗi nộp bài: ' + (err.message || err.toString()));
     }
   };
 
@@ -1267,7 +1270,7 @@ export async function handleUploadSubmission(e) {
     setFormControlsDisabled(form, false);
     if (cancelBtn) cancelBtn.disabled = false;
     if (btn) setButtonLoading(btn, false);
-    showToast('Không thể đọc file từ thiết bị!', 'error');
+    showFormError(form, 'Không thể đọc file từ thiết bị!', dropzoneEl);
   };
 
   reader.readAsDataURL(file);
@@ -1365,9 +1368,10 @@ export async function handleSubmitQuickPinModal(e) {
   const pinInput = document.getElementById('quick-pin-input-code');
   const pin = pinInput ? pinInput.value.trim() : '';
 
+  clearFormError('form-quick-pin-modal');
+
   if (!/^\d{6}$/.test(pin)) {
-    showToast('Mã PIN điểm danh phải gồm đúng 6 chữ số!', 'warning');
-    if (pinInput) pinInput.focus();
+    showFormError('form-quick-pin-modal', 'Mã PIN điểm danh phải gồm đúng 6 chữ số!', pinInput);
     return;
   }
 
@@ -1394,7 +1398,7 @@ export async function handleSubmitQuickPinModal(e) {
       closeQuickPinModal();
       await loadMemberData(true, true);
     } else {
-      showToast((res && res.message) ? res.message : 'Mã PIN không đúng hoặc buổi học đã đóng!', 'error');
+      showFormError('form-quick-pin-modal', (res && res.message) ? res.message : 'Mã PIN không đúng hoặc buổi học đã đóng!', pinInput);
       if (pinInput) {
         pinInput.value = '';
         pinInput.focus();
@@ -1403,6 +1407,6 @@ export async function handleSubmitQuickPinModal(e) {
   } catch (err) {
     if (btn) setButtonLoading(btn, false);
     if (pinInput) pinInput.disabled = false;
-    showToast('Lỗi điểm danh: ' + (err.message || err.toString()), 'error');
+    showFormError('form-quick-pin-modal', 'Lỗi điểm danh: ' + (err.message || err.toString()), pinInput);
   }
 }

@@ -14,6 +14,8 @@ export {
   hideToast,
   showGlobalLoading,
   hideGlobalLoading,
+  showFormError,
+  clearFormError,
   setButtonLoading,
   withButtonLock,
   setFormDisabled,

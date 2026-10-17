@@ -203,7 +203,11 @@ function addDocument(docData) {
       // Schema: DocID, TenTaiLieu, PhanLoai, LinkDrive, MoTa
       sheet.appendRow([docId, tenTaiLieu, phanLoai, linkDrive, moTa]);
       invalidateSheetCache(CONFIG.SHEET_NAMES.TAI_LIEU);
-      return { success: true, message: `Đã thêm tài liệu "${tenTaiLieu}" vào kho!` };
+      return { 
+        success: true, 
+        message: `Đã thêm tài liệu "${tenTaiLieu}" vào kho!`,
+        docId: docId
+      };
     });
 
     return lockResult;

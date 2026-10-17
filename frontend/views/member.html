@@ -534,8 +534,16 @@
       </button>
     </div>
 
-    <form id="form-submit-file" data-action="submit-assignment" class="mt-4 space-y-4">
+    <form id="form-submit-file" data-action="submit-assignment" novalidate class="mt-4 space-y-4">
       <input type="hidden" id="submit-task-id">
+
+      <!-- Dedicated Form Error Alert -->
+      <div id="submit-file-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="submit-file-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
 
       <!-- Drag & Drop Box -->
       <div>
@@ -618,7 +626,14 @@
       </p>
     </div>
 
-    <form id="form-quick-pin-modal" data-action="submit-quick-pin-modal" class="space-y-3.5 max-w-xs mx-auto">
+    <form id="form-quick-pin-modal" data-action="submit-quick-pin-modal" novalidate class="space-y-3.5 max-w-xs mx-auto">
+      <!-- Dedicated Form Error Alert -->
+      <div id="quick-pin-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error text-left">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="quick-pin-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
       <input 
         type="text" 
         id="quick-pin-input-code" 

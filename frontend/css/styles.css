@@ -221,6 +221,27 @@ body {
   border-color: var(--accent-base);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
+
+/* Trạng thái lỗi Form chuyên dụng (Dedicated Form Error States - Không dùng tooltip tự động) */
+.bht-input.has-error, .bht-select.has-error, .bht-textarea.has-error,
+.dropzone.has-error, #dropzone.has-error {
+  border-color: var(--status-err-text) !important;
+  box-shadow: 0 0 0 3px var(--status-err-bg) !important;
+}
+
+.bht-form-error-alert {
+  border-left: 4px solid var(--status-err-text);
+  background-color: var(--status-err-bg);
+  color: var(--status-err-text);
+  font-size: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
 .bht-label {
   display: block;
   font-size: 0.75rem;

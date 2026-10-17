@@ -6,7 +6,7 @@
 // ====================================================================
 
 import { callApi } from '../services/api.js';
-import { appState, uiActionLocks, showToast, showView, showGlobalLoading, hideGlobalLoading, escapeHtml, setFormControlsDisabled, setButtonLoading } from './ui.js';
+import { appState, uiActionLocks, showToast, showView, showGlobalLoading, hideGlobalLoading, escapeHtml, setFormControlsDisabled, setButtonLoading, showFormError, clearFormError } from './ui.js';
 import { 
   adminSessionCardTemplate, 
   adminSubmissionRowTemplate, 
@@ -612,15 +612,15 @@ export async function handleCreateTask(e) {
   const nguoiNhan = assigneeInput ? assigneeInput.value.trim() || 'ALL' : 'ALL';
   const sessionId = sessionSelect ? sessionSelect.value : 'GENERAL';
 
+  clearFormError(form);
+
   if (!tieuDe) {
-    showToast('Vui lòng nhập tiêu đề bài tập / nhiệm vụ!', 'warning');
-    if (titleInput) titleInput.focus();
+    showFormError(form, 'Vui lòng nhập tiêu đề bài tập / nhiệm vụ!', titleInput);
     return;
   }
 
   if (!deadline) {
-    showToast('Vui lòng chọn hạn nộp (Deadline) cho bài tập!', 'warning');
-    if (deadlineInput) deadlineInput.focus();
+    showFormError(form, 'Vui lòng chọn hạn nộp (Deadline) cho bài tập!', deadlineInput);
     return;
   }
 
@@ -664,13 +664,13 @@ export async function handleCreateTask(e) {
       renderAdminTasksGrid();
       updateAdminStats();
     } else {
-      showToast((res && res.message) ? res.message : 'Không thể tạo nhiệm vụ!', 'error');
+      showFormError(form, (res && res.message) ? res.message : 'Không thể tạo nhiệm vụ!');
     }
   } catch (err) {
     setFormControlsDisabled(form, false);
     if (cancelBtn) cancelBtn.disabled = false;
     if (btn) setButtonLoading(btn, false);
-    showToast('Lỗi: ' + (err.message || err.toString()), 'error');
+    showFormError(form, 'Lỗi: ' + (err.message || err.toString()));
   }
 }
 
@@ -752,21 +752,26 @@ export async function handleAddMember(e) {
   const hoTen = hoTenInput ? hoTenInput.value.trim() : '';
   const role = document.getElementById('member-input-role')?.value || 'MEMBER';
 
-  if (!mssv || !hoTen) {
-    showToast('Vui lòng nhập đầy đủ MSSV và Họ tên!', 'warning');
+  clearFormError(form);
+
+  if (!mssv) {
+    showFormError(form, 'Vui lòng nhập Mã số sinh viên (MSSV)!', mssvInput);
     return;
   }
 
   if (!/^\d{8,20}$/.test(mssv)) {
-    showToast('Mã số sinh viên (MSSV) phải gồm từ 8 đến 20 chữ số!', 'warning');
-    if (mssvInput) mssvInput.focus();
+    showFormError(form, 'Mã số sinh viên (MSSV) phải gồm từ 8 đến 20 chữ số!', mssvInput);
+    return;
+  }
+
+  if (!hoTen) {
+    showFormError(form, 'Vui lòng nhập Họ và Tên thành viên!', hoTenInput);
     return;
   }
 
   const isDuplicate = (appState.members || []).some(m => String(m.MSSV).trim() === mssv);
   if (isDuplicate) {
-    showToast(`MSSV ${mssv} đã tồn tại trong danh sách thành viên!`, 'warning');
-    if (mssvInput) mssvInput.focus();
+    showFormError(form, `MSSV ${mssv} đã tồn tại trong danh sách thành viên!`, mssvInput);
     return;
   }
 
@@ -800,13 +805,13 @@ export async function handleAddMember(e) {
       renderAdminMembersTable();
       updateAdminStats();
     } else {
-      showToast((res && res.message) ? res.message : 'Không thể thêm thành viên!', 'error');
+      showFormError(form, (res && res.message) ? res.message : 'Không thể thêm thành viên!', mssvInput);
     }
   } catch (err) {
     setFormControlsDisabled(form, false);
     if (cancelBtn) cancelBtn.disabled = false;
     if (btn) setButtonLoading(btn, false);
-    showToast('Lỗi: ' + (err.message || err.toString()), 'error');
+    showFormError(form, 'Lỗi: ' + (err.message || err.toString()));
   }
 }
 
@@ -950,18 +955,24 @@ export async function handleCreateAttendanceSession(e) {
   const room = document.getElementById('att-input-room') ? document.getElementById('att-input-room').value.trim() : 'Phòng Lab 02 - Tầng 3 Nhà A3';
   const date = document.getElementById('att-input-date') ? document.getElementById('att-input-date').value : '';
   const desc = document.getElementById('att-input-desc') ? document.getElementById('att-input-desc').value.trim() : '';
-  const link = document.getElementById('att-input-link') ? document.getElementById('att-input-link').value.trim() : '';
+  const linkInput = document.getElementById('att-input-link');
+  const link = linkInput ? linkInput.value.trim() : '';
   const pin = pinInput ? pinInput.value.trim() : '';
 
+  clearFormError(form);
+
   if (!title) {
-    showToast('Vui lòng nhập tên buổi sinh hoạt / chuyên đề!', 'warning');
-    if (titleInput) titleInput.focus();
+    showFormError(form, 'Vui lòng nhập tên buổi sinh hoạt / chuyên đề!', titleInput);
     return;
   }
 
   if (!/^\d{6}$/.test(pin)) {
-    showToast('Mã PIN điểm danh phải gồm đúng 6 chữ số!', 'warning');
-    if (pinInput) pinInput.focus();
+    showFormError(form, 'Mã PIN điểm danh phải gồm đúng 6 chữ số!', pinInput);
+    return;
+  }
+
+  if (link && !/^https?:\/\//i.test(link)) {
+    showFormError(form, 'Link tài liệu phải là một đường dẫn URL hợp lệ (bắt đầu bằng http:// hoặc https://)!', linkInput);
     return;
   }
 
@@ -990,7 +1001,7 @@ export async function handleCreateAttendanceSession(e) {
       const newSession = {
         SessionID: res.sessionId || ('MEET_' + Date.now()),
         TenBuoiHop: title,
-        MaPin: autoPin,
+        MaPin: pin,
         TrangThai: 'Open',
         DS_CoMat: '[]',
         NgayDienRa: date,
@@ -1626,24 +1637,33 @@ export async function handleUpdateAttendanceSession(e) {
   const form = document.getElementById('form-edit-attendance');
   const btn = document.getElementById('btn-submit-edit-attendance');
   const sessionId = document.getElementById('edit-att-id')?.value;
-  const title = document.getElementById('edit-att-title')?.value.trim();
+  const titleInput = document.getElementById('edit-att-title');
+  const pinInput = document.getElementById('edit-att-pin');
+  const linkInput = document.getElementById('edit-att-link');
+
+  const title = titleInput?.value.trim();
   const tag = document.getElementById('edit-att-tag')?.value || 'GENERAL';
   const room = document.getElementById('edit-att-room')?.value.trim() || '';
   const date = document.getElementById('edit-att-date')?.value || '';
-  const pin = document.getElementById('edit-att-pin')?.value.trim() || '';
-  const link = document.getElementById('edit-att-link')?.value.trim() || '';
+  const pin = pinInput?.value.trim() || '';
+  const link = linkInput?.value.trim() || '';
   const desc = document.getElementById('edit-att-desc')?.value.trim() || '';
   const status = document.getElementById('edit-att-status')?.value || 'Open';
 
+  clearFormError(form);
+
   if (!sessionId || !title) {
-    showToast('Vui lòng nhập đầy đủ tên buổi học!', 'warning');
-    document.getElementById('edit-att-title')?.focus();
+    showFormError(form, 'Vui lòng nhập đầy đủ tên buổi học!', titleInput);
     return;
   }
 
   if (!/^\d{6}$/.test(pin)) {
-    showToast('Mã PIN điểm danh phải gồm đúng 6 chữ số!', 'warning');
-    document.getElementById('edit-att-pin')?.focus();
+    showFormError(form, 'Mã PIN điểm danh phải gồm đúng 6 chữ số!', pinInput);
+    return;
+  }
+
+  if (link && !/^https?:\/\//i.test(link)) {
+    showFormError(form, 'Link tài liệu phải là một đường dẫn URL hợp lệ (bắt đầu bằng http:// hoặc https://)!', linkInput);
     return;
   }
 
@@ -1689,12 +1709,12 @@ export async function handleUpdateAttendanceSession(e) {
         openAdminSessionDetail(sessionId);
       }
     } else {
-      showToast((res && res.message) ? res.message : 'Lỗi khi cập nhật buổi học!', 'error');
+      showFormError(form, (res && res.message) ? res.message : 'Lỗi khi cập nhật buổi học!');
     }
   } catch (err) {
     setFormControlsDisabled(form, false);
     if (btn) setButtonLoading(btn, false);
-    showToast('Lỗi: ' + (err.message || err.toString()), 'error');
+    showFormError(form, 'Lỗi: ' + (err.message || err.toString()));
   }
 }
 
@@ -1779,21 +1799,24 @@ export async function handleUpdateTask(e) {
   const form = document.getElementById('form-edit-task');
   const btn = document.getElementById('btn-submit-edit-task');
   const taskId = document.getElementById('edit-task-id')?.value;
-  const title = document.getElementById('edit-task-title')?.value.trim();
+  const titleInput = document.getElementById('edit-task-title');
+  const deadlineInput = document.getElementById('edit-task-deadline');
+
+  const title = titleInput?.value.trim();
   const assignee = document.getElementById('edit-task-assignee')?.value.trim() || 'ALL';
-  const deadline = document.getElementById('edit-task-deadline')?.value || '';
+  const deadline = deadlineInput?.value || '';
   const desc = document.getElementById('edit-task-desc')?.value.trim() || '';
   const status = document.getElementById('edit-task-status')?.value || 'Open';
 
+  clearFormError(form);
+
   if (!taskId || !title) {
-    showToast('Vui lòng nhập tiêu đề bài tập!', 'warning');
-    document.getElementById('edit-task-title')?.focus();
+    showFormError(form, 'Vui lòng nhập tiêu đề bài tập!', titleInput);
     return;
   }
 
   if (!deadline) {
-    showToast('Vui lòng chọn hạn nộp (Deadline) cho bài tập!', 'warning');
-    document.getElementById('edit-task-deadline')?.focus();
+    showFormError(form, 'Vui lòng chọn hạn nộp (Deadline) cho bài tập!', deadlineInput);
     return;
   }
 
@@ -1841,12 +1864,12 @@ export async function handleUpdateTask(e) {
         if (currentSession) renderDetailTaskPanel(currentSession);
       }
     } else {
-      showToast((res && res.message) ? res.message : 'Lỗi khi cập nhật bài tập!', 'error');
+      showFormError(form, (res && res.message) ? res.message : 'Lỗi khi cập nhật bài tập!');
     }
   } catch (err) {
     setFormControlsDisabled(form, false);
     if (btn) setButtonLoading(btn, false);
-    showToast('Lỗi: ' + (err.message || err.toString()), 'error');
+    showFormError(form, 'Lỗi: ' + (err.message || err.toString()));
   }
 }
 
@@ -1939,19 +1962,28 @@ export async function handleSaveDocument(e) {
   const form = document.getElementById('form-edit-doc');
   const btn = document.getElementById('btn-submit-edit-doc');
   const docId = document.getElementById('edit-doc-id')?.value;
-  const title = document.getElementById('edit-doc-title')?.value.trim();
+  const titleInput = document.getElementById('edit-doc-title');
+  const linkInput = document.getElementById('edit-doc-link');
+
+  const title = titleInput?.value.trim();
   const category = document.getElementById('edit-doc-category')?.value || 'Slide';
-  const link = document.getElementById('edit-doc-link')?.value.trim();
+  const link = linkInput?.value.trim();
   const desc = document.getElementById('edit-doc-desc')?.value.trim() || '';
 
-  if (!title || !link) {
-    showToast('Vui lòng nhập tên tài liệu và link tải về!', 'warning');
+  clearFormError(form);
+
+  if (!title) {
+    showFormError(form, 'Vui lòng nhập tên tài liệu / slide / giáo trình!', titleInput);
+    return;
+  }
+
+  if (!link) {
+    showFormError(form, 'Vui lòng nhập đường link Google Drive / tải về!', linkInput);
     return;
   }
 
   if (!/^https?:\/\//i.test(link)) {
-    showToast('Link tài liệu phải là một đường dẫn URL hợp lệ (bắt đầu bằng http:// hoặc https://)!', 'warning');
-    document.getElementById('edit-doc-link')?.focus();
+    showFormError(form, 'Link tài liệu phải là một đường dẫn URL hợp lệ (bắt đầu bằng http:// hoặc https://)!', linkInput);
     return;
   }
 
@@ -1991,12 +2023,12 @@ export async function handleSaveDocument(e) {
         });
       }
     } else {
-      showToast((res && res.message) ? res.message : 'Không thể lưu tài liệu!', 'error');
+      showFormError(form, (res && res.message) ? res.message : 'Không thể lưu tài liệu!');
     }
   } catch (err) {
     setFormControlsDisabled(form, false);
     if (btn) setButtonLoading(btn, false);
-    showToast('Lỗi: ' + (err.message || err.toString()), 'error');
+    showFormError(form, 'Lỗi: ' + (err.message || err.toString()));
   }
 }
 

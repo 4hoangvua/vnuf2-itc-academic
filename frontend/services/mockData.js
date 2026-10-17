@@ -443,34 +443,48 @@ export async function handleMockAction(action, payload) {
     // 1. AUTH
     case 'getAuthStatus': {
       const token = localStorage.getItem('bht_token') || '';
-      let targetMssv = '';
+      
+      // 1. Nếu có Session Token Mock hợp lệ
       if (token && token.startsWith('MOCK_TOKEN_')) {
-        targetMssv = token.replace('MOCK_TOKEN_', '');
-      } else {
-        targetMssv = String(data.cachedMssv || data.mssv || payload || '').trim().toUpperCase();
+        const targetMssv = token.replace('MOCK_TOKEN_', '').trim().toUpperCase();
+        const member = state.members.find(m => m.MSSV === targetMssv);
+        if (member) {
+          if (member.TrangThai === 'Inactive') {
+            return { status: 'BLOCKED', message: 'Tài khoản của bạn đang ở trạng thái Tạm khóa (Inactive)!' };
+          }
+          return {
+            status: 'AUTHENTICATED',
+            user: {
+              mssv: member.MSSV,
+              hoTen: member.HoTen,
+              email: member.Email,
+              role: member.Role,
+              trangThai: member.TrangThai,
+              ngayThamGia: member.NgayThamGia
+            }
+          };
+        }
       }
 
-      if (!targetMssv) {
-        return { status: 'PROMPT_MSSV', message: 'Chào mừng bạn đến với Cổng Ban Học Thuật. Vui lòng nhập Mã số sinh viên (MSSV) để đăng nhập!' };
-      }
-      const member = state.members.find(m => m.MSSV === targetMssv);
-      if (!member) {
-        try { localStorage.removeItem('bht_mssv'); } catch (_) {}
-        return { status: 'PROMPT_MSSV', message: 'Chào mừng bạn đến với Cổng Ban Học Thuật. Vui lòng nhập Mã số sinh viên (MSSV) để đăng nhập!' };
-      }
-      if (member.TrangThai === 'Inactive') {
-        return { status: 'BLOCKED', message: 'Tài khoản của bạn đang ở trạng thái Tạm khóa (Inactive)!' };
-      }
-      return {
-        status: 'AUTHENTICATED',
-        user: {
-          mssv: member.MSSV,
-          hoTen: member.HoTen,
-          email: member.Email,
-          role: member.Role,
-          trangThai: member.TrangThai,
-          ngayThamGia: member.NgayThamGia
+      // 2. Không có Token hợp lệ: Kiểm tra MSSV lưu trữ để hỗ trợ gợi ý đăng nhập OTP (như GAS)
+      const cleanCachedMssv = String(data.cachedMssv || data.mssv || payload || '').trim().toUpperCase();
+      if (cleanCachedMssv) {
+        const member = state.members.find(m => m.MSSV === cleanCachedMssv);
+        if (member) {
+          if (member.TrangThai === 'Inactive') {
+            return { status: 'BLOCKED', message: 'Tài khoản của bạn đang ở trạng thái Tạm khóa (Inactive)!' };
+          }
+          return {
+            status: 'PROMPT_MSSV',
+            suggestedMssv: cleanCachedMssv,
+            message: 'Vui lòng xác thực mã OTP để bắt đầu phiên làm việc mới an toàn.'
+          };
         }
+      }
+
+      return {
+        status: 'PROMPT_MSSV',
+        message: 'Chào mừng bạn đến với Cổng Ban Học Thuật. Vui lòng nhập Mã số sinh viên (MSSV) để đăng nhập!'
       };
     }
 
@@ -700,7 +714,11 @@ export async function handleMockAction(action, payload) {
       ds.push(mssv);
       session.DS_CoMat = JSON.stringify(ds);
       saveLocalMockState(state);
-      return { success: true, message: `Điểm danh thành công buổi "${session.TenBuoiHop}"!` };
+      return { 
+        success: true, 
+        message: `Điểm danh thành công buổi "${session.TenBuoiHop}"!`,
+        sessionId: session.SessionID
+      };
     }
 
     // 4. TASKS
@@ -729,7 +747,12 @@ export async function handleMockAction(action, payload) {
       }
 
       saveLocalMockState(state);
-      return { success: true, message: `Đã tạo nhiệm vụ "${newTask.TieuDe}" thành công!`, taskId: newTask.TaskID };
+      return { 
+        success: true, 
+        message: `Đã tạo nhiệm vụ "${newTask.TieuDe}" thành công!`, 
+        taskId: newTask.TaskID,
+        folderId: newTask.FolderID
+      };
     }
 
     case 'updateTask': {
@@ -810,7 +833,13 @@ export async function handleMockAction(action, payload) {
       };
       state.submissions.unshift(newSub);
       saveLocalMockState(state);
-      return { success: true, message: 'Nộp bài thành công (Mock Mode)!', subId: newSub.SubID };
+      return { 
+        success: true, 
+        message: 'Nộp bài thành công (Mock Mode)!', 
+        subId: newSub.SubID,
+        fileUrl: newSub.DriveLink,
+        submitTime: newSub.ThoiGianNop
+      };
     }
 
     case 'reviewSubmission': {
@@ -841,6 +870,7 @@ export async function handleMockAction(action, payload) {
       return { 
         success: true, 
         message: `Đã thêm tài liệu "${newDoc.TenTaiLieu}" vào kho!`,
+        docId: newDoc.DocID,
         data: newDoc 
       };
     }

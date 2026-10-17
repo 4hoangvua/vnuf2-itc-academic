@@ -21,7 +21,7 @@ function validateTokenSession(token) {
   if (cachedJson) {
     try {
       const session = JSON.parse(cachedJson);
-      // Kiểm tra thời hạn 6 tiếng
+      // Kiểm tra thời hạn hiệu lực (30 ngày)
       if (session && session.mssv && (Date.now() - (session.createdAt || 0) < CONFIG.AUTH.TOKEN_TTL_SECONDS * 1000)) {
         return session;
       }
@@ -30,17 +30,18 @@ function validateTokenSession(token) {
     }
   }
 
-  // 2. Fallback sang PropertiesService nếu cache bị dọn
+  // 2. Fallback sang PropertiesService nếu cache bị dọn hoặc hết hạn 6h của CacheService
   try {
     const props = PropertiesService.getScriptProperties();
     const propJson = props.getProperty(tokenKey);
     if (propJson) {
       const session = JSON.parse(propJson);
       if (session && session.mssv && (Date.now() - (session.createdAt || 0) < CONFIG.AUTH.TOKEN_TTL_SECONDS * 1000)) {
-        // Nạp lại vào CacheService để tăng tốc các request kế tiếp
+        // Nạp lại vào CacheService để tăng tốc các request kế tiếp (giới hạn tối đa 21600s của GAS CacheService)
         try {
-          const remainingTtl = Math.max(60, Math.floor(CONFIG.AUTH.TOKEN_TTL_SECONDS - (Date.now() - session.createdAt) / 1000));
-          cache.put(tokenKey, JSON.stringify(session), remainingTtl);
+          const remainingSecs = Math.floor(CONFIG.AUTH.TOKEN_TTL_SECONDS - (Date.now() - session.createdAt) / 1000);
+          const cacheTtl = Math.min(21600, Math.max(60, remainingSecs));
+          cache.put(tokenKey, JSON.stringify(session), cacheTtl);
         } catch (reCacheErr) {}
         return session;
       } else {
@@ -355,14 +356,15 @@ function verifyLoginOtp(rawMssv, inputOtp) {
 
     const tokenKey = CONFIG.AUTH.TOKEN_PREFIX + sessionToken;
 
-    // Lưu vào CacheService (6 tiếng)
+    // Lưu vào CacheService (giới hạn tối đa 21600s / 6 tiếng theo trần của Google Apps Script)
     try {
-      cache.put(tokenKey, JSON.stringify(sessionData), CONFIG.AUTH.TOKEN_TTL_SECONDS);
+      const initialCacheTtl = Math.min(21600, CONFIG.AUTH.TOKEN_TTL_SECONDS);
+      cache.put(tokenKey, JSON.stringify(sessionData), initialCacheTtl);
     } catch (cErr) {
       console.warn('Lỗi lưu session vào cache:', cErr);
     }
 
-    // Lưu vào PropertiesService dự phòng
+    // Lưu vào PropertiesService dự phòng (bền vững 30 ngày)
     try {
       const props = PropertiesService.getScriptProperties();
       props.setProperty(tokenKey, JSON.stringify(sessionData));

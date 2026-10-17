@@ -6,8 +6,9 @@ globalThis.localStorage = {
   clear: () => memStore.clear()
 };
 
+import fs from 'fs';
 import { store, getState, setState, subscribe } from './frontend/modules/store.js';
-import { escapeHTML } from './frontend/utils/dom.js';
+import { escapeHTML, showFormError, clearFormError } from './frontend/utils/dom.js';
 import { getToken, setToken, clearToken, MUTATION_INVALIDATION_MAP } from './frontend/services/api.js';
 import {
   memberSessionCardTemplate,
@@ -307,9 +308,175 @@ const delDocRes = await mockCallApi('deleteDocument', { docId: createdDocId });
 assert('mockCallApi deleteDocument succeeds', delDocRes.success === true);
 assert('deleted document no longer in mock store', !getLocalMockState().documents.find(d => d.DocID === createdDocId));
 
+// 11. Testing Form Error Validation & Custom Error Display (No Browser Default Tooltips)
+console.log('\n--- 11. Testing Form Validation & Custom Error Notification ---');
+
+const viewFiles = [
+  './frontend/views/admin.html',
+  './frontend/views/auth.html',
+  './frontend/views/member.html'
+];
+
+let totalFormsFound = 0;
+viewFiles.forEach(file => {
+  const content = fs.readFileSync(file, 'utf8');
+  // Match all <form ...> tags
+  const formTags = content.match(/<form[^>]+>/g) || [];
+  totalFormsFound += formTags.length;
+
+  formTags.forEach(tag => {
+    const idMatch = tag.match(/id="([^"]+)"/);
+    const formId = idMatch ? idMatch[1] : 'unknown-form';
+    assert(`Form #${formId} in ${file} has novalidate attribute (no native tooltips)`, tag.includes('novalidate'));
+  });
+});
+assert('All 10 project forms were found and validated for novalidate', totalFormsFound === 10);
+
+// Test mock element behavior for showFormError and clearFormError
+function createMockClassList() {
+  const classes = new Set();
+  return {
+    add: (...c) => c.forEach(x => classes.add(x)),
+    remove: (...c) => c.forEach(x => classes.delete(x)),
+    contains: (c) => classes.has(c),
+    get size() { return classes.size; }
+  };
+}
+
+function createMockElement(id = '', tag = 'div') {
+  const listeners = new Map();
+  const children = [];
+  return {
+    id,
+    tagName: tag.toUpperCase(),
+    classList: createMockClassList(),
+    textContent: '',
+    children,
+    querySelector: (sel) => {
+      if (sel.includes('.js-error-msg') || sel.includes('error-msg')) {
+        return children.find(c => c.id.includes('error-msg') || c.id.includes('msg')) || children[0] || null;
+      }
+      if (sel.includes('.js-form-error') || sel.includes('error-alert') || sel.includes('error')) {
+        return children.find(c => c.id.includes('error') || c.id.includes('alert')) || null;
+      }
+      return null;
+    },
+    querySelectorAll: (sel) => {
+      if (sel.includes('.has-error')) {
+        return children.filter(c => c.classList.contains('has-error'));
+      }
+      if (sel.includes('.js-form-error') || sel.includes('error')) {
+        return children.filter(c => c.id.includes('error'));
+      }
+      return [];
+    },
+    addEventListener: (type, fn) => {
+      if (!listeners.has(type)) listeners.set(type, []);
+      listeners.get(type).push(fn);
+    },
+    removeEventListener: (type, fn) => {
+      if (!listeners.has(type)) return;
+      const arr = listeners.get(type).filter(f => f !== fn);
+      listeners.set(type, arr);
+    },
+    dispatchEvent: (type) => {
+      const arr = listeners.get(type) || [];
+      arr.forEach(fn => fn());
+    },
+    focus: () => {}
+  };
+}
+
+const mockForm = createMockElement('form-test', 'form');
+const mockErrBox = createMockElement('test-error-alert');
+mockErrBox.classList.add('hidden');
+const mockErrMsg = createMockElement('test-error-msg', 'span');
+mockErrBox.children.push(mockErrMsg);
+mockForm.children.push(mockErrBox);
+
+const mockInput = createMockElement('test-input', 'input');
+mockForm.children.push(mockInput);
+
+showFormError(mockForm, 'Mã PIN điểm danh phải gồm đúng 6 chữ số!', mockInput);
+assert('showFormError unhides error alert box', !mockErrBox.classList.contains('hidden'));
+assert('showFormError sets error message text', mockErrMsg.textContent === 'Mã PIN điểm danh phải gồm đúng 6 chữ số!');
+assert('showFormError marks invalid input with has-error class', mockInput.classList.contains('has-error'));
+
+// Test typing event auto-clears error
+mockInput.dispatchEvent('input');
+assert('User input event auto-clears has-error class', !mockInput.classList.contains('has-error'));
+assert('User input event hides form error alert', mockErrBox.classList.contains('hidden'));
+
+// Test clearFormError explicitly
+showFormError(mockForm, 'Lỗi khác', mockInput);
+clearFormError(mockForm);
+assert('clearFormError hides error alert box', mockErrBox.classList.contains('hidden'));
+assert('clearFormError removes has-error from inputs', !mockInput.classList.contains('has-error'));
+
+// 12. Testing API & Mock Contract Sync (Zero Discrepancy)
+console.log('\n--- 12. Testing API & Mock Contract Sync (Zero Discrepancy) ---');
+
+// Test addDocument returns docId
+const testAddDoc = await mockCallApi('addDocument', {
+  tenTaiLieu: 'Tài liệu Thử nghiệm Sync Contract',
+  phanLoai: 'Chuẩn đầu ra (MOS/IC3)',
+  linkDrive: 'https://drive.google.com/test-sync',
+  moTa: 'Tài liệu sync contract'
+});
+assert('addDocument returns res.docId matching data.DocID', testAddDoc.success === true && Boolean(testAddDoc.docId) && testAddDoc.docId === testAddDoc.data.DocID);
+
+// Test createTask returns folderId
+const testCreateTask = await mockCallApi('createTask', {
+  tieuDe: 'Task Sync Contract Test',
+  deadline: '2026-11-01T23:59',
+  nguoiNhan: 'ALL',
+  moTa: 'Thử nghiệm folderId',
+  sessionId: 'MEET_20261015_190000'
+});
+assert('createTask returns res.folderId and res.taskId', testCreateTask.success === true && Boolean(testCreateTask.taskId) && Boolean(testCreateTask.folderId));
+
+// Test submitTaskAssignment returns fileUrl and submitTime
+const testSubmitTask = await mockCallApi('submitTaskAssignment', {
+  taskId: testCreateTask.taskId,
+  mssv: '2351120015',
+  hoTen: 'Lê Hoàng Minh',
+  email: 'minhlh.k68@gmail.com',
+  fileName: 'test_sync.zip'
+});
+assert('submitTaskAssignment returns fileUrl and submitTime', testSubmitTask.success === true && Boolean(testSubmitTask.subId) && Boolean(testSubmitTask.fileUrl) && Boolean(testSubmitTask.submitTime));
+
+// Test checkInAttendance returns sessionId
+const testCheckin = await mockCallApi('checkInAttendance', {
+  pinCode: '839201',
+  mssv: '2451120033'
+});
+assert('checkInAttendance returns res.sessionId', testCheckin.success === true && testCheckin.sessionId === 'MEET_20261015_190000');
+
+// Test getAuthStatus security: no token -> PROMPT_MSSV (not auto-authenticated)
+localStorage.removeItem('bht_token');
+const unauthStatus = await mockCallApi('getAuthStatus', { cachedMssv: '2351120015' });
+assert('getAuthStatus without token prompts for OTP (PROMPT_MSSV)', unauthStatus.status === 'PROMPT_MSSV' && unauthStatus.suggestedMssv === '2351120015');
+
+// Test getAuthStatus with valid MOCK_TOKEN -> AUTHENTICATED
+localStorage.setItem('bht_token', 'MOCK_TOKEN_2351120015');
+const authStatus = await mockCallApi('getAuthStatus', {});
+assert('getAuthStatus with MOCK_TOKEN returns AUTHENTICATED', authStatus.status === 'AUTHENTICATED' && authStatus.user.mssv === '2351120015');
+
+// Test getAuthStatus with inactive user -> BLOCKED
+localStorage.setItem('bht_token', 'MOCK_TOKEN_2251120099');
+const blockedStatus = await mockCallApi('getAuthStatus', {});
+assert('getAuthStatus with Inactive user returns BLOCKED', blockedStatus.status === 'BLOCKED');
+
+// Clean up
+localStorage.removeItem('bht_token');
+await mockCallApi('deleteDocument', { docId: testAddDoc.docId });
+await mockCallApi('deleteTask', { taskId: testCreateTask.taskId });
+
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
   process.exit(1);
 } else {
   console.log(`\nALL ${passed} CORE ARCHITECTURE & UI COMPONENT TESTS PASSED! (0 failures)\n`);
 }
+
+

@@ -34,7 +34,7 @@ const CONFIG = {
   // Cấu hình Session Token xác thực
   AUTH: {
     TOKEN_PREFIX: 'AUTH_TOKEN_',
-    TOKEN_TTL_SECONDS: 6 * 3600, // 6 tiếng
+    TOKEN_TTL_SECONDS: 30 * 24 * 3600, // 30 ngày (Bền vững qua PropertiesService kết hợp CacheService)
     OTP_TTL_SECONDS: 300,        // 5 phút
     OTP_PREFIX: 'OTP_'
   },
@@ -86,6 +86,7 @@ const CONFIG = {
     'reviewSubmission',
     'getAllSubmissions',
     'addDocument',
+    'createDocument',
     'updateDocument',
     'deleteDocument'
   ],
