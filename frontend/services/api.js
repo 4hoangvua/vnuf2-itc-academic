@@ -14,7 +14,7 @@ import { handleMockAction } from './mockData.js';
 
 export const API_CONFIG = {
   // Điền URL Web App Google Apps Script (/exec)
-  DEFAULT_GAS_URL: 'https://script.google.com/macros/s/AKfycbwdMssefZxnsEr8cTZYXX0Id-CIOPy-5Tv6ggJu2h7PRPC2SAdsCHPvxqKHcGjdGmujTg/exec',
+  DEFAULT_GAS_URL: 'https://script.google.com/macros/s/AKfycby0HwfnxfbqyfhmuIPKQpxK9pYCxc8DgvAtGWMNq62AbkOdYnhEIAczpmYj-mi3M2Ehqg/exec',
 
   // Tự động kích hoạt Mock Mode trên localhost/file:// khi chưa cấu hình URL
   AUTO_MOCK_ON_LOCALHOST: true,
@@ -126,7 +126,13 @@ export function clearToken() {
  * Lấy URL Google Apps Script Web App
  */
 export function getApiUrl() {
-  return safeStorage.getItem('bht_gas_api_url') || API_CONFIG.DEFAULT_GAS_URL || '';
+  const custom = safeStorage.getItem('bht_gas_api_url');
+  // Nếu url cũ lưu trong localStorage là url bị lỗi trước đây, tự động dọn dẹp để nhận DEFAULT_GAS_URL mới
+  if (custom && custom.includes('AKfycbwdMssefZxnsEr8cTZYXX0Id-CIOPy-5Tv6ggJu2h7PRPC2SAdsCHPvxqKHcGjdGmujTg')) {
+    safeStorage.removeItem('bht_gas_api_url');
+    return API_CONFIG.DEFAULT_GAS_URL;
+  }
+  return custom || API_CONFIG.DEFAULT_GAS_URL || '';
 }
 
 /**
