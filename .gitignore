@@ -1,8 +1,10 @@
 # Dependencies
 node_modules/
 
-# Local Google Clasp auth credentials (chống lộ OAuth token)
+# Local Google Clasp auth credentials & backend source (chống lộ OAuth token, Sheet ID & Folder ID)
 .clasprc.json
+.clasp.json
+gas-backend/
 
 # Logs & temp
 *.log
