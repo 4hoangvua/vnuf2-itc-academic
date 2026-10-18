@@ -881,11 +881,11 @@ export function renderMemberDrlWidget(data = {}) {
       <!-- Bento KPI 1: Circular Donut Progress (Chuyên cần) -->
       <div 
         data-action="scroll-to-member-audit"
-        class="glass-bento-interactive rounded-xl p-3.5 sm:p-4 flex items-center justify-between cursor-pointer hover:border-emerald-500/30 transition-all group"
+        class="glass-bento-interactive rounded-xl p-3.5 sm:p-4 flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition-all group"
         title="Bấm để cuộn xuống xem Nhật ký chuyên cần"
       >
         <div class="space-y-0.5">
-          <span class="text-[10px] font-mono uppercase tracking-wider text-ink-muted block font-semibold group-hover:text-emerald-400 transition-colors">
+          <span class="text-[10px] font-mono uppercase tracking-wider text-ink-muted block font-semibold group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
             CHỈ SỐ THAM GIA HỌC VỤ
           </span>
           <h4 class="text-sm sm:text-base font-bold text-ink font-sans">
@@ -894,7 +894,7 @@ export function renderMemberDrlWidget(data = {}) {
           <p class="text-xs text-ink-muted font-mono">
             ${attendedCount}/${totalSessions} buổi tham gia
           </p>
-          <div class="inline-flex items-center gap-1 text-emerald-400 font-mono text-[11px] font-medium pt-0.5">
+          <div class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-mono text-[11px] font-medium pt-0.5">
             <i class="fa-solid fa-circle-check text-[10px]"></i>
             <span>${attendedCount === totalSessions && totalSessions > 0 ? 'Không vắng buổi nào' : `Đạt ${safeRate}%`}</span>
           </div>
@@ -903,8 +903,8 @@ export function renderMemberDrlWidget(data = {}) {
         <!-- Donut SVG -->
         <div class="relative w-16 h-16 shrink-0 flex items-center justify-center">
           <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-            <path class="text-surface-container-high stroke-current opacity-20" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3.5"></path>
-            <path class="text-emerald-400 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="${safeRate}, 100" stroke-linecap="round" stroke-width="3.5"></path>
+            <path class="text-subtle stroke-current opacity-80" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3.5"></path>
+            <path class="text-emerald-500 dark:text-emerald-400 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="${safeRate}, 100" stroke-linecap="round" stroke-width="3.5"></path>
           </svg>
           <div class="absolute inset-0 flex items-center justify-center">
             <span class="font-mono text-xs font-bold text-ink">${safeRate}%</span>
@@ -916,19 +916,19 @@ export function renderMemberDrlWidget(data = {}) {
       <div 
         data-action="switch-member-tab"
         data-tab="sessions"
-        class="glass-bento-interactive rounded-xl p-3.5 sm:p-4 flex flex-col justify-between cursor-pointer hover:border-emerald-500/30 transition-all group"
+        class="glass-bento-interactive rounded-xl p-3.5 sm:p-4 flex flex-col justify-between cursor-pointer hover:border-emerald-500/40 transition-all group"
         title="Bấm để chuyển sang Lộ trình Chuyên đề & Bài tập"
       >
         <div class="flex items-center justify-between mb-1.5">
           <div>
-            <span class="text-[10px] font-mono uppercase tracking-wider text-ink-muted block font-semibold group-hover:text-emerald-400 transition-colors">
+            <span class="text-[10px] font-mono uppercase tracking-wider text-ink-muted block font-semibold group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
               TIẾN ĐỘ BÀI TẬP LAB
             </span>
             <h4 class="text-sm sm:text-base font-bold text-ink font-sans">
               Bài nộp đạt tiêu chuẩn
             </h4>
           </div>
-          <span class="font-mono text-sm sm:text-base font-bold text-emerald-400 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+          <span class="font-mono text-sm sm:text-base font-bold text-emerald-700 dark:text-emerald-400 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
             ${approvedTasks} / ${taskTotal}
           </span>
         </div>
@@ -936,7 +936,7 @@ export function renderMemberDrlWidget(data = {}) {
         <!-- Progress track -->
         <div class="space-y-1 mt-1">
           <div class="w-full bg-subtle h-2 rounded-full overflow-hidden border border-hairline">
-            <div class="bht-drl-progress-fill bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style="width: ${rateWidth};"></div>
+            <div class="bht-drl-progress-fill bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-500 dark:to-teal-400 h-full rounded-full transition-all duration-500" style="width: ${rateWidth};"></div>
           </div>
           <div class="flex justify-between items-center text-ink-muted font-mono text-[10px]">
             <span>Đạt ${safeRate}% (50% Đạt +10 · 80% Xuất sắc +15)</span>
@@ -948,18 +948,18 @@ export function renderMemberDrlWidget(data = {}) {
       <!-- Bento KPI 3: Điểm Rèn Luyện — Trạng thái Chưa công bố -->
       <div 
         data-action="show-drl-notice"
-        class="glass-bento-interactive rounded-xl p-3.5 sm:p-4 bg-gradient-to-r from-surface to-subtle flex items-center justify-between border-l-4 border-l-slate-500/40 cursor-pointer hover:border-slate-400/40 transition-all group"
+        class="glass-bento-interactive rounded-xl p-3.5 sm:p-4 flex items-center justify-between border-l-4 border-l-slate-400 dark:border-l-slate-500/40 cursor-pointer hover:border-slate-500 transition-all group"
         title="Điểm Rèn Luyện sẽ được công bố vào đợt đánh giá cuối học kỳ"
       >
         <div class="space-y-0.5 flex-1">
           <div class="flex items-center gap-1.5">
-            <i class="fa-solid fa-medal text-slate-400 text-xs"></i>
+            <i class="fa-solid fa-medal text-slate-500 dark:text-slate-400 text-xs"></i>
             <span class="text-[10px] font-mono uppercase tracking-wider text-ink-muted font-semibold">
               ĐIỂM RÈN LUYỆN HỌC KỲ
             </span>
           </div>
           <div class="flex items-center gap-2 pt-0.5">
-            <i class="fa-solid fa-lock text-slate-400 text-sm"></i>
+            <i class="fa-solid fa-lock text-slate-500 dark:text-slate-400 text-sm"></i>
             <span class="text-sm font-bold text-ink-muted font-mono">??? ĐRL</span>
           </div>
           <p class="text-[11px] text-ink-faint flex items-center gap-1.5 pt-0.5 font-mono">

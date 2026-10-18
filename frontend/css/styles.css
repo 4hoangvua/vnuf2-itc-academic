@@ -82,24 +82,45 @@ html.dark {
   --shadow-glow: 0 0 24px -2px rgba(16, 185, 129, 0.25);
 }
 
-/* Glassmorphism & Bento Utilities */
+/* Glassmorphism & Bento Utilities - Thích ứng hoàn hảo cả Light & Dark Mode */
 .glass-bento-card {
-  background: rgba(15, 23, 42, 0.65);
+  background: var(--bg-surface);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
 }
 
 .glass-bento-interactive {
-  background: rgba(15, 23, 42, 0.65);
+  background: var(--bg-surface);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-bento-interactive:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--border-strong);
+  background: var(--bg-elevated);
+  box-shadow: 0 4px 16px -2px rgba(15, 98, 86, 0.08);
+}
+
+/* Biến thể Glassmorphism cho Dark Mode */
+html.dark .glass-bento-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+html.dark .glass-bento-interactive {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+html.dark .glass-bento-interactive:hover {
+  border-color: rgba(16, 185, 129, 0.35);
   background: rgba(23, 31, 51, 0.8);
   box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
 }
@@ -723,11 +744,9 @@ body {
    13. TIỆN ÍCH TIẾN ĐỘ ĐIỂM RÈN LUYỆN & HỌC THUẬT (MEMBER ACADEMIC WIDGETS)
    ==================================================================== */
 .bht-drl-card {
-  background: linear-gradient(135deg, var(--bg-surface) 0%, var(--accent-soft) 100%);
-  border: 1px solid var(--border-subtle);
-  border-radius: 0.75rem;
-  box-shadow: var(--shadow-card);
-  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .bht-drl-progress-track {
