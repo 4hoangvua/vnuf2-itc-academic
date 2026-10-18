@@ -74,12 +74,55 @@ export function renderMemberSkeletons(force = false) {
 }
 
 /**
+ * Lấy thông tin người dùng hiện tại của phân hệ Thành viên
+ * (Hỗ trợ Admin khi xem thử nghiệm hoặc xem dưới danh nghĩa 1 sinh viên cụ thể)
+ */
+export function getCurrentMemberUser() {
+  const viewingAs = sessionStorage.getItem('bht_viewing_as_member');
+  if (viewingAs && viewingAs !== 'true') {
+    try {
+      const parsed = JSON.parse(viewingAs);
+      if (parsed && parsed.mssv) return parsed;
+    } catch (e) {}
+  }
+  return appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null') || { hoTen: 'Thành Viên', mssv: localStorage.getItem('bht_mssv') || '' };
+}
+
+/**
  * Khởi tạo giao diện Cổng Thành Viên (chỉ chạy 1 lần khi đăng nhập hoặc F5)
  * @param {boolean} silent Nếu true thì tải ngầm không hiện overlay loading toàn màn hình
  */
 export function initMemberView(silent = true) {
   showView('view-member');
-  const user = appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null') || { hoTen: 'Thành Viên', mssv: localStorage.getItem('bht_mssv') || '' };
+  const user = getCurrentMemberUser();
+  const viewingAs = sessionStorage.getItem('bht_viewing_as_member');
+
+  // Điều khiển hiển thị banner và nút quay lại Quản trị
+  const banner = document.getElementById('admin-preview-mode-banner');
+  const sideBtn = document.getElementById('sidebar-return-admin-container');
+  const mobBtn = document.getElementById('mobile-return-admin-btn');
+  const bannerTitle = document.getElementById('admin-preview-banner-title');
+  const bannerDesc = document.getElementById('admin-preview-banner-desc');
+
+  if (viewingAs) {
+    if (banner) banner.classList.remove('hidden');
+    if (sideBtn) sideBtn.classList.remove('hidden');
+    if (mobBtn) mobBtn.classList.remove('hidden');
+
+    if (bannerTitle && bannerDesc) {
+      if (viewingAs !== 'true' && user && user.hoTen) {
+        bannerTitle.textContent = `Xem trước: Sinh viên ${user.hoTen} (${user.mssv})`;
+        bannerDesc.textContent = `Bạn đang xem toàn bộ kết quả chuyên đề, điểm danh và bài tập của sinh viên này.`;
+      } else {
+        bannerTitle.textContent = 'Chế độ xem trước: Giao diện Thành viên';
+        bannerDesc.textContent = 'Bạn đang trải nghiệm giao diện với tư cách Thành viên. Phiên quản trị vẫn được bảo toàn.';
+      }
+    }
+  } else {
+    if (banner) banner.classList.add('hidden');
+    if (sideBtn) sideBtn.classList.add('hidden');
+    if (mobBtn) mobBtn.classList.add('hidden');
+  }
 
   const nameEl = document.getElementById('member-display-name');
   const mssvEl = document.getElementById('member-display-mssv');
@@ -132,7 +175,8 @@ export function initMemberView(silent = true) {
     window._memberStorageListenerAttached = true;
     
     const triggerSync = (src) => {
-      if (appState.user && appState.user.role === 'MEMBER') {
+      const isViewingAs = sessionStorage.getItem('bht_viewing_as_member');
+      if (isViewingAs || (appState.user && appState.user.role === 'MEMBER')) {
         console.log(`[Sync] Nhận tín hiệu cập nhật (${src}), tự động đồng bộ dữ liệu chuyên đề mới...`);
         loadMemberData(true, true); // Silent reload, bỏ qua cache
       }
@@ -152,7 +196,8 @@ export function initMemberView(silent = true) {
 
     // 3. Tự động đồng bộ khi chuyển quay lại Tab (Visibility change)
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && appState.user && appState.user.role === 'MEMBER') {
+      const isViewingAs = sessionStorage.getItem('bht_viewing_as_member');
+      if (!document.hidden && (isViewingAs || (appState.user && appState.user.role === 'MEMBER'))) {
         loadMemberData(true, true);
       }
     });
@@ -165,8 +210,8 @@ export function initMemberView(silent = true) {
  * @param {boolean} skipCache Nếu true thì yêu cầu máy chủ lấy dữ liệu mới nhất, bỏ qua cache
  */
 export async function loadMemberData(silent = true, skipCache = false) {
-  const user = appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null');
-  if (!user) return;
+  const user = getCurrentMemberUser();
+  if (!user || !user.mssv) return;
 
   if (!silent) showGlobalLoading('Đang tải dữ liệu học thuật...');
 
@@ -306,7 +351,7 @@ export function renderMemberAuditTable() {
   const pagEl = document.getElementById('member-attendance-audit-pagination');
   if (!auditTbody) return;
 
-  const user = appState.user || {};
+  const user = getCurrentMemberUser();
   const sessions = appState.attendance || [];
 
   if (sessions.length === 0) {
@@ -351,7 +396,7 @@ export function renderMemberAuditTable() {
  * Render toàn bộ Dashboard thành viên (Spotlight, DRL Widget, Audit Table, Roadmap, Docs)
  */
 export function renderMemberDashboard() {
-  const user = appState.user || {};
+  const user = getCurrentMemberUser();
   const sessions = appState.attendance || [];
 
   // Cập nhật số lượng hoạt động
@@ -453,7 +498,7 @@ function renderMemberStats() {
   const tasks = appState.tasks || [];
   const subs = appState.submissions || [];
   const atts = appState.attendance || [];
-  const user = appState.user || {};
+  const user = getCurrentMemberUser();
 
   const tEl = document.getElementById('stat-member-tasks') || document.getElementById('stat-open-tasks');
   const sEl = document.getElementById('stat-member-submits') || document.getElementById('stat-my-submissions');
@@ -650,7 +695,7 @@ export function renderMemberSessions(filteredSessions) {
 
   const sessions = filteredSessions !== undefined ? filteredSessions : (lastMemberFilteredSessions || appState.attendance || []);
   lastMemberFilteredSessions = sessions;
-  const user = appState.user || {};
+  const user = getCurrentMemberUser();
 
   if (sessions.length === 0) {
     const isFiltered = (currentSessionCategory !== 'ALL' || (document.getElementById('input-search-sessions')?.value.trim()));
@@ -728,7 +773,7 @@ export function openMemberSessionDetail(sessionId, updateHash = true) {
   }
 
   currentMemberDetailSessionId = sessionId;
-  const user = appState.user || {};
+  const user = getCurrentMemberUser();
   const allTasks = appState.tasks || [];
   const subs = appState.submissions || [];
 

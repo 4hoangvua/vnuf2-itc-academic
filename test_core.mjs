@@ -592,6 +592,16 @@ assert('renderDocCard displays custom category label accurately', customDocCard.
 assert('renderDocCard applies folder icon for custom categories', customDocCard.includes('fa-folder-open'));
 assert('renderDocCard applies accent badge style for custom categories', customDocCard.includes('bg-accent-soft'));
 
+// 13.9 Admin View-as-Member Role Switching & Preview Banner
+assert('admin.html has switch-to-member-view action', adminHtmlContent.includes('data-action="switch-to-member-view"'));
+assert('member.html has #admin-preview-mode-banner', memberHtmlContent.includes('id="admin-preview-mode-banner"'));
+assert('member.html has #sidebar-return-admin-container', memberHtmlContent.includes('id="sidebar-return-admin-container"'));
+assert('member.html has #mobile-return-admin-btn', memberHtmlContent.includes('id="mobile-return-admin-btn"'));
+assert('member.html has return-to-admin-view action', memberHtmlContent.includes('data-action="return-to-admin-view"'));
+assert('app.js registers switch-to-member-view action', appJsContent.includes("'switch-to-member-view'"));
+assert('app.js registers return-to-admin-view action', appJsContent.includes("'return-to-admin-view'"));
+assert('app.js registers view-as-member action', appJsContent.includes("'view-as-member'"));
+
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
   process.exit(1);

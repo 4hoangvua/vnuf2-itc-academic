@@ -17,7 +17,11 @@ export async function checkAuthSession() {
 
   // 1. Optimistic Shell: Hiển thị ngay khung giao diện tĩnh 0ms trước khi fetch API
   if (cachedRole === 'ADMIN') {
-    initAdminView(true);
+    if (sessionStorage.getItem('bht_viewing_as_member')) {
+      initMemberView(true);
+    } else {
+      initAdminView(true);
+    }
   } else if (cachedRole === 'MEMBER') {
     initMemberView(true);
   } else {
@@ -388,7 +392,11 @@ function handleAuthSuccess(user, token) {
   sessionStorage.setItem('bht_user', JSON.stringify(user));
 
   if (cleanRole === 'ADMIN') {
-    initAdminView(true);
+    if (sessionStorage.getItem('bht_viewing_as_member')) {
+      initMemberView(true);
+    } else {
+      initAdminView(true);
+    }
   } else {
     initMemberView(true);
   }

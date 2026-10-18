@@ -84,6 +84,18 @@
       </button>
     </nav>
 
+    <!-- Nút Chuyển sang Giao diện Thành viên (Chế độ Xem thử nghiệm cho Admin) -->
+    <div class="px-3 py-2 border-t border-hairline sidebar-switch-role-box">
+      <button 
+        data-action="switch-to-member-view"
+        class="bht-btn bht-btn-secondary w-full text-xs justify-center font-medium shadow-sm hover:border-accent hover:text-accent transition-colors"
+        title="Xem giao diện người dùng như một Thành viên CLB"
+      >
+        <i class="fa-solid fa-eye text-accent mr-1.5"></i>
+        <span class="sidebar-text">Xem vai trò Thành viên</span>
+      </button>
+    </div>
+
     <!-- Admin Profile & Footer Controls -->
     <div class="p-3 border-t border-hairline bg-subtle/40 sidebar-footer shrink-0">
       <div class="flex items-center gap-2.5 px-2 py-2 mb-2 sidebar-footer-profile">
@@ -142,6 +154,9 @@
     </div>
 
     <div class="flex items-center gap-1">
+      <button data-action="switch-to-member-view" class="bht-btn bht-btn-ghost bht-btn-icon text-xs text-accent" title="Xem vai trò Thành viên">
+        <i class="fa-solid fa-eye"></i>
+      </button>
       <button data-action="toggle-theme" class="bht-btn bht-btn-ghost bht-btn-icon text-xs" title="Đổi giao diện">
         <i class="fa-solid fa-moon js-theme-icon"></i>
       </button>

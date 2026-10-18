@@ -126,3 +126,25 @@ Thay vì dùng popup modal chật chội khiến giao diện bị phình to (blo
    - **Chống click nhầm (Drag Threshold):** Ngăn kích hoạt sự kiện `click` của nút tag khi người dùng đang thực hiện động tác kéo chuột (> 6px).
    - **Desktop Wheel-to-Horizontal-Scroll:** Tự động chuyển đổi lăn chuột giữa (`deltaY`) thành cuộn ngang dải tag mà không cần giữ phím `Shift`.
 
+---
+
+## 6. Chế Độ Xem Trước Giao Diện Thành Viên Cho Quản Trị Viên (Admin View-as-Member & Impersonation)
+
+Tính năng cho phép Quản trị viên (Admin) trải nghiệm hệ thống dưới góc nhìn người học mà không phải đăng xuất hay mất phiên làm việc:
+
+1. **Chuyển đổi 1-Click Không Mất Phiên (Zero Token Loss):**
+   - Nút **`[👁️ Xem vai trò Thành viên]`** được tích hợp ngay trên Sidebar (Desktop) và Topbar (Mobile) của Admin Portal (`data-action="switch-to-member-view"`).
+   - Khi bấm, hệ thống kích hoạt cờ `sessionStorage.setItem('bht_viewing_as_member', 'true')` và chuyển hướng sang `view-member` thông qua `initMemberView(true)`.
+   - **Bảo toàn bảo mật:** Token quản trị thật (`bht_token`) và vai trò thật (`bht_role = ADMIN`) trong `localStorage` được giữ nguyên vẹn 100%.
+
+2. **Khung Banner Cảnh Báo Trực Quan (Sticky Preview Banner):**
+   - Khi ở chế độ xem thử nghiệm, một banner nổi bật `#admin-preview-mode-banner` hiển thị trang trọng ở đầu trang Thành viên với nhãn `PREVIEW`.
+   - Nút **`[Quay lại Cổng Quản Trị]`** xuất hiện đồng thời trên Banner, Sidebar Thành viên (`#sidebar-return-admin-container`) và Topbar Mobile (`#mobile-return-admin-btn`) với action `return-to-admin-view`.
+   - Bấm quay lại lập tức xóa cờ preview và đưa Quản trị viên trở về Admin Portal ngay tức thì kèm Toast thông báo.
+
+3. **Chế Độ Xem Theo Danh Nghĩa Từng Sinh Viên (Specific Member Impersonation):**
+   - Tại bảng Quản lý Nhân sự Thành viên (`admin-members-tbody`), mỗi hàng sinh viên có nút **`[👁️ Xem]`** (`data-action="view-as-member"`).
+   - Khi Admin bấm vào nút này, hệ thống lưu thông tin `{ mssv, hoTen, email }` vào `bht_viewing_as_member` và nạp giao diện Thành viên.
+   - Toàn bộ dữ liệu Điểm rèn luyện (ĐRL), Lịch sử điểm danh học vụ, Danh sách bài tập đã nộp / cần làm sẽ phản ánh chính xác 100% hồ sơ học tập của sinh viên đó, giúp Ban Học Thuật kiểm tra phản ánh của sinh viên một cách trực quan nhất.
+
+

@@ -2421,3 +2421,54 @@ export async function handleDeleteDocument(docId) {
     showToast('Lỗi khi xóa tài liệu: ' + (err.message || err.toString()), 'error');
   }
 }
+
+/**
+ * Chuyển đổi sang Chế độ xem trước giao diện Thành viên cho Quản trị viên
+ * @param {string} [targetMssv=null] MSSV của thành viên cụ thể muốn xem thử (tùy chọn)
+ */
+export async function switchToMemberView(targetMssv = null) {
+  let targetUser = null;
+  if (targetMssv) {
+    const members = appState.members || [];
+    const found = members.find(m => String(m.MSSV).trim().toUpperCase() === String(targetMssv).trim().toUpperCase());
+    if (found) {
+      targetUser = {
+        mssv: found.MSSV,
+        hoTen: found.HoTen,
+        email: found.Email || '',
+        role: 'MEMBER'
+      };
+    }
+  }
+
+  if (targetUser) {
+    sessionStorage.setItem('bht_viewing_as_member', JSON.stringify(targetUser));
+    showToast(`Đang xem trước giao diện của: ${targetUser.hoTen} (${targetUser.mssv})`, 'info');
+  } else {
+    sessionStorage.setItem('bht_viewing_as_member', 'true');
+    showToast('Đã chuyển sang chế độ xem vai trò Thành viên!', 'info');
+  }
+
+  showView('view-member');
+  const { initMemberView } = await import('./member.js');
+  initMemberView(true);
+}
+
+/**
+ * Thoát chế độ xem thử nghiệm và quay trở lại Cổng Quản Trị Viên
+ */
+export async function returnToAdminView() {
+  sessionStorage.removeItem('bht_viewing_as_member');
+
+  // Ẩn thanh banner và các nút quay lại
+  const banner = document.getElementById('admin-preview-mode-banner');
+  const sideBtn = document.getElementById('sidebar-return-admin-container');
+  const mobBtn = document.getElementById('mobile-return-admin-btn');
+  if (banner) banner.classList.add('hidden');
+  if (sideBtn) sideBtn.classList.add('hidden');
+  if (mobBtn) mobBtn.classList.add('hidden');
+
+  showView('view-admin');
+  initAdminView(true);
+  showToast('Đã quay lại Cổng Quản Trị Viên', 'success');
+}

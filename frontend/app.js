@@ -111,7 +111,9 @@ import {
   handleSaveDocument,
   handleDeleteDocument,
   handleFilterAdminDocs,
-  handleFilterAdminAttendance
+  handleFilterAdminAttendance,
+  switchToMemberView,
+  returnToAdminView
 } from './modules/admin.js?v=20261017_1';
 
 import {
@@ -200,6 +202,11 @@ const CENTRAL_ACTION_MAP = {
   'save-task-in-detail': () => handleSaveTaskInDetail(),
   'open-projector-from-detail': () => handleOpenProjectorFromDetail(),
   'filter-submissions-for-session': (el, ev, ds) => filterAndSwitchToSubmissions(ds.id),
+
+  // --- CHUYỂN ĐỔI CHẾ ĐỘ XEM ADMIN <-> MEMBER (PREVIEW MODE) ---
+  'switch-to-member-view': () => switchToMemberView(),
+  'return-to-admin-view': () => returnToAdminView(),
+  'view-as-member': (el, ev, ds) => switchToMemberView(ds.id),
 
   // --- QUẢN TRỊ SỬA / XÓA (ADMIN CRUD ACTIONS) ---
   'open-edit-session-modal': (el, ev, ds) => openEditAttendanceModal(ds.id),
@@ -387,7 +394,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const user = store.getState('user');
     if (!hash || !user) return;
 
-    if (user.role === 'ADMIN') {
+    const isViewingAsMember = sessionStorage.getItem('bht_viewing_as_member');
+
+    if (user.role === 'ADMIN' && !isViewingAsMember) {
       const adminTabs = ['submissions', 'attendance', 'members'];
       if (hash.startsWith('attendance/')) {
         const sid = hash.replace('attendance/', '').trim();

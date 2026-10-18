@@ -1337,6 +1337,15 @@ export function renderMemberRow(member = {}, options = {}) {
       </td>
       <td class="py-3 px-4 text-center">
         <div class="flex items-center justify-center gap-1.5">
+          <button 
+            data-action="view-as-member"
+            data-id="${mssv}"
+            title="Xem giao diện của thành viên ${hoTen}"
+            class="bht-btn bht-btn-ghost bht-btn-xs text-accent hover:bg-accent-soft"
+          >
+            <i class="fa-solid fa-eye text-[10px] mr-1"></i>
+            <span>Xem</span>
+          </button>
           ${m.Email ? `
             <button 
               data-action="reset-member-email"

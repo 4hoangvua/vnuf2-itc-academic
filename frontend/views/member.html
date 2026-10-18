@@ -68,6 +68,18 @@
       </button>
     </nav>
 
+    <!-- Nút Quay lại Cổng Quản Trị (Chỉ hiển thị khi Admin đang ở chế độ xem thử nghiệm) -->
+    <div id="sidebar-return-admin-container" class="hidden px-3 py-2 border-t border-hairline bg-accent-soft/30">
+      <button 
+        data-action="return-to-admin-view"
+        class="bht-btn bht-btn-primary w-full text-xs justify-center font-medium shadow-sm"
+        title="Quay lại Cổng Quản Trị Viên"
+      >
+        <i class="fa-solid fa-arrow-left mr-1.5"></i>
+        <span class="sidebar-text">Quay lại Quản trị</span>
+      </button>
+    </div>
+
     <!-- User Profile & Footer Controls -->
     <div class="p-3 border-t border-hairline bg-subtle/40 sidebar-footer shrink-0">
       <div class="flex items-center gap-3 px-2 py-2 mb-2 sidebar-footer-profile">
@@ -127,6 +139,10 @@
     </div>
 
     <div class="flex items-center gap-1.5">
+      <button id="mobile-return-admin-btn" data-action="return-to-admin-view" class="hidden bht-btn bht-btn-primary bht-btn-xs text-xs font-semibold px-2 py-1 shadow-sm flex items-center gap-1" title="Quay lại Cổng Quản Trị">
+        <i class="fa-solid fa-arrow-left text-[10px]"></i>
+        <span>Quản trị</span>
+      </button>
       <button data-action="toggle-theme" class="bht-btn bht-btn-ghost bht-btn-icon text-xs" title="Đổi giao diện">
         <i class="fa-solid fa-moon js-theme-icon"></i>
       </button>
@@ -172,6 +188,30 @@
 
   <!-- ==================== VÙNG NỘI DUNG CHÍNH (EDITORIAL CANVAS) ==================== -->
   <main class="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 max-w-5xl mx-auto w-full pb-24 md:pb-8">
+    
+    <!-- ==================== BANNER CHẾ ĐỘ XEM THỬ NGHIỆM CHO ADMIN ==================== -->
+    <div id="admin-preview-mode-banner" class="hidden mb-6 p-3.5 sm:p-4 rounded-xl border border-accent/30 bg-accent-soft/60 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-sm">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-accent text-accent-fg flex items-center justify-center text-sm shrink-0 shadow-sm">
+          <i class="fa-solid fa-eye"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs sm:text-sm font-semibold text-ink" id="admin-preview-banner-title">Chế độ xem trước: Giao diện Thành viên</span>
+            <span class="bht-badge-mono text-[10px] bg-accent-soft text-accent border border-accent/20">PREVIEW</span>
+          </div>
+          <p class="text-[11px] sm:text-xs text-ink-muted truncate" id="admin-preview-banner-desc">Bạn đang trải nghiệm giao diện với tư cách Thành viên. Phiên quản trị vẫn được bảo toàn.</p>
+        </div>
+      </div>
+      <button 
+        data-action="return-to-admin-view" 
+        class="bht-btn bht-btn-primary bht-btn-sm font-semibold text-xs shrink-0 shadow-sm flex items-center gap-1.5"
+        title="Quay lại Cổng Quản Trị Viên"
+      >
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Quay lại Cổng Quản Trị</span>
+      </button>
+    </div>
     
     <!-- ==================== TAB 1: TỔNG QUAN & NHẬT KÝ RÈN LUYỆN (BENTO GRID 12-COL) ==================== -->
     <section id="member-tab-dashboard" class="space-y-6">
