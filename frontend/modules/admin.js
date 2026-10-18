@@ -85,6 +85,13 @@ export function initAdminView(silent = true) {
     if (taskFilter) taskFilter.addEventListener('change', () => handleFilterSubmissions());
     if (memSearch) memSearch.addEventListener('input', (e) => handleFilterMembers(e.target.value));
     if (attSearch) attSearch.addEventListener('input', (e) => filterSessionAttendees(e.target.value));
+
+    // Tự động đồng bộ làm mới dữ liệu khi Admin quay lại Tab trình duyệt
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && appState.user && appState.user.role === 'ADMIN') {
+        loadAdminData(true, true);
+      }
+    });
   }
 
   // Tự động mở đúng tab theo URL Hash nếu có
