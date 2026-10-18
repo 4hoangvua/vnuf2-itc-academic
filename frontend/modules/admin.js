@@ -102,15 +102,15 @@ export function initAdminView(silent = true) {
  * Tải toàn bộ dữ liệu quản trị lần đầu khi mở app hoặc refresh
  * @param {boolean} silent Nếu true thì tải ngầm không hiện overlay loading toàn màn hình
  */
-export async function loadAdminData(silent = true) {
+export async function loadAdminData(silent = true, skipCache = false) {
   if (!silent) showGlobalLoading('Đang tải dữ liệu ban điều hành...');
 
   try {
     const [membersRes, tasksRes, subsRes, attRes] = await Promise.all([
-      callApi('getAllMembers'),
-      callApi('getAllTasks'),
-      callApi('getAllSubmissions'),
-      callApi('getAttendanceSessions')
+      callApi('getAllMembers', {}, { skipCache }),
+      callApi('getAllTasks', {}, { skipCache }),
+      callApi('getAllSubmissions', {}, { skipCache }),
+      callApi('getAttendanceSessions', {}, { skipCache })
     ]);
 
     hideGlobalLoading();
@@ -152,10 +152,10 @@ export async function loadAdminData(silent = true) {
 }
 
 /**
- * Nút làm mới dữ liệu thủ công
+ * Nút làm mới dữ liệu thủ công (bỏ qua cache để luôn lấy dữ liệu mới nhất từ máy chủ)
  */
 export function refreshAdminData() {
-  loadAdminData();
+  loadAdminData(false, true);
 }
 
 /**
