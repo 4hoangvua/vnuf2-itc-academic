@@ -765,6 +765,27 @@ body {
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Hide scrollbar for Chrome, Safari, Opera, Edge, Firefox */
+.scrollbar-none::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none,
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+}
+
+.scrollbar-none.is-dragging,
+.scrollbar-hide.is-dragging,
+.is-dragging,
+.is-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
 /* Category Filter Pills */
 .bht-category-pill {
   display: inline-flex;
@@ -779,8 +800,10 @@ body {
   border: 1px solid var(--border-subtle);
   transition: all 0.15s ease;
   white-space: nowrap;
+  flex-shrink: 0;
   cursor: pointer;
   user-select: none;
+  touch-action: manipulation;
 }
 .bht-category-pill:hover {
   background-color: var(--bg-subtle);
@@ -885,5 +908,72 @@ body {
 
 .bht-pagination-select:focus {
   border-color: var(--accent-base);
+}
+
+/* ====================================================================
+   14. HỆ THỐNG SKELETON SHIMMER LOADING (ACADEMIC SKELETON ENGINE)
+   ==================================================================== */
+.bht-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: bht-shimmer 1.8s infinite ease-in-out;
+  border-radius: 0.375rem;
+}
+
+[data-theme='light'] .bht-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 25%,
+    rgba(0, 0, 0, 0.09) 50%,
+    rgba(0, 0, 0, 0.04) 75%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes bht-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.bht-countdown-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: all 0.2s ease;
+}
+
+.bht-countdown-pill.is-imminent {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fcd34d;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+}
+
+.bht-countdown-pill.is-live {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+}
+
+.bht-countdown-pill.is-upcoming {
+  background: rgba(20, 184, 166, 0.12);
+  border: 1px solid rgba(20, 184, 166, 0.25);
+  color: #5eead4;
 }
 

@@ -22,6 +22,7 @@ export {
   setFormDisabled as setFormControlsDisabled,
   attachEventDelegation,
   attachFormDelegation,
+  initHorizontalDragScroll,
   $,
   $$
 } from '../utils/dom.js';

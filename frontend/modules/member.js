@@ -12,9 +12,15 @@ import {
   renderMemberSpotlightCard,
   renderMemberAttendanceAuditTable,
   uiTopicTagBadge,
+  formatSessionDateVN,
+  renderTopicFilterBarHtml,
+  matchesTopicCategory,
   renderTableSkeleton,
   renderCardSkeleton,
-  renderStatSkeleton
+  renderStatSkeleton,
+  renderSpotlightSkeleton,
+  renderDrlWidgetSkeleton,
+  renderAuditTableSkeleton
 } from './templates.js';
 import { 
   paginate, 
@@ -27,25 +33,41 @@ import {
 /**
  * Hiển thị các khối Skeleton nhấp nháy êm dịu trên danh sách buổi học, bài tập, học liệu của Thành viên
  */
-export function renderMemberSkeletons() {
-  const sessionsList = document.getElementById('member-sessions-list');
-  if (sessionsList && (!appState.attendance || appState.attendance.length === 0)) {
-    sessionsList.innerHTML = renderCardSkeleton(3);
+export function renderMemberSkeletons(force = false) {
+  // 1. Khung Bento Trái 7/12: Thẻ Tâm Điểm Buổi Học & Chuyên Đề Mới Nhất
+  const spotlightEl = document.getElementById('member-spotlight-container');
+  if (spotlightEl && (force || !appState.attendance || appState.attendance.length === 0)) {
+    spotlightEl.innerHTML = renderSpotlightSkeleton();
   }
 
-  const tasksList = document.getElementById('member-tasks-list');
-  if (tasksList && (!appState.tasks || appState.tasks.length === 0)) {
-    tasksList.innerHTML = renderCardSkeleton(2);
+  // 2. Khung Bento Phải 5/12: Cụm 3 Thẻ KPI Học Vụ & Tiến Độ ĐRL
+  const drlWidgetEl = document.getElementById('member-drl-widget-container');
+  if (drlWidgetEl && (force || !appState.attendance || appState.attendance.length === 0)) {
+    drlWidgetEl.innerHTML = renderDrlWidgetSkeleton();
   }
 
+  // 3. Bảng Nhật Ký Điểm Danh Học Vụ
+  const auditTbody = document.getElementById('member-attendance-audit-tbody');
+  if (auditTbody && (force || !appState.attendance || appState.attendance.length === 0)) {
+    auditTbody.innerHTML = renderAuditTableSkeleton(4);
+  }
+
+  // 4. Danh sách lộ trình chuyên đề (Tab 2)
+  const sessionFeed = document.getElementById('member-session-feed') || document.getElementById('member-sessions-grid');
+  if (sessionFeed && (force || !appState.attendance || appState.attendance.length === 0)) {
+    sessionFeed.innerHTML = renderCardSkeleton(3);
+  }
+
+  // 5. Kho học liệu & tài liệu (Tab 3)
   const docsGrid = document.getElementById('member-docs-grid');
-  if (docsGrid && (!appState.docs || appState.docs.length === 0)) {
+  if (docsGrid && (force || !appState.docs || appState.docs.length === 0)) {
     docsGrid.innerHTML = renderCardSkeleton(3);
   }
 
+  // 6. Các chỉ số Counter
   ['member-stat-attended', 'member-stat-submissions', 'member-stat-approved'].forEach(id => {
     const el = document.getElementById(id);
-    if (el && (!el.textContent.trim() || el.textContent.trim() === '0')) {
+    if (el && (force || !el.textContent.trim() || el.textContent.trim() === '0')) {
       el.innerHTML = renderStatSkeleton();
     }
   });
@@ -79,10 +101,12 @@ export function initMemberView(silent = true) {
   if (!window._memberInputsBound) {
     window._memberInputsBound = true;
     const docSearch = document.getElementById('input-search-docs');
+    const sessionSearch = document.getElementById('input-search-sessions');
     const fileInput = document.getElementById('file-upload-input');
     const pinInput = document.getElementById('input-attendance-pin');
     const detailPinInput = document.getElementById('member-detail-pin-input');
 
+    if (sessionSearch) sessionSearch.addEventListener('input', () => applySessionsFilter());
     if (docSearch) docSearch.addEventListener('input', (e) => handleSearchDocs(e.target.value));
     if (fileInput) fileInput.addEventListener('change', (e) => handleFileSelected(e.target));
     if (pinInput) pinInput.addEventListener('input', (e) => {
@@ -194,6 +218,7 @@ export async function loadMemberData(silent = true, skipCache = false) {
 }
 
 export function refreshMemberData() {
+  renderMemberSkeletons(true);
   loadMemberData(false, true); // Bỏ qua cache để luôn lấy dữ liệu mới nhất
 }
 
@@ -546,19 +571,93 @@ function renderMemberStats() {
 let currentMemberDetailSessionId = null;
 let currentMemberSessionSubTab = 'info';
 
+let currentSessionCategory = 'ALL';
+let lastMemberFilteredSessions = null;
+
+/**
+ * Lọc danh sách chuyên đề theo danh mục (Pill Buttons)
+ */
+export function filterSessionsByCategory(category) {
+  currentSessionCategory = category || 'ALL';
+  applySessionsFilter();
+}
+
+/**
+ * Áp dụng kết hợp cả Danh mục và Từ khóa tìm kiếm cho Chuyên đề
+ */
+export function applySessionsFilter() {
+  const searchInput = document.getElementById('input-search-sessions');
+  const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+  const allSessions = appState.attendance || [];
+
+  // Đồng bộ thanh filter pills động
+  const container = document.getElementById('member-sessions-categories');
+  if (container) {
+    container.innerHTML = renderTopicFilterBarHtml({
+      activeCat: currentSessionCategory,
+      items: allSessions,
+      tagField: 'TagChuyenDe',
+      actionName: 'filter-sessions-category'
+    });
+  }
+
+  const filtered = allSessions.filter(s => {
+    // 1. Lọc theo Danh mục
+    if (currentSessionCategory && currentSessionCategory !== 'ALL') {
+      if (!matchesTopicCategory(s.TagChuyenDe, currentSessionCategory)) return false;
+    }
+
+    // 2. Lọc theo Từ khóa tìm kiếm
+    if (query) {
+      const matchText = (
+        (s.TenBuoiHop || '') + ' ' +
+        (s.PhongHoc || '') + ' ' +
+        (s.NoiDungChuyenDe || '') + ' ' +
+        (s.TagChuyenDe || '') + ' ' +
+        (s.SessionID || '')
+      ).toLowerCase();
+      if (!matchText.includes(query)) return false;
+    }
+
+    return true;
+  });
+
+  lastMemberFilteredSessions = filtered;
+  resetPagination('member-sessions');
+  renderMemberSessions(filtered);
+}
+
 /**
  * Render dòng thời gian các buổi sinh hoạt chuyên đề (Giao diện thẻ gọn gàng - Compact Clean Cards)
  */
-export function renderMemberSessions() {
+export function renderMemberSessions(filteredSessions) {
   const container = document.getElementById('member-session-feed') || document.getElementById('member-sessions-grid');
   const pagEl = document.getElementById('member-sessions-pagination');
   if (!container) return;
 
-  const sessions = appState.attendance || [];
+  const allSessions = appState.attendance || [];
+
+  // Luôn cập nhật thanh filter pills động nếu container tồn tại
+  const filterContainer = document.getElementById('member-sessions-categories');
+  if (filterContainer) {
+    filterContainer.innerHTML = renderTopicFilterBarHtml({
+      activeCat: currentSessionCategory,
+      items: allSessions,
+      tagField: 'TagChuyenDe',
+      actionName: 'filter-sessions-category'
+    });
+  }
+
+  const sessions = filteredSessions !== undefined ? filteredSessions : (lastMemberFilteredSessions || appState.attendance || []);
+  lastMemberFilteredSessions = sessions;
   const user = appState.user || {};
 
   if (sessions.length === 0) {
-    container.innerHTML = emptyStateTemplate('Chưa có buổi sinh hoạt nào được lên lịch!', 'fa-calendar-xmark');
+    const isFiltered = (currentSessionCategory !== 'ALL' || (document.getElementById('input-search-sessions')?.value.trim()));
+    const msg = isFiltered 
+      ? 'Không tìm thấy buổi sinh hoạt nào phù hợp với từ khóa hoặc bộ lọc đã chọn!' 
+      : 'Chưa có buổi sinh hoạt nào được lên lịch!';
+    container.innerHTML = emptyStateTemplate(msg, 'fa-calendar-xmark');
     if (pagEl) pagEl.innerHTML = '';
     return;
   }
@@ -678,7 +777,7 @@ export function openMemberSessionDetail(sessionId, updateHash = true) {
   if (tagEl) tagEl.innerHTML = uiTopicTagBadge(s.TagChuyenDe || 'GENERAL');
   if (roomEl) roomEl.textContent = s.PhongHoc || 'Phòng Lab 02 - Tầng 3 Nhà A3';
   if (titleEl) titleEl.textContent = s.TenBuoiHop || 'Chuyên đề học thuật';
-  if (dateEl) dateEl.textContent = s.NgayDienRa ? s.NgayDienRa.replace('T', ' ') : 'Chưa xếp lịch';
+  if (dateEl) dateEl.textContent = formatSessionDateVN(s.NgayDienRa);
 
   // Điểm danh & Trạng thái nút PIN
   let ds = [];
@@ -1029,20 +1128,6 @@ let currentDocCategory = 'ALL';
  */
 export function filterDocsByCategory(category) {
   currentDocCategory = category || 'ALL';
-
-  // Cập nhật trạng thái active của các nút pill
-  const container = document.getElementById('member-docs-categories');
-  if (container) {
-    container.querySelectorAll('.bht-category-pill').forEach(btn => {
-      const cat = btn.getAttribute('data-category');
-      if (cat === currentDocCategory) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
-  }
-
   applyDocsFilter();
 }
 
@@ -1054,25 +1139,21 @@ export function applyDocsFilter() {
   const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
   const allDocs = appState.docs || [];
 
+  // Đồng bộ thanh filter pills động cho học liệu
+  const container = document.getElementById('member-docs-categories');
+  if (container) {
+    container.innerHTML = renderTopicFilterBarHtml({
+      activeCat: currentDocCategory,
+      items: allDocs,
+      tagField: 'PhanLoai',
+      actionName: 'filter-docs-category'
+    });
+  }
+
   const filtered = allDocs.filter(d => {
     // 1. Lọc theo Danh mục
     if (currentDocCategory && currentDocCategory !== 'ALL') {
-      const type = ((d.PhanLoai || '') + ' ' + (d.TenTaiLieu || '')).toLowerCase();
-      if (currentDocCategory === 'CHUAN_DAU_RA' && !(type.includes('chuẩn đầu ra') || type.includes('mos') || type.includes('ic3'))) {
-        return false;
-      }
-      if (currentDocCategory === 'WORD_DO_AN' && !(type.includes('word') || type.includes('luận văn') || type.includes('đồ án') || type.includes('khóa luận'))) {
-        return false;
-      }
-      if (currentDocCategory === 'EXCEL_DATA' && !(type.includes('excel') || type.includes('số liệu') || type.includes('dashboard') || type.includes('bảng tính'))) {
-        return false;
-      }
-      if (currentDocCategory === 'AI_TOOLS' && !(type.includes('ai') || type.includes('prompt') || type.includes('chatgpt') || type.includes('trí tuệ nhân tạo'))) {
-        return false;
-      }
-      if (currentDocCategory === 'OLYMPIC' && !(type.includes('olympic') || type.includes('thuật toán') || type.includes('đề thi') || type.includes('c++'))) {
-        return false;
-      }
+      if (!matchesTopicCategory(d.PhanLoai, currentDocCategory)) return false;
     }
 
     // 2. Lọc theo Từ khóa tìm kiếm
@@ -1098,6 +1179,19 @@ export function renderMemberDocs(filteredDocs) {
   const container = document.getElementById('member-doc-list') || document.getElementById('member-docs-grid');
   const pagEl = document.getElementById('member-docs-pagination');
   if (!container) return;
+
+  const allDocs = appState.docs || [];
+
+  // Luôn cập nhật thanh filter pills động nếu container tồn tại
+  const filterContainer = document.getElementById('member-docs-categories');
+  if (filterContainer) {
+    filterContainer.innerHTML = renderTopicFilterBarHtml({
+      activeCat: currentDocCategory,
+      items: allDocs,
+      tagField: 'PhanLoai',
+      actionName: 'filter-docs-category'
+    });
+  }
 
   const docs = filteredDocs !== undefined ? filteredDocs : (lastMemberFilteredDocs || appState.docs || []);
   lastMemberFilteredDocs = docs;

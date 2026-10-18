@@ -19,7 +19,11 @@ import {
   renderAdminTaskItem,
   renderDocCard,
   uiTopicTagBadge,
+  formatSessionDateVN,
   uiEmptyState,
+  renderTopicFilterBarHtml,
+  matchesTopicCategory,
+  extractDynamicTopics,
   renderTableSkeleton,
   renderCardSkeleton,
   renderStatSkeleton
@@ -50,6 +54,11 @@ export function renderAdminSkeletons() {
   const membersTbody = document.getElementById('admin-members-tbody');
   if (membersTbody && (!appState.members || appState.members.length === 0)) {
     membersTbody.innerHTML = renderTableSkeleton(5, 5);
+  }
+
+  const docsGrid = document.getElementById('admin-docs-grid');
+  if (docsGrid && (!appState.docs || appState.docs.length === 0)) {
+    docsGrid.innerHTML = renderCardSkeleton(3);
   }
 
   ['admin-stat-members', 'admin-stat-sessions', 'admin-stat-submissions', 'admin-stat-pending'].forEach(id => {
@@ -86,6 +95,64 @@ export function initAdminView(silent = true) {
     if (memSearch) memSearch.addEventListener('input', (e) => handleFilterMembers(e.target.value));
     if (attSearch) attSearch.addEventListener('input', (e) => filterSessionAttendees(e.target.value));
 
+    // Lắng nghe tìm kiếm kho tài liệu học thuật
+    const docSearch = document.getElementById('admin-search-docs');
+    if (docSearch) docSearch.addEventListener('input', (e) => handleSearchAdminDocs(e.target.value));
+
+    // Lắng nghe tìm kiếm buổi sinh hoạt & chuyên đề
+    const attGridSearch = document.getElementById('admin-search-attendance');
+    if (attGridSearch) attGridSearch.addEventListener('input', (e) => handleSearchAdminAttendance(e.target.value));
+
+    // Lắng nghe chọn Tag Chuyên Đề Tùy Biến
+    const attTagSelect = document.getElementById('att-input-tag');
+    if (attTagSelect) {
+      attTagSelect.addEventListener('change', (e) => {
+        const customContainer = document.getElementById('att-custom-tag-container');
+        const customInput = document.getElementById('att-input-custom-tag');
+        if (customContainer) {
+          if (e.target.value === 'CUSTOM') {
+            customContainer.classList.remove('hidden');
+            if (customInput) customInput.focus();
+          } else {
+            customContainer.classList.add('hidden');
+          }
+        }
+      });
+    }
+
+    const editAttTagSelect = document.getElementById('edit-att-tag');
+    if (editAttTagSelect) {
+      editAttTagSelect.addEventListener('change', (e) => {
+        const customContainer = document.getElementById('edit-att-custom-tag-container');
+        const customInput = document.getElementById('edit-att-input-custom-tag');
+        if (customContainer) {
+          if (e.target.value === 'CUSTOM') {
+            customContainer.classList.remove('hidden');
+            if (customInput) customInput.focus();
+          } else {
+            customContainer.classList.add('hidden');
+          }
+        }
+      });
+    }
+
+    // Lắng nghe chọn Phân loại Học liệu Tùy Biến
+    const editDocCatSelect = document.getElementById('edit-doc-category');
+    if (editDocCatSelect) {
+      editDocCatSelect.addEventListener('change', (e) => {
+        const customContainer = document.getElementById('edit-doc-custom-category-container');
+        const customInput = document.getElementById('edit-doc-input-custom-category');
+        if (customContainer) {
+          if (e.target.value === 'CUSTOM') {
+            customContainer.classList.remove('hidden');
+            if (customInput) customInput.focus();
+          } else {
+            customContainer.classList.add('hidden');
+          }
+        }
+      });
+    }
+
     // Tự động đồng bộ làm mới dữ liệu khi Admin quay lại Tab trình duyệt
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && appState.user && appState.user.role === 'ADMIN') {
@@ -96,7 +163,7 @@ export function initAdminView(silent = true) {
 
   // Tự động mở đúng tab theo URL Hash nếu có
   const currentHash = window.location.hash.replace('#', '');
-  const validTabs = ['submissions', 'tasks', 'members', 'attendance'];
+  const validTabs = ['submissions', 'tasks', 'members', 'attendance', 'docs'];
   const initialTab = validTabs.includes(currentHash) ? currentHash : 'submissions';
   switchAdminTab(initialTab, false);
 
@@ -113,11 +180,12 @@ export async function loadAdminData(silent = true, skipCache = false) {
   if (!silent) showGlobalLoading('Đang tải dữ liệu ban điều hành...');
 
   try {
-    const [membersRes, tasksRes, subsRes, attRes] = await Promise.all([
+    const [membersRes, tasksRes, subsRes, attRes, docsRes] = await Promise.all([
       callApi('getAllMembers', {}, { skipCache }),
       callApi('getAllTasks', {}, { skipCache }),
       callApi('getAllSubmissions', {}, { skipCache }),
-      callApi('getAttendanceSessions', {}, { skipCache })
+      callApi('getAttendanceSessions', {}, { skipCache }),
+      callApi('getAllDocuments', {}, { skipCache })
     ]);
 
     hideGlobalLoading();
@@ -126,6 +194,10 @@ export async function loadAdminData(silent = true, skipCache = false) {
     if (tasksRes && tasksRes.success) appState.tasks = tasksRes.data || [];
     if (subsRes && subsRes.success) appState.submissions = subsRes.data || [];
     if (attRes && attRes.success) appState.attendance = attRes.data || [];
+    if (docsRes && docsRes.success) {
+      appState.docs = docsRes.data || [];
+      appState.documents = appState.docs;
+    }
 
     renderAdminDashboard();
 
@@ -195,7 +267,7 @@ export function updateAdminStats() {
  * @param {'submissions'|'attendance'|'members'} tab
  */
 export function switchAdminTab(tab, updateHash = true) {
-  const tabs = ['submissions', 'attendance', 'members'];
+  const tabs = ['submissions', 'attendance', 'members', 'docs'];
   // Nếu truyền 'tasks' từ URL hash cũ hoặc bookmark, tự động chuyển sang 'attendance'
   const targetTab = (tab === 'tasks') ? 'attendance' : (tabs.includes(tab) ? tab : 'submissions');
 
@@ -261,6 +333,7 @@ export function renderAdminDashboard() {
   renderAdminSubmissionsTable();
   renderAdminAttendanceGrid();
   renderAdminMembersTable();
+  renderAdminDocsGrid();
 }
 
 // ====================================================================
@@ -888,22 +961,72 @@ export async function handleToggleMemberStatus(mssv, status) {
 // 4. PHÂN HỆ BUỔI SINH HOẠT & ĐIỂM DANH PIN
 // ====================================================================
 
+export function handleFilterAdminAttendance(cat) {
+  appState.adminAttendanceCategory = cat || 'ALL';
+  resetPagination('admin-attendance');
+  renderAdminAttendanceGrid();
+}
+
+export function handleSearchAdminAttendance(query) {
+  appState.adminAttendanceSearchQuery = String(query || '').trim();
+  resetPagination('admin-attendance');
+  renderAdminAttendanceGrid();
+}
+
 export function renderAdminAttendanceGrid() {
   const container = document.getElementById('admin-attendance-grid');
   const pagEl = document.getElementById('admin-attendance-pagination');
   if (!container) return;
 
   const sessions = appState.attendance || [];
+  const cat = appState.adminAttendanceCategory || 'ALL';
+  const search = (appState.adminAttendanceSearchQuery || '').toLowerCase().trim();
 
-  if (sessions.length === 0) {
-    container.innerHTML = emptyStateTemplate('Chưa có buổi sinh hoạt nào được tạo! Bấm "Tạo buổi sinh hoạt mới" để bắt đầu.', 'fa-calendar-plus');
+  // 1. Đồng bộ dải nút Filter Pills động tái sử dụng
+  const filterContainer = document.getElementById('admin-attendance-category-filters');
+  if (filterContainer) {
+    filterContainer.innerHTML = renderTopicFilterBarHtml({
+      activeCat: cat,
+      items: sessions,
+      tagField: 'TagChuyenDe',
+      actionName: 'filter-admin-attendance'
+    });
+  }
+
+  const filtered = sessions.filter(s => {
+    // 1. Lọc theo danh mục / tag
+    if (cat !== 'ALL' && !matchesTopicCategory(s.TagChuyenDe, cat)) {
+      return false;
+    }
+
+    // 2. Lọc theo từ khóa tìm kiếm
+    if (search) {
+      const matchText = (
+        (s.TenBuoiHop || '') + ' ' +
+        (s.PhongHoc || '') + ' ' +
+        (s.NoiDungChuyenDe || '') + ' ' +
+        (s.TagChuyenDe || '') + ' ' +
+        (s.SessionID || '')
+      ).toLowerCase();
+      if (!matchText.includes(search)) return false;
+    }
+
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    const isFiltered = (cat !== 'ALL' || Boolean(search));
+    const msg = isFiltered 
+      ? 'Không tìm thấy buổi sinh hoạt nào phù hợp với bộ lọc hoặc từ khóa!' 
+      : 'Chưa có buổi sinh hoạt nào được tạo! Bấm "Tạo buổi sinh hoạt mới" để bắt đầu.';
+    container.innerHTML = emptyStateTemplate(msg, 'fa-calendar-xmark');
     if (pagEl) pagEl.innerHTML = '';
     return;
   }
 
   const allTasks = appState.tasks || [];
 
-  const { pagedItems } = paginate('admin-attendance', sessions, {
+  const { pagedItems } = paginate('admin-attendance', filtered, {
     pageSize: 6,
     pageSizeOptions: [4, 6, 10, 20],
     onPageChange: () => renderAdminAttendanceGrid()
@@ -932,11 +1055,47 @@ export function generateRandomPin() {
   return pin;
 }
 
+export function populateAttendanceTagSelect(selectId, selectedValue = 'GENERAL') {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const sessions = appState.attendance || [];
+  const baseOptions = [
+    { value: 'GENERAL', label: 'Sinh hoạt & Học vụ chung' },
+    { value: 'CHUAN_DAU_RA', label: 'Chuẩn đầu ra MOS / IC3' },
+    { value: 'WORD_DO_AN', label: 'Đồ án & Luận văn Word' },
+    { value: 'EXCEL_DATA', label: 'Excel & Xử lý số liệu' },
+    { value: 'AI_TOOLS', label: 'Kỹ năng AI thực chiến' },
+    { value: 'OLYMPIC', label: 'Olympic & Thuật toán' }
+  ];
+
+  const dynamicTopics = extractDynamicTopics(sessions, 'TagChuyenDe');
+  const customTopics = dynamicTopics.filter(t => t.isCustom);
+
+  let html = baseOptions.map(opt => `<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`).join('\n');
+  if (customTopics.length > 0) {
+    html += '\n<optgroup label="── Chủ đề đã tạo trước đó ──">';
+    customTopics.forEach(t => {
+      html += `\n<option value="${escapeHtml(t.id)}">${escapeHtml(t.label)}</option>`;
+    });
+    html += '\n</optgroup>';
+  }
+  html += '\n<option value="CUSTOM">+ Thêm chủ đề mới (Tự nhập)...</option>';
+  select.innerHTML = html;
+  select.value = selectedValue;
+}
+
 export function openCreateAttendanceModal() {
   const form = document.getElementById('form-create-attendance');
   if (form) form.reset();
   setFormControlsDisabled(form, false);
   generateRandomPin();
+  populateAttendanceTagSelect('att-input-tag', 'GENERAL');
+
+  const customContainer = document.getElementById('att-custom-tag-container');
+  const customInput = document.getElementById('att-input-custom-tag');
+  if (customContainer) customContainer.classList.add('hidden');
+  if (customInput) customInput.value = '';
 
   const modal = document.getElementById('modal-create-attendance');
   if (modal) modal.classList.remove('hidden');
@@ -958,7 +1117,17 @@ export async function handleCreateAttendanceSession(e) {
   const pinInput = document.getElementById('att-input-pin');
 
   const title = titleInput ? titleInput.value.trim() : '';
-  const tag = document.getElementById('att-input-tag') ? document.getElementById('att-input-tag').value : 'GENERAL';
+  const tagSelect = document.getElementById('att-input-tag');
+  let tag = tagSelect ? tagSelect.value : 'GENERAL';
+  if (tag === 'CUSTOM') {
+    const customInput = document.getElementById('att-input-custom-tag');
+    const customVal = customInput ? customInput.value.trim() : '';
+    if (!customVal) {
+      showFormError(form, 'Vui lòng nhập tên chủ đề tùy chỉnh!', customInput);
+      return;
+    }
+    tag = customVal;
+  }
   const room = document.getElementById('att-input-room') ? document.getElementById('att-input-room').value.trim() : 'Phòng Lab 02 - Tầng 3 Nhà A3';
   const date = document.getElementById('att-input-date') ? document.getElementById('att-input-date').value : '';
   const desc = document.getElementById('att-input-desc') ? document.getElementById('att-input-desc').value.trim() : '';
@@ -1019,7 +1188,9 @@ export async function handleCreateAttendanceSession(e) {
         BaiTap: null
       };
       appState.attendance.unshift(newSession);
-
+      appState.adminAttendanceCategory = 'ALL';
+      appState.adminAttendanceSearchQuery = '';
+      resetPagination('admin-attendance');
       renderAdminAttendanceGrid();
       showToast('Đã tạo buổi học! Bạn có thể thiết lập mã PIN và bài tập ngay.', 'success');
 
@@ -1082,7 +1253,7 @@ export function openAdminSessionDetail(sessionId, updateHash = true) {
   if (tagEl) tagEl.innerHTML = uiTopicTagBadge(session.TagChuyenDe || 'GENERAL');
   if (roomEl) roomEl.textContent = session.PhongHoc || 'Phòng Lab 02 - Nhà A3';
   if (titleEl) titleEl.textContent = session.TenBuoiHop;
-  if (dateEl) dateEl.textContent = session.NgayDienRa ? session.NgayDienRa.replace('T', ' ') : 'Chưa xếp lịch';
+  if (dateEl) dateEl.textContent = formatSessionDateVN(session.NgayDienRa);
 
   const isOpen = String(session.TrangThai || '').toLowerCase() === 'open';
   if (statusEl) {
@@ -1619,7 +1790,24 @@ export function openEditAttendanceModal(sessionId) {
 
   if (idInput) idInput.value = session.SessionID;
   if (titleInput) titleInput.value = session.TenBuoiHop || '';
-  if (tagSelect) tagSelect.value = session.TagChuyenDe || 'GENERAL';
+
+  const knownTags = ['GENERAL', 'CHUAN_DAU_RA', 'WORD_DO_AN', 'EXCEL_DATA', 'AI_TOOLS', 'OLYMPIC'];
+  const sessionTag = session.TagChuyenDe || 'GENERAL';
+  const customTagContainer = document.getElementById('edit-att-custom-tag-container');
+  const customTagInput = document.getElementById('edit-att-input-custom-tag');
+
+  if (tagSelect) {
+    if (knownTags.includes(sessionTag)) {
+      tagSelect.value = sessionTag;
+      if (customTagContainer) customTagContainer.classList.add('hidden');
+      if (customTagInput) customTagInput.value = '';
+    } else {
+      tagSelect.value = 'CUSTOM';
+      if (customTagContainer) customTagContainer.classList.remove('hidden');
+      if (customTagInput) customTagInput.value = sessionTag;
+    }
+  }
+
   if (roomInput) roomInput.value = session.PhongHoc || '';
   if (dateInput) dateInput.value = session.NgayDienRa || '';
   if (pinInput) pinInput.value = session.MaPin || '';
@@ -1649,7 +1837,17 @@ export async function handleUpdateAttendanceSession(e) {
   const linkInput = document.getElementById('edit-att-link');
 
   const title = titleInput?.value.trim();
-  const tag = document.getElementById('edit-att-tag')?.value || 'GENERAL';
+  const tagSelect = document.getElementById('edit-att-tag');
+  let tag = tagSelect?.value || 'GENERAL';
+  if (tag === 'CUSTOM') {
+    const customInput = document.getElementById('edit-att-input-custom-tag');
+    const customVal = customInput ? customInput.value.trim() : '';
+    if (!customVal) {
+      showFormError(form, 'Vui lòng nhập tên chủ đề tùy chỉnh!', customInput);
+      return;
+    }
+    tag = customVal;
+  }
   const room = document.getElementById('edit-att-room')?.value.trim() || '';
   const date = document.getElementById('edit-att-date')?.value || '';
   const pin = pinInput?.value.trim() || '';
@@ -1919,6 +2117,127 @@ export async function handleDeleteTask(taskId) {
   }
 }
 
+// ====================================================================
+// 4. PHÂN HỆ QUẢN LÝ KHO HỌC LIỆU & SLIDE ĐA PHƯƠNG TIỆN
+// ====================================================================
+
+/**
+ * Lọc tài liệu theo danh mục (Pills)
+ * @param {string} category Mã phân loại hoặc 'ALL'
+ */
+export function handleFilterAdminDocs(category = 'ALL') {
+  appState.adminDocCategory = category;
+  resetPagination('admin-docs');
+  renderAdminDocsGrid();
+}
+
+/**
+ * Tìm kiếm tài liệu theo từ khóa
+ * @param {string} query Từ khóa tìm kiếm
+ */
+export function handleSearchAdminDocs(query = '') {
+  appState.adminDocSearchQuery = String(query).toLowerCase().trim();
+  resetPagination('admin-docs');
+  renderAdminDocsGrid();
+}
+
+/**
+ * Render Lưới Tài Liệu Học Thuật trong Quản Trị
+ */
+export function renderAdminDocsGrid() {
+  const grid = document.getElementById('admin-docs-grid');
+  const pagEl = document.getElementById('admin-docs-pagination');
+  if (!grid) return;
+
+  const docs = appState.documents || appState.docs || [];
+  const cat = appState.adminDocCategory || 'ALL';
+  const search = appState.adminDocSearchQuery || '';
+
+  // 1. Đồng bộ dải nút Filter Pills động tái sử dụng (Tự động phát hiện tag mới)
+  const filterContainer = document.getElementById('admin-doc-category-filters');
+  if (filterContainer) {
+    filterContainer.innerHTML = renderTopicFilterBarHtml({
+      activeCat: cat,
+      items: docs,
+      tagField: 'PhanLoai',
+      actionName: 'filter-admin-docs'
+    });
+  }
+
+  const filtered = docs.filter(d => {
+    // 1. Lọc theo danh mục dùng hàm so sánh taxonomy chuẩn
+    let matchCat = true;
+    if (cat !== 'ALL') {
+      matchCat = matchesTopicCategory(d.PhanLoai, cat);
+    }
+
+    // 2. Lọc theo từ khóa tìm kiếm
+    let matchSearch = true;
+    if (search) {
+      matchSearch = String(d.TenTaiLieu || '').toLowerCase().includes(search) ||
+                    String(d.PhanLoai || '').toLowerCase().includes(search) ||
+                    String(d.MoTa || '').toLowerCase().includes(search) ||
+                    String(d.DocID || '').toLowerCase().includes(search);
+    }
+
+    return matchCat && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="col-span-full bht-card p-8 text-center text-ink-muted">
+        <i class="fa-solid fa-box-open text-3xl mb-2 text-ink-faint"></i>
+        <p class="text-sm">Không tìm thấy tài liệu học thuật nào phù hợp!</p>
+      </div>
+    `;
+    if (pagEl) pagEl.innerHTML = '';
+    return;
+  }
+
+  const { pagedItems } = paginate('admin-docs', filtered, {
+    pageSize: 6,
+    pageSizeOptions: [6, 12, 24, 48],
+    onPageChange: () => renderAdminDocsGrid()
+  });
+
+  grid.innerHTML = pagedItems.map(d => renderDocCard(d, { isAdmin: true })).join('');
+
+  if (pagEl) {
+    pagEl.innerHTML = renderPagination('admin-docs');
+  }
+}
+
+export function populateDocCategorySelect(selectedValue = 'Slide') {
+  const catSelect = document.getElementById('edit-doc-category');
+  if (!catSelect) return;
+
+  const docs = appState.documents || appState.docs || [];
+  const baseOptions = [
+    { value: 'Slide', label: 'Slide bài giảng' },
+    { value: 'Chuẩn đầu ra MOS/IC3', label: 'Chuẩn đầu ra MOS/IC3' },
+    { value: 'Word & Đồ án', label: 'Word & Đồ án' },
+    { value: 'Excel & Số liệu', label: 'Excel & Số liệu' },
+    { value: 'Prompt AI & Tools', label: 'Prompt AI & Tools' },
+    { value: 'Olympic & Thuật toán', label: 'Olympic & Thuật toán' },
+    { value: 'Ebook & Sách', label: 'Ebook & Sách' }
+  ];
+
+  const dynamicTopics = extractDynamicTopics(docs, 'PhanLoai');
+  const customTopics = dynamicTopics.filter(t => t.isCustom);
+
+  let html = baseOptions.map(opt => `<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`).join('\n');
+  if (customTopics.length > 0) {
+    html += '\n<optgroup label="── Phân loại đã tạo trước đó ──">';
+    customTopics.forEach(t => {
+      html += `\n<option value="${escapeHtml(t.id)}">${escapeHtml(t.label)}</option>`;
+    });
+    html += '\n</optgroup>';
+  }
+  html += '\n<option value="CUSTOM">+ Thêm phân loại mới (Tự nhập)...</option>';
+  catSelect.innerHTML = html;
+  catSelect.value = selectedValue;
+}
+
 /**
  * Quản lý Kho học liệu / Tài liệu: Thêm, Sửa, Xóa
  */
@@ -1927,13 +2246,20 @@ export function openCreateDocModal() {
   const heading = document.getElementById('modal-doc-heading');
   const form = document.getElementById('form-edit-doc');
   if (form) form.reset();
-  document.getElementById('edit-doc-id').value = '';
+  const idInput = document.getElementById('edit-doc-id');
+  if (idInput) idInput.value = '';
+  const customContainer = document.getElementById('edit-doc-custom-category-container');
+  if (customContainer) customContainer.classList.add('hidden');
+  const customInput = document.getElementById('edit-doc-input-custom-category');
+  if (customInput) customInput.value = '';
+  populateDocCategorySelect('Slide');
   if (heading) heading.textContent = 'Thêm Tài Liệu Mới Vào Kho';
   if (modal) modal.classList.remove('hidden');
 }
 
 export function openEditDocModal(docId) {
-  const doc = (appState.documents || []).find(d => d.DocID === docId);
+  const docs = appState.documents || appState.docs || [];
+  const doc = docs.find(d => d.DocID === docId);
   if (!doc) {
     showToast('Không tìm thấy tài liệu!', 'error');
     return;
@@ -1948,12 +2274,27 @@ export function openEditDocModal(docId) {
   const catSelect = document.getElementById('edit-doc-category');
   const linkInput = document.getElementById('edit-doc-link');
   const descInput = document.getElementById('edit-doc-desc');
+  const customContainer = document.getElementById('edit-doc-custom-category-container');
+  const customInput = document.getElementById('edit-doc-input-custom-category');
 
   if (idInput) idInput.value = doc.DocID;
   if (titleInput) titleInput.value = doc.TenTaiLieu || '';
-  if (catSelect) catSelect.value = doc.PhanLoai || 'Slide';
   if (linkInput) linkInput.value = doc.LinkDrive || '';
   if (descInput) descInput.value = doc.MoTa || '';
+
+  const defaultCategories = ['Slide', 'Chuẩn đầu ra MOS/IC3', 'Word & Đồ án', 'Excel & Số liệu', 'Prompt AI & Tools', 'Olympic & Thuật toán', 'Ebook & Sách'];
+  const docCategory = doc.PhanLoai || 'Slide';
+
+  populateDocCategorySelect(docCategory);
+
+  if (defaultCategories.includes(docCategory) || catSelect?.value === docCategory) {
+    if (customContainer) customContainer.classList.add('hidden');
+    if (customInput) customInput.value = '';
+  } else {
+    if (catSelect) catSelect.value = 'CUSTOM';
+    if (customContainer) customContainer.classList.remove('hidden');
+    if (customInput) customInput.value = docCategory;
+  }
 
   if (modal) modal.classList.remove('hidden');
 }
@@ -1973,7 +2314,16 @@ export async function handleSaveDocument(e) {
   const linkInput = document.getElementById('edit-doc-link');
 
   const title = titleInput?.value.trim();
-  const category = document.getElementById('edit-doc-category')?.value || 'Slide';
+  let category = document.getElementById('edit-doc-category')?.value || 'Slide';
+  if (category === 'CUSTOM') {
+    const customInput = document.getElementById('edit-doc-input-custom-category');
+    const customVal = customInput?.value.trim();
+    if (!customVal) {
+      showFormError(form, 'Vui lòng nhập tên phân loại học liệu mới!', customInput);
+      return;
+    }
+    category = customVal;
+  }
   const link = linkInput?.value.trim();
   const desc = document.getElementById('edit-doc-desc')?.value.trim() || '';
 
@@ -2011,8 +2361,9 @@ export async function handleSaveDocument(e) {
       showToast(res.message || 'Lưu tài liệu thành công!', 'success');
       closeEditDocModal();
 
+      const docs = appState.documents || appState.docs || [];
       if (isEdit) {
-        const d = (appState.documents || []).find(x => x.DocID === docId);
+        const d = docs.find(x => x.DocID === docId);
         if (d) {
           d.TenTaiLieu = title;
           d.PhanLoai = category;
@@ -2020,15 +2371,22 @@ export async function handleSaveDocument(e) {
           d.MoTa = desc;
         }
       } else {
-        appState.documents = appState.documents || [];
-        appState.documents.unshift({
+        const newDoc = {
           DocID: res.docId || ('DOC_' + Date.now()),
           TenTaiLieu: title,
           PhanLoai: category,
           LinkDrive: link,
           MoTa: desc
-        });
+        };
+        docs.unshift(newDoc);
       }
+      appState.documents = docs;
+      appState.docs = docs;
+      appState.adminDocCategory = 'ALL';
+      appState.adminDocSearchQuery = '';
+      resetPagination('admin-docs');
+      renderAdminDocsGrid();
+      populateDocCategorySelect(category);
     } else {
       showFormError(form, (res && res.message) ? res.message : 'Không thể lưu tài liệu!');
     }
@@ -2041,7 +2399,8 @@ export async function handleSaveDocument(e) {
 
 export async function handleDeleteDocument(docId) {
   if (!docId) return;
-  const doc = (appState.documents || []).find(d => d.DocID === docId);
+  const docs = appState.documents || appState.docs || [];
+  const doc = docs.find(d => d.DocID === docId);
   const docTitle = doc ? doc.TenTaiLieu : docId;
 
   const confirmed = window.confirm(`Bạn có chắc muốn XÓA tài liệu "${docTitle}" khỏi kho học liệu?`);
@@ -2051,7 +2410,10 @@ export async function handleDeleteDocument(docId) {
     const res = await callApi('deleteDocument', { docId });
     if (res && res.success) {
       showToast(res.message || 'Đã xóa tài liệu!', 'success');
-      appState.documents = (appState.documents || []).filter(d => d.DocID !== docId);
+      const updatedDocs = docs.filter(d => d.DocID !== docId);
+      appState.documents = updatedDocs;
+      appState.docs = updatedDocs;
+      renderAdminDocsGrid();
     } else {
       showToast((res && res.message) ? res.message : 'Không thể xóa tài liệu!', 'error');
     }

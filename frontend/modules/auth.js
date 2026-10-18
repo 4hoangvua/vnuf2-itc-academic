@@ -12,7 +12,7 @@ import { initAdminView } from './admin.js';
  */
 export async function checkAuthSession() {
   const cachedMssv = localStorage.getItem('bht_mssv') || '';
-  const cachedRole = localStorage.getItem('bht_role') || '';
+  const cachedRole = String(localStorage.getItem('bht_role') || '').trim().toUpperCase();
   const currentToken = getToken();
 
   // 1. Optimistic Shell: Hiển thị ngay khung giao diện tĩnh 0ms trước khi fetch API
@@ -380,12 +380,14 @@ export async function handleLogout() {
  */
 function handleAuthSuccess(user, token) {
   const currentToken = token || getToken();
+  const cleanRole = String(user.role || 'MEMBER').trim().toUpperCase();
+  user.role = cleanRole;
   store.setState({ user: user, token: currentToken });
   localStorage.setItem('bht_mssv', user.mssv);
-  localStorage.setItem('bht_role', user.role || 'MEMBER');
+  localStorage.setItem('bht_role', cleanRole);
   sessionStorage.setItem('bht_user', JSON.stringify(user));
 
-  if (user.role === 'ADMIN') {
+  if (cleanRole === 'ADMIN') {
     initAdminView(true);
   } else {
     initMemberView(true);

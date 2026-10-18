@@ -201,12 +201,71 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         <!-- Cột trái (7/12) - Thẻ Sự kiện đang diễn ra (Featured Live Event Card) -->
         <div id="member-spotlight-container" class="lg:col-span-7 flex flex-col">
-          <!-- Rendered dynamically via renderMemberSpotlightCard() -->
+          <div class="relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0B0F17] via-[#07241d]/40 to-[#041a15]/40 p-5 sm:p-6 flex flex-col justify-between h-full min-h-[260px] animate-pulse">
+            <div>
+              <div class="flex flex-wrap items-center justify-between gap-2.5 mb-4">
+                <div class="flex items-center gap-2">
+                  <div class="h-6 w-28 rounded-full bht-skeleton"></div>
+                  <div class="h-6 w-24 rounded-full bht-skeleton"></div>
+                </div>
+                <div class="h-6 w-36 rounded-full bht-skeleton hidden sm:block"></div>
+              </div>
+              <div class="space-y-2.5 mb-4">
+                <div class="h-7 w-3/4 rounded-lg bht-skeleton"></div>
+                <div class="h-5 w-1/2 rounded-lg bht-skeleton"></div>
+              </div>
+              <div class="flex flex-wrap items-center gap-4 p-3 rounded-xl bg-slate-950/40 border border-white/5 mb-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-4 h-4 rounded-full bht-skeleton"></div>
+                  <div class="h-4 w-32 rounded bht-skeleton"></div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-4 h-4 rounded-full bht-skeleton"></div>
+                  <div class="h-4 w-40 rounded bht-skeleton"></div>
+                </div>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+              <div class="h-9 w-40 rounded-lg bht-skeleton"></div>
+              <div class="h-9 w-36 rounded-lg bht-skeleton"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Cột phải (5/12) - Cụm 3 thẻ KPI trực quan (Bento Stats) -->
         <div id="member-drl-widget-container" class="lg:col-span-5 flex flex-col justify-between gap-3">
-          <!-- Rendered dynamically via renderMemberDrlWidget() -->
+          <div class="flex flex-col justify-between gap-3 h-full animate-pulse">
+            <div class="bht-card p-4 rounded-xl border border-hairline bg-surface/80 flex items-center justify-between gap-3">
+              <div class="space-y-2 flex-1 min-w-0">
+                <div class="h-3 w-32 rounded bht-skeleton"></div>
+                <div class="h-5 w-44 rounded-lg bht-skeleton"></div>
+                <div class="h-3 w-28 rounded bht-skeleton"></div>
+              </div>
+              <div class="w-12 h-12 rounded-full bht-skeleton shrink-0"></div>
+            </div>
+            <div class="bht-card p-4 rounded-xl border border-hairline bg-surface/80 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                  <div class="h-3 w-28 rounded bht-skeleton"></div>
+                  <div class="h-5 w-40 rounded-lg bht-skeleton"></div>
+                </div>
+                <div class="h-6 w-12 rounded-full bht-skeleton"></div>
+              </div>
+              <div class="h-2 w-full rounded-full bht-skeleton"></div>
+              <div class="flex justify-between items-center">
+                <div class="h-3 w-36 rounded bht-skeleton"></div>
+                <div class="h-3 w-16 rounded bht-skeleton"></div>
+              </div>
+            </div>
+            <div class="bht-card p-4 rounded-xl border border-hairline bg-surface/80 flex items-center justify-between gap-3">
+              <div class="space-y-2 flex-1 min-w-0">
+                <div class="h-3 w-36 rounded bht-skeleton"></div>
+                <div class="h-5 w-28 rounded-lg bht-skeleton"></div>
+                <div class="h-3 w-32 rounded bht-skeleton"></div>
+              </div>
+              <div class="h-6 w-20 rounded-full bht-skeleton shrink-0"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -267,7 +326,20 @@
               </tr>
             </thead>
             <tbody id="member-attendance-audit-tbody" class="divide-y divide-hairline">
-              <!-- Rendered via renderMemberAttendanceAuditTable() -->
+              <tr class="animate-pulse border-b border-hairline">
+                <td class="p-3.5 pl-4 w-16"><div class="w-11 h-11 rounded-xl bht-skeleton"></div></td>
+                <td class="p-3.5"><div class="h-4 w-3/4 max-w-sm rounded-md bht-skeleton mb-2"></div><div class="flex items-center gap-2"><div class="h-3 w-24 rounded bht-skeleton"></div><div class="h-3 w-32 rounded bht-skeleton"></div></div></td>
+                <td class="p-3.5 text-center hidden md:table-cell"><div class="h-5 w-20 rounded-full bht-skeleton mx-auto"></div></td>
+                <td class="p-3.5 text-center"><div class="h-5.5 w-20 rounded-full bht-skeleton mx-auto"></div></td>
+                <td class="p-3.5 pr-4 text-right"><div class="h-8 w-20 rounded-lg bht-skeleton ml-auto"></div></td>
+              </tr>
+              <tr class="animate-pulse border-b border-hairline">
+                <td class="p-3.5 pl-4 w-16"><div class="w-11 h-11 rounded-xl bht-skeleton"></div></td>
+                <td class="p-3.5"><div class="h-4 w-3/4 max-w-sm rounded-md bht-skeleton mb-2"></div><div class="flex items-center gap-2"><div class="h-3 w-24 rounded bht-skeleton"></div><div class="h-3 w-32 rounded bht-skeleton"></div></div></td>
+                <td class="p-3.5 text-center hidden md:table-cell"><div class="h-5 w-20 rounded-full bht-skeleton mx-auto"></div></td>
+                <td class="p-3.5 text-center"><div class="h-5.5 w-20 rounded-full bht-skeleton mx-auto"></div></td>
+                <td class="p-3.5 pr-4 text-right"><div class="h-8 w-20 rounded-lg bht-skeleton ml-auto"></div></td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -277,7 +349,8 @@
 
     <!-- ==================== TAB 2: LỘ TRÌNH CHUYÊN ĐỀ & BÀI TẬP ==================== -->
     <section id="member-tab-sessions" class="hidden space-y-4">
-      <div class="flex items-center justify-between pb-2 border-b border-hairline">
+      <!-- Header & Search Toolbar (Tối ưu responsive: full-width trên mobile, sm:w-72 trên tablet/desktop) -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-hairline">
         <div>
           <h3 class="bht-heading-serif text-lg font-semibold text-ink flex items-center gap-2">
             <i class="fa-solid fa-route text-accent text-sm"></i>
@@ -285,7 +358,24 @@
           </h3>
           <p class="text-xs text-ink-muted">Toàn bộ chuyên đề chuẩn bị chứng chỉ MOS/IC3, kỹ năng viết luận văn Word, xử lý dữ liệu Excel và ứng dụng AI</p>
         </div>
-        <span class="text-xs text-ink-muted font-mono hidden sm:inline">Học kỳ 2026-2027</span>
+
+        <!-- Search Bar -->
+        <div class="relative w-full sm:w-72">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-faint">
+            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+          </div>
+          <input 
+            type="text" 
+            id="input-search-sessions" 
+            placeholder="Tìm theo tên chuyên đề, phòng học..." 
+            class="bht-input pl-8 text-xs sm:text-sm"
+          >
+        </div>
+      </div>
+
+      <!-- Category Filter Pills (Vuốt ngang mượt mà trên điện thoại - render động tái sử dụng) -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs select-none scrollbar-none" id="member-sessions-categories">
+        <!-- Rendered dynamically via renderTopicFilterBarHtml -->
       </div>
 
       <!-- Roadmap Timeline Container -->
@@ -459,56 +549,9 @@
         </div>
       </div>
 
-      <!-- Category Filter Pills (Chuẩn đầu ra, Word, Excel, AI, Olympic) -->
+      <!-- Category Filter Pills (Vuốt ngang mượt mà trên điện thoại - render động tái sử dụng) -->
       <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs select-none scrollbar-none" id="member-docs-categories">
-        <button 
-          data-action="filter-docs-category" 
-          data-category="ALL"
-          class="bht-category-pill active"
-        >
-          <i class="fa-solid fa-shapes"></i>
-          <span>Tất cả</span>
-        </button>
-        <button 
-          data-action="filter-docs-category" 
-          data-category="CHUAN_DAU_RA"
-          class="bht-category-pill"
-        >
-          <i class="fa-solid fa-certificate"></i>
-          <span>Chuẩn đầu ra MOS/IC3</span>
-        </button>
-        <button 
-          data-action="filter-docs-category" 
-          data-category="WORD_DO_AN"
-          class="bht-category-pill"
-        >
-          <i class="fa-solid fa-file-word"></i>
-          <span>Word Khóa luận & Đồ án</span>
-        </button>
-        <button 
-          data-action="filter-docs-category" 
-          data-category="EXCEL_DATA"
-          class="bht-category-pill"
-        >
-          <i class="fa-solid fa-file-excel"></i>
-          <span>Excel & Xử lý số liệu</span>
-        </button>
-        <button 
-          data-action="filter-docs-category" 
-          data-category="AI_TOOLS"
-          class="bht-category-pill"
-        >
-          <i class="fa-solid fa-wand-magic-sparkles"></i>
-          <span>Prompt AI & Kỹ năng</span>
-        </button>
-        <button 
-          data-action="filter-docs-category" 
-          data-category="OLYMPIC"
-          class="bht-category-pill"
-        >
-          <i class="fa-solid fa-award"></i>
-          <span>Olympic & Thuật toán</span>
-        </button>
+        <!-- Rendered dynamically via renderTopicFilterBarHtml -->
       </div>
 
       <div id="member-doc-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">

@@ -9,9 +9,23 @@ export const INITIAL_MOCK_DATA = {
   // 1. Danh sách thành viên mẫu
   members: [
     {
+      MSSV: '257480104007',
+      HoTen: 'Trần Đình Hoàng',
+      Email: 'hoangstricker@gmail.com',
+      Lop: 'K70-HTTT',
+      'Lớp': 'K70-HTTT',
+      Ban: 'Ban học thuật',
+      Role: 'ADMIN',
+      TrangThai: 'Active',
+      NgayThamGia: '18/10/2026'
+    },
+    {
       MSSV: '2251120001',
       HoTen: 'Nguyễn Văn Hoàng',
       Email: 'hoangnv.vnuf2@gmail.com',
+      Lop: 'K67-HTTT',
+      'Lớp': 'K67-HTTT',
+      Ban: 'Ban học thuật',
       Role: 'ADMIN',
       TrangThai: 'Active',
       NgayThamGia: '10/09/2024'
@@ -20,6 +34,9 @@ export const INITIAL_MOCK_DATA = {
       MSSV: '2251120002',
       HoTen: 'Trần Thị Thu Trang',
       Email: 'thutrang.cntt@gmail.com',
+      Lop: 'K67-CNTT',
+      'Lớp': 'K67-CNTT',
+      Ban: 'Ban học thuật',
       Role: 'ADMIN',
       TrangThai: 'Active',
       NgayThamGia: '15/09/2024'
@@ -28,6 +45,9 @@ export const INITIAL_MOCK_DATA = {
       MSSV: '2351120015',
       HoTen: 'Lê Hoàng Minh',
       Email: 'minhlh.k68@gmail.com',
+      Lop: 'K68-CNTT',
+      'Lớp': 'K68-CNTT',
+      Ban: 'Ban học thuật',
       Role: 'MEMBER',
       TrangThai: 'Active',
       NgayThamGia: '01/10/2025'
@@ -36,6 +56,9 @@ export const INITIAL_MOCK_DATA = {
       MSSV: '2351120028',
       HoTen: 'Phạm Phương Anh',
       Email: 'phuonganh.cntt@gmail.com',
+      Lop: 'K68-HTTT',
+      'Lớp': 'K68-HTTT',
+      Ban: 'Ban học thuật',
       Role: 'MEMBER',
       TrangThai: 'Active',
       NgayThamGia: '05/10/2025'
@@ -44,6 +67,9 @@ export const INITIAL_MOCK_DATA = {
       MSSV: '2451120033',
       HoTen: 'Vũ Quốc Bảo',
       Email: '',
+      Lop: 'K69-CNTT',
+      'Lớp': 'K69-CNTT',
+      Ban: 'Ban học thuật',
       Role: 'MEMBER',
       TrangThai: 'Active',
       NgayThamGia: '10/10/2026'
@@ -52,6 +78,9 @@ export const INITIAL_MOCK_DATA = {
       MSSV: '2251120099',
       HoTen: 'Đỗ Tiến Đạt',
       Email: 'tiendat.old@gmail.com',
+      Lop: 'K67-CNTT',
+      'Lớp': 'K67-CNTT',
+      Ban: 'Ban học thuật',
       Role: 'MEMBER',
       TrangThai: 'Inactive',
       NgayThamGia: '01/09/2023'
@@ -403,6 +432,28 @@ export function getLocalMockState() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
+      let hasChanges = false;
+      // Tự động đồng bộ các thành viên và Role mới nhất vào mock store
+      if (parsed.members) {
+        INITIAL_MOCK_DATA.members.forEach(initM => {
+          const existing = parsed.members.find(m => m.MSSV === initM.MSSV);
+          if (existing) {
+            if (existing.Role !== initM.Role || existing.Lop !== initM.Lop || existing.Ban !== initM.Ban) {
+              existing.Role = initM.Role;
+              existing.Lop = initM.Lop;
+              existing['Lớp'] = initM['Lớp'];
+              existing.Ban = initM.Ban;
+              hasChanges = true;
+            }
+          } else {
+            parsed.members.unshift(initM);
+            hasChanges = true;
+          }
+        });
+      }
+      if (hasChanges) {
+        localStorage.setItem('bht_mock_store', JSON.stringify(parsed));
+      }
       // Nếu store cũ chưa có bộ học liệu mới hoặc chưa có submissions đầy đủ, tự động làm mới
       if (parsed.documents && parsed.documents.some(d => d.DocID === 'DOC_MOS_001') && 
           parsed.attendance && parsed.attendance.some(s => s.PhongHoc) &&
@@ -458,6 +509,8 @@ export async function handleMockAction(action, payload) {
               mssv: member.MSSV,
               hoTen: member.HoTen,
               email: member.Email,
+              lop: member.Lop || member['Lớp'] || '',
+              ban: member.Ban || '',
               role: member.Role,
               trangThai: member.TrangThai,
               ngayThamGia: member.NgayThamGia
@@ -553,10 +606,15 @@ export async function handleMockAction(action, payload) {
       if (state.members.some(m => m.MSSV === newMssv)) {
         return { success: false, message: `MSSV ${newMssv} đã tồn tại!` };
       }
+      const cleanLop = String(data.lop || data.Lop || data['Lớp'] || '').trim();
+      const cleanBan = String(data.ban || data.Ban || 'Ban học thuật').trim();
       const newMem = {
         MSSV: newMssv,
         HoTen: String(data.hoTen || '').trim(),
         Email: '',
+        Lop: cleanLop,
+        'Lớp': cleanLop,
+        Ban: cleanBan,
         Role: (data.role || 'MEMBER').toUpperCase(),
         TrangThai: 'Active',
         NgayThamGia: new Date().toLocaleDateString('vi-VN')

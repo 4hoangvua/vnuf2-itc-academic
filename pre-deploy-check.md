@@ -14,7 +14,7 @@
 | **I/O Google Sheets** | 100% đọc/ghi theo lô (Batch I/O) qua `DbHelper` | Grep `getValue()` / `setValue()` trong code |
 | **Frontend Code** | 0 `window.*`, 0 `onclick` inline, 100% `data-action` | `git grep "onclick"` |
 | **Cache Busting** | Đánh số phiên bản `?v=...` chống dính cache cũ | Kiểm tra thẻ `<script>` / `<link>` trong `index.html` |
-| **Automated Tests** | 14/14 core architecture unit tests PASSED | Chạy `node test_core.mjs` |
+| **Automated Tests** | 121/121 core architecture & component unit tests PASSED | Chạy `node test_core.mjs` |
 
 ---
 
@@ -72,7 +72,7 @@
     ```powershell
     node test_core.mjs
     ```
-    Kết quả bắt buộc: `ALL 14 CORE ARCHITECTURE TESTS PASSED! (0 failures)`.
+    Kết quả bắt buộc: `ALL 121 CORE ARCHITECTURE & UI COMPONENT TESTS PASSED! (0 failures)`.
 
 ---
 

@@ -19,7 +19,7 @@ description: Quy trình kiểm tra toàn diện trước khi deploy hệ thống
 | **I/O Google Sheets** | 100% đọc/ghi theo lô (Batch I/O) qua `DbHelper` | Grep `getValue()` / `setValue()` trong code |
 | **Frontend Code** | 0 `window.*`, 0 `onclick` inline, 100% `data-action` | `git grep "onclick"` |
 | **Cache Busting** | Đánh số phiên bản `?v=...` chống dính cache cũ | Kiểm tra thẻ `<script>` / `<link>` trong `index.html` |
-| **Automated Tests** | 14/14 core architecture unit tests PASSED | Chạy `node test_core.mjs` |
+| **Automated Tests** | 121/121 core architecture & component unit tests PASSED | Chạy `node test_core.mjs` |
 
 ---
 
@@ -77,7 +77,7 @@ description: Quy trình kiểm tra toàn diện trước khi deploy hệ thống
     ```powershell
     node test_core.mjs
     ```
-    Kết quả bắt buộc: `ALL 14 CORE ARCHITECTURE TESTS PASSED! (0 failures)`.
+    Kết quả bắt buộc: `ALL 121 CORE ARCHITECTURE & UI COMPONENT TESTS PASSED! (0 failures)`.
 
 ---
 
@@ -99,6 +99,10 @@ Khi deploy lên GitHub Pages hoặc Web Server, trình duyệt của sinh viên 
     - **Execute as:** `Me (tài khoản Google của bạn)`.
     - **Who has access:** `Anyone`.
   - Copy URL dạng `https://script.google.com/macros/s/.../exec` để cấu hình vào Frontend.
+- [ ] **12. Phân Tách Tuyệt Đối Kênh Deploy Git (GitHub) vs Clasp (Google Apps Script):**
+  - **Deploy Backend:** Chạy `npx @google/clasp push` (hoặc `clasp push`) trực tiếp từ local lên Apps Script.
+  - **Đồng bộ Backend:** Chạy `npx @google/clasp pull` khi có thay đổi trên Apps Script console.
+  - **Push Frontend:** Kiểm tra `.gitignore` luôn chứa `.clasp.json` và `gas-backend/`. Chỉ push mã nguồn `frontend/`, tài liệu và config lên GitHub. Không xóa folder `gas-backend/` trên máy local.
 
 ---
 

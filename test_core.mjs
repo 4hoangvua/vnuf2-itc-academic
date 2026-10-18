@@ -28,7 +28,15 @@ import {
   uiTopicTagBadge,
   renderMemberSpotlightCard,
   renderMemberAttendanceAuditTable,
-  renderAdminTaskItem
+  renderAdminTaskItem,
+  renderSpotlightSkeleton,
+  renderDrlWidgetSkeleton,
+  renderAuditTableSkeleton,
+  renderCardSkeleton,
+  renderStatSkeleton,
+  renderAdminTableSkeleton,
+  getSessionRemainingTime,
+  formatSessionDateVN
 } from './frontend/modules/templates.js';
 import { calculateDrlProgress } from './frontend/modules/member.js';
 import { mockCallApi, getLocalMockState } from './frontend/services/mockData.js';
@@ -207,10 +215,13 @@ assert('uiTopicTagBadge renders Excel & Dữ liệu tag correctly', tagE.include
 const tagA = uiTopicTagBadge('AI_TOOLS');
 assert('uiTopicTagBadge renders Prompt AI tag correctly', tagA.includes('Kỹ năng AI thực chiến') && tagA.includes('fa-brain'));
 
+const tagCustom = uiTopicTagBadge('Lập trình Python & AI');
+assert('uiTopicTagBadge renders custom topic tag correctly', tagCustom.includes('Lập trình Python &amp; AI') && tagCustom.includes('fa-bookmark'));
+
 const spotlightOpen = renderMemberSpotlightCard({
   SessionID: 'MEET_SPOTLIGHT_01',
   TenBuoiHop: 'Chuyên đề Tối ưu hóa Luận văn Word',
-  NgayDienRa: '22/10/2026',
+  NgayDienRa: null,
   PhongHoc: 'Phòng Lab 03 - Nhà A3',
   TrangThai: 'Open',
   TagChuyenDe: 'WORD_DO_AN'
@@ -220,7 +231,7 @@ assert('renderMemberSpotlightCard renders live session with quick pin button whe
 const spotlightAttended = renderMemberSpotlightCard({
   SessionID: 'MEET_SPOTLIGHT_01',
   TenBuoiHop: 'Chuyên đề Tối ưu hóa Luận văn Word',
-  NgayDienRa: '22/10/2026',
+  NgayDienRa: null,
   PhongHoc: 'Phòng Lab 03 - Nhà A3',
   TrangThai: 'Open',
   TagChuyenDe: 'WORD_DO_AN'
@@ -256,6 +267,46 @@ const adminDoc = renderDocCard({
   LinkDrive: 'https://drive.google.com/test'
 }, { isAdmin: true });
 assert('renderDocCard includes edit and delete buttons for admin', adminDoc.includes('data-action="open-edit-doc-modal"') && adminDoc.includes('data-action="delete-doc"'));
+
+// 8b. Testing Skeleton Engine & Countdown Logic
+console.log('\n--- 8b. Testing Skeleton Engine & Countdown Logic ---');
+const spotlightSkel = renderSpotlightSkeleton();
+assert('renderSpotlightSkeleton generates animated shimmer container with bht-skeleton classes', spotlightSkel.includes('bht-skeleton') && spotlightSkel.includes('animate-pulse') && spotlightSkel.includes('min-h-[260px]'));
+
+const drlSkel = renderDrlWidgetSkeleton();
+assert('renderDrlWidgetSkeleton generates 3 KPI card skeletons', drlSkel.includes('Chỉ số chuyên cần') || (drlSkel.includes('bht-skeleton') && drlSkel.includes('h-full')));
+
+const auditSkel = renderAuditTableSkeleton(3);
+assert('renderAuditTableSkeleton generates exact number of table rows', (auditSkel.match(/<tr/g) || []).length === 3);
+
+const cardSkel = renderCardSkeleton(4);
+assert('renderCardSkeleton generates exact count of card skeletons', (cardSkel.match(/bht-card/g) || []).length === 4);
+
+const statSkel = renderStatSkeleton();
+assert('renderStatSkeleton generates inline skeleton element', statSkel.includes('bht-skeleton'));
+
+const adminTableSkel = renderAdminTableSkeleton(3, 4);
+assert('renderAdminTableSkeleton generates requested rows and columns', (adminTableSkel.match(/<tr/g) || []).length === 3 && (adminTableSkel.match(/<td/g) || []).length === 12);
+
+// Countdown calculation tests
+const futureDate = new Date(Date.now() + 30 * 60 * 1000); // 30 mins in future
+const dateStr30m = `${String(futureDate.getDate()).padStart(2, '0')}/${String(futureDate.getMonth() + 1).padStart(2, '0')}/${futureDate.getFullYear()} ${String(futureDate.getHours()).padStart(2, '0')}:${String(futureDate.getMinutes()).padStart(2, '0')}`;
+const rem30m = getSessionRemainingTime(dateStr30m);
+assert('getSessionRemainingTime identifies imminent session within 60 mins', rem30m && rem30m.isImminent && rem30m.text.includes('Bắt đầu sau'));
+
+const future2Days = new Date(Date.now() + 2 * 24 * 3600 * 1000 + 3 * 3600 * 1000);
+const dateStr2d = `${String(future2Days.getDate()).padStart(2, '0')}/${String(future2Days.getMonth() + 1).padStart(2, '0')}/${future2Days.getFullYear()} ${String(future2Days.getHours()).padStart(2, '0')}:${String(future2Days.getMinutes()).padStart(2, '0')}`;
+const rem2d = getSessionRemainingTime(dateStr2d);
+assert('getSessionRemainingTime formats remaining days correctly', rem2d && !rem2d.isImminent && rem2d.text.includes('Còn 2 ngày'));
+
+const imminentSpotlight = renderMemberSpotlightCard({
+  SessionID: 'MEET_COUNTDOWN_TEST',
+  TenBuoiHop: 'Chuyên đề Word Đồ án Sắp Diễn Ra',
+  NgayDienRa: dateStr30m,
+  PhongHoc: 'Lab 03 - A3',
+  TrangThai: 'Pending'
+}, false);
+assert('renderMemberSpotlightCard highlights imminent session with amber countdown and pulse badge', imminentSpotlight.includes('SẮP BẮT ĐẦU:') && imminentSpotlight.includes('border-amber-500'));
 
 // 9. Mutation Invalidation Map for CRUD actions
 console.log('\n--- 9. Testing CRUD Mutations Invalidation Map ---');
@@ -471,6 +522,75 @@ assert('getAuthStatus with Inactive user returns BLOCKED', blockedStatus.status 
 localStorage.removeItem('bht_token');
 await mockCallApi('deleteDocument', { docId: testAddDoc.docId });
 await mockCallApi('deleteTask', { taskId: testCreateTask.taskId });
+
+console.log('\n--- 13. Testing Date Formatting, Hero Countdown & Admin Docs ---');
+// 13.1 Format ngày giờ VN chuẩn 'HH:mm • DD/MM/YYYY'
+const isoFormatted = formatSessionDateVN('2026-10-19T18:30');
+assert('formatSessionDateVN formats ISO 2026-10-19T18:30 to 18:30 • 19/10/2026', isoFormatted === '18:30 • 19/10/2026');
+
+const dateOnlyFormatted = formatSessionDateVN('2026-10-19');
+assert('formatSessionDateVN formats date-only to 19/10/2026', dateOnlyFormatted === '19/10/2026');
+
+const vnFormatted = formatSessionDateVN('19/10/2026 18:30');
+assert('formatSessionDateVN handles VN date string correctly', vnFormatted === '18:30 • 19/10/2026');
+
+// 13.2 Buổi học ngày mai (tương lai) KHÔNG ĐƯỢC hiển thị 'ĐANG DIỄN RA'
+const tomorrow = new Date(Date.now() + 24 * 3600 * 1000);
+const tomorrowIso = tomorrow.toISOString().slice(0, 16);
+const futureSession = {
+  SessionID: 'MEET_FUTURE',
+  TenBuoiHop: 'Chuyên đề Tương Lai',
+  NgayDienRa: tomorrowIso,
+  PhongHoc: 'Lab 01',
+  TrangThai: 'Open',
+  TagChuyenDe: 'MOS_IC3'
+};
+const futureCardHtml = renderMemberSpotlightCard(futureSession, false);
+assert('Future session is NOT marked as ĐANG DIỄN RA even if TrangThai=Open', !futureCardHtml.includes('ĐANG DIỄN RA'));
+assert('Future session renders Hero Countdown Box with countdown text', futureCardHtml.includes('Thời gian đếm ngược bắt đầu'));
+assert('Future session displays formatted VN date', futureCardHtml.includes(formatSessionDateVN(tomorrowIso)));
+
+// 13.3 Custom topic tag badge
+const customTagHtml = uiTopicTagBadge('Trí tuệ nhân tạo Deep Learning');
+assert('uiTopicTagBadge renders custom topic tag text accurately', customTagHtml.includes('Trí tuệ nhân tạo Deep Learning'));
+assert('uiTopicTagBadge applies bookmark icon for custom tags', customTagHtml.includes('fa-bookmark'));
+
+// 13.4 Admin HTML contains docs management section and forms
+const adminHtmlContent = fs.readFileSync('./frontend/views/admin.html', 'utf-8');
+assert('admin.html has #admin-tab-docs section', adminHtmlContent.includes('id="admin-tab-docs"'));
+assert('admin.html has #modal-edit-doc modal', adminHtmlContent.includes('id="modal-edit-doc"'));
+assert('admin.html has #admin-tab-btn-docs sidebar tab', adminHtmlContent.includes('id="admin-tab-btn-docs"'));
+assert('admin.html has #att-custom-tag-container for custom topics', adminHtmlContent.includes('id="att-custom-tag-container"'));
+assert('admin.html has #edit-doc-custom-category-container for custom doc categories', adminHtmlContent.includes('id="edit-doc-custom-category-container"'));
+assert('admin.html has #admin-search-attendance input', adminHtmlContent.includes('id="admin-search-attendance"'));
+assert('admin.html has #admin-attendance-category-filters container', adminHtmlContent.includes('id="admin-attendance-category-filters"'));
+
+// 13.5 Member HTML contains sessions search bar and category filter pills
+const memberHtmlContent = fs.readFileSync('./frontend/views/member.html', 'utf-8');
+assert('member.html has #input-search-sessions input', memberHtmlContent.includes('id="input-search-sessions"'));
+assert('member.html has #member-sessions-categories container', memberHtmlContent.includes('id="member-sessions-categories"'));
+
+// 13.6 CSS contains scrollbar-none and mobile touch pill optimization
+const stylesCssContent = fs.readFileSync('./frontend/css/styles.css', 'utf-8');
+assert('styles.css defines .scrollbar-none and .scrollbar-hide', stylesCssContent.includes('.scrollbar-none') && stylesCssContent.includes('.scrollbar-hide'));
+assert('styles.css optimizes .bht-category-pill with touch-action and flex-shrink', stylesCssContent.includes('flex-shrink: 0') && stylesCssContent.includes('touch-action: manipulation'));
+
+// 13.7 Central App Dispatcher contains session filter actions
+const appJsContent = fs.readFileSync('./frontend/app.js', 'utf-8');
+assert('app.js registers filter-sessions-category action', appJsContent.includes("'filter-sessions-category'"));
+assert('app.js registers filter-admin-attendance action', appJsContent.includes("'filter-admin-attendance'"));
+
+// 13.8 Custom Document Category Card Rendering
+const customDocCard = renderDocCard({
+  DocID: 'DOC_CUSTOM_01',
+  TenTaiLieu: 'Giáo trình Lập trình Rust cơ bản',
+  PhanLoai: 'Lập trình Hệ thống Rust',
+  LinkDrive: 'https://drive.google.com/rust',
+  MoTa: 'Nhập môn ngôn ngữ lập trình hệ thống an toàn bộ nhớ'
+});
+assert('renderDocCard displays custom category label accurately', customDocCard.includes('Lập trình Hệ thống Rust'));
+assert('renderDocCard applies folder icon for custom categories', customDocCard.includes('fa-folder-open'));
+assert('renderDocCard applies accent badge style for custom categories', customDocCard.includes('bg-accent-soft'));
 
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);

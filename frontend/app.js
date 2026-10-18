@@ -21,7 +21,8 @@ import {
   toggleSidebar,
   initSidebar,
   attachEventDelegation,
-  attachFormDelegation
+  attachFormDelegation,
+  initHorizontalDragScroll
 } from './modules/ui.js';
 
 import {
@@ -48,6 +49,7 @@ import {
   backToMemberSessionsList,
   switchMemberSessionSubTab,
   handleCheckInFromDetail,
+  filterSessionsByCategory,
   filterDocsByCategory,
   openQuickPinModal,
   closeQuickPinModal,
@@ -107,7 +109,9 @@ import {
   openEditDocModal,
   closeEditDocModal,
   handleSaveDocument,
-  handleDeleteDocument
+  handleDeleteDocument,
+  handleFilterAdminDocs,
+  handleFilterAdminAttendance
 } from './modules/admin.js?v=20261017_1';
 
 import {
@@ -153,7 +157,8 @@ const CENTRAL_ACTION_MAP = {
     const input = document.getElementById('file-upload-input');
     if (input) input.click();
   },
-  'filter-docs-category': (el, ev, ds) => filterDocsByCategory(ds.category),
+  'filter-sessions-category': (el, ev, ds) => filterSessionsByCategory(ds.category || ds.cat),
+  'filter-docs-category': (el, ev, ds) => filterDocsByCategory(ds.category || ds.cat),
   'open-quick-pin-modal': (el, ev, ds) => openQuickPinModal(ds.id),
   'close-quick-pin-modal': () => closeQuickPinModal(),
   'filter-member-audit': (el, ev, ds) => filterMemberAuditTable(ds.filter),
@@ -218,6 +223,8 @@ const CENTRAL_ACTION_MAP = {
   'open-edit-doc-modal': (el, ev, ds) => openEditDocModal(ds.id),
   'close-edit-doc-modal': () => closeEditDocModal(),
   'delete-doc': (el, ev, ds) => handleDeleteDocument(ds.id),
+  'filter-admin-docs': (el, ev, ds) => handleFilterAdminDocs(ds.cat || ds.category),
+  'filter-admin-attendance': (el, ev, ds) => handleFilterAdminAttendance(ds.cat || ds.category),
 
   // --- MÁY CHIẾU PIN (PROJECTOR MODE) ---
   'open-projector-mode': (el, ev, ds) => openProjectorMode(ds.id),
@@ -366,6 +373,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 5. Nạp động các phân hệ View HTML từ views/ (auth.html, member.html, admin.html)
   await loadAllViews();
   initSidebar();
+  initHorizontalDragScroll();
 
   // 6. Hiển thị thanh Dev Helper ở góc phải màn hình phục vụ kiểm thử
   renderDevHelperBanner();

@@ -8,6 +8,16 @@
 // ====================================================================
 
 import { escapeHTML } from '../utils/dom.js';
+export {
+  renderSpotlightSkeleton,
+  renderDrlWidgetSkeleton,
+  renderAuditTableSkeleton,
+  renderCardSkeleton,
+  renderStatSkeleton,
+  renderAdminTableSkeleton,
+  renderAdminTableSkeleton as renderTableSkeleton
+} from './skeleton.js';
+
 
 // ====================================================================
 // 1. NHÓM ATOMIC COMPONENTS (THÀNH PHẦN CƠ BẢN DÙNG CHUNG)
@@ -129,6 +139,112 @@ export function uiMonoBadge(code = '', extraClass = '') {
   return `<span class="bht-badge-mono ${extraClass}">${escapeHTML(String(code || ''))}</span>`;
 }
 
+// ====================================================================
+// HỆ THỐNG PHÂN LOẠI & BỘ LỌC CHUYÊN ĐỀ / HỌC LIỆU DÙNG CHUNG (TAXONOMY REGISTRY)
+// ====================================================================
+
+export const CORE_ACADEMIC_TOPICS = [
+  { id: 'ALL', label: 'Tất cả', icon: 'fa-shapes' },
+  { id: 'CHUAN_DAU_RA', label: 'Chuẩn đầu ra MOS/IC3', icon: 'fa-certificate', keywords: ['mos', 'ic3', 'chuẩn đầu ra', 'chuan_dau_ra'] },
+  { id: 'WORD_DO_AN', label: 'Word Khóa luận & Đồ án', icon: 'fa-file-lines', keywords: ['word', 'khóa luận', 'luận văn', 'đồ án', 'word_do_an'] },
+  { id: 'EXCEL_DATA', label: 'Excel & Xử lý số liệu', icon: 'fa-table-cells', keywords: ['excel', 'số liệu', 'bảng tính', 'dashboard', 'excel_data'] },
+  { id: 'AI_TOOLS', label: 'Prompt AI & Kỹ năng', icon: 'fa-brain', keywords: ['ai', 'prompt', 'chatgpt', 'trí tuệ nhân tạo', 'ai_tools'] },
+  { id: 'OLYMPIC', label: 'Olympic & Thuật toán', icon: 'fa-award', keywords: ['olympic', 'thuật toán', 'đề thi', 'c++', 'quy hoạch động'] },
+  { id: 'SLIDE', label: 'Slide bài giảng', icon: 'fa-file-powerpoint', keywords: ['slide', 'ppt', 'bài giảng'] },
+  { id: 'EBOOK', label: 'Ebook & Sách', icon: 'fa-book-bookmark', keywords: ['ebook', 'sách', 'giáo trình'] }
+];
+
+/**
+ * Trích xuất danh sách Tag độc nhất từ dữ liệu (tự động phát hiện tag tùy biến mới)
+ * @param {Array} items Mảng dữ liệu (attendance hoặc documents)
+ * @param {string} tagField Tên trường lưu tag ('TagChuyenDe' hoặc 'PhanLoai')
+ * @returns {Array} Danh sách topics gồm các topic cốt lõi + các topic tùy biến mới
+ */
+export function extractDynamicTopics(items = [], tagField = 'TagChuyenDe') {
+  const topicsMap = new Map();
+  CORE_ACADEMIC_TOPICS.forEach(t => topicsMap.set(t.id, { ...t }));
+
+  if (Array.isArray(items)) {
+    items.forEach(item => {
+      const rawTag = String(item[tagField] || '').trim();
+      if (!rawTag) return;
+
+      // Kiểm tra xem tag này đã thuộc về topic chuẩn nào chưa
+      const isKnown = CORE_ACADEMIC_TOPICS.some(core => {
+        if (core.id === 'ALL') return false;
+        if (core.id.toUpperCase() === rawTag.toUpperCase()) return true;
+        if (core.keywords && core.keywords.some(kw => rawTag.toLowerCase().includes(kw))) return true;
+        return false;
+      });
+
+      // Nếu là tag tùy biến hoàn toàn mới do Admin gõ tự do
+      if (!isKnown && !topicsMap.has(rawTag)) {
+        topicsMap.set(rawTag, {
+          id: rawTag,
+          label: rawTag,
+          icon: 'fa-bookmark',
+          isCustom: true
+        });
+      }
+    });
+  }
+
+  return Array.from(topicsMap.values());
+}
+
+/**
+ * Kiểm tra xem một item có khớp với bộ lọc category được chọn không
+ * @param {string} itemTag Giá trị tag của item
+ * @param {string} selectedCat Mã category được chọn
+ * @returns {boolean}
+ */
+export function matchesTopicCategory(itemTag = '', selectedCat = 'ALL') {
+  if (!selectedCat || selectedCat === 'ALL') return true;
+  const rawTag = String(itemTag || '').trim();
+  if (!rawTag) return false;
+
+  const catNorm = selectedCat.toUpperCase().trim();
+  const rawNorm = rawTag.toUpperCase().trim();
+
+  if (rawNorm === catNorm) return true;
+
+  const core = CORE_ACADEMIC_TOPICS.find(t => t.id === selectedCat);
+  if (core && core.keywords) {
+    const lower = rawTag.toLowerCase();
+    return core.keywords.some(kw => lower.includes(kw));
+  }
+
+  return rawNorm.includes(catNorm) || catNorm.includes(rawNorm);
+}
+
+/**
+ * Sinh chuỗi HTML thanh bộ lọc Tag tái sử dụng dùng chung cho cả Chuyên đề và Học liệu
+ * @param {Object} options
+ * @param {string} [options.activeCat='ALL'] Tag đang được chọn
+ * @param {Array} [options.items=[]] Danh sách dữ liệu để trích xuất tag độc nhất
+ * @param {string} [options.tagField='TagChuyenDe'] Trường tag ('TagChuyenDe' hoặc 'PhanLoai')
+ * @param {string} [options.actionName='filter-topics'] Tên data-action của nút bấm
+ * @returns {string} Chuỗi HTML các nút .bht-category-pill
+ */
+export function renderTopicFilterBarHtml({ activeCat = 'ALL', items = [], tagField = 'TagChuyenDe', actionName = 'filter-topics' } = {}) {
+  const topics = extractDynamicTopics(items, tagField);
+  return topics.map(topic => {
+    const isActive = String(topic.id || '').toUpperCase() === String(activeCat || 'ALL').toUpperCase();
+    return `
+      <button 
+        data-action="${escapeHTML(actionName)}" 
+        data-cat="${escapeHTML(topic.id)}" 
+        data-category="${escapeHTML(topic.id)}"
+        class="bht-category-pill ${isActive ? 'active' : ''}"
+        title="${escapeHTML(topic.label)}"
+      >
+        <i class="fa-solid ${escapeHTML(topic.icon)}"></i>
+        <span>${escapeHTML(topic.label)}</span>
+      </button>
+    `.trim();
+  }).join('\n');
+}
+
 /**
  * Sinh huy hiệu phân loại Chuyên đề học thuật (Academic Topic Badge)
  * @param {string} tagKey Khóa phân loại (CHUAN_DAU_RA, WORD_DO_AN, EXCEL_DATA, AI_TOOLS, OLYMPIC, GENERAL)
@@ -168,10 +284,15 @@ export function uiTopicTagBadge(tagKey = '', customText = '') {
       colorClass = 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20';
       break;
     case 'GENERAL':
-    default:
       if (!label) label = 'Sinh hoạt & Học vụ';
       icon = 'fa-chalkboard-user';
       colorClass = 'bg-accent-soft text-accent border border-accent/20';
+      break;
+    default:
+      // Hỗ trợ mọi Custom Tag mới do Admin nhập tự do
+      if (!label) label = String(tagKey || 'Chuyên đề').trim();
+      icon = 'fa-bookmark';
+      colorClass = 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20';
       break;
   }
 
@@ -434,7 +555,7 @@ export function renderSessionCard(session = {}, options = {}) {
 
   const sessionId = escapeHTML(s.SessionID || '');
   const tenBuoiHop = escapeHTML(s.TenBuoiHop || 'Chưa đặt tên');
-  const ngayDienRa = escapeHTML(s.NgayDienRa || 'Chưa xếp lịch');
+  const ngayDienRa = escapeHTML(formatSessionDateVN(s.NgayDienRa));
   const maPin = escapeHTML(s.MaPin || '------');
   const phongHoc = escapeHTML(s.PhongHoc || 'Phòng Lab 02 - Tầng 3 Nhà A3');
   const tagBadgeHtml = uiTopicTagBadge(s.TagChuyenDe || 'GENERAL');
@@ -601,6 +722,133 @@ export function renderSessionCard(session = {}, options = {}) {
 }
 
 /**
+ * Chuẩn hóa ngày giờ học thuật sang định dạng hiển thị tiếng Việt 'HH:mm • DD/MM/YYYY' hoặc 'DD/MM/YYYY'
+ * @param {string} dateStr Chuỗi ngày giờ thô (từ Sheet hoặc input datetime-local)
+ * @returns {string} Chuỗi hiển thị chuẩn
+ */
+export function formatSessionDateVN(dateStr) {
+  if (!dateStr) return 'Chưa xếp lịch';
+  const str = String(dateStr).trim();
+
+  // Khớp ISO format YYYY-MM-DDTHH:mm hoặc YYYY-MM-DD HH:mm hoặc YYYY-MM-DD
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{1,2}))?/);
+  if (isoMatch) {
+    const [, y, m, d, hh, mm] = isoMatch;
+    const dStr = `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+    if (hh !== undefined) {
+      return `${hh.padStart(2, '0')}:${(mm || '00').padStart(2, '0')} • ${dStr}`;
+    }
+    return dStr;
+  }
+
+  // Khớp định dạng VN DD/MM/YYYY HH:mm hoặc DD/MM/YYYY
+  const vnMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?/);
+  if (vnMatch) {
+    const [, d, m, y, hh, mm] = vnMatch;
+    const dStr = `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+    if (hh !== undefined) {
+      return `${hh.padStart(2, '0')}:${mm.padStart(2, '0')} • ${dStr}`;
+    }
+    return dStr;
+  }
+
+  return str;
+}
+
+/**
+ * Phân tích chuỗi ngày giờ từ Sheet để tính thời gian còn lại đến buổi học
+ * Hỗ trợ các định dạng: 'DD/MM/YYYY HH:mm', 'DD/MM/YYYY', ISO 'YYYY-MM-DDTHH:mm'
+ * @param {string} dateStr Chuỗi ngày giờ diễn ra
+ * @returns {Object|null} { text, badgeText, isLive, isImminent, diffMs }
+ */
+export function getSessionRemainingTime(dateStr) {
+  if (!dateStr) return null;
+  const str = String(dateStr).trim();
+
+  let targetDate = null;
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{1,2}))?/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10) - 1;
+    const day = parseInt(isoMatch[3], 10);
+    const hour = isoMatch[4] !== undefined ? parseInt(isoMatch[4], 10) : 19;
+    const minute = isoMatch[5] !== undefined ? parseInt(isoMatch[5], 10) : 30;
+    targetDate = new Date(year, month, day, hour, minute);
+  } else {
+    const vnMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?/);
+    if (vnMatch) {
+      const day = parseInt(vnMatch[1], 10);
+      const month = parseInt(vnMatch[2], 10) - 1;
+      const year = parseInt(vnMatch[3], 10);
+      const hour = vnMatch[4] ? parseInt(vnMatch[4], 10) : 19;
+      const minute = vnMatch[5] ? parseInt(vnMatch[5], 10) : 30;
+      targetDate = new Date(year, month, day, hour, minute);
+    } else {
+      const parsed = new Date(str);
+      if (!isNaN(parsed.getTime())) targetDate = parsed;
+    }
+  }
+
+  if (!targetDate) return null;
+
+  const now = Date.now();
+  const diffMs = targetDate.getTime() - now;
+
+  if (diffMs <= 0) {
+    if (diffMs > -4 * 3600 * 1000) {
+      return { 
+        text: 'Đang diễn ra', 
+        badgeText: 'ĐANG DIỄN RA',
+        isLive: true, 
+        isImminent: false, 
+        diffMs 
+      };
+    }
+    return { 
+      text: 'Đã kết thúc', 
+      badgeText: 'ĐÃ KẾT THÚC',
+      isLive: false, 
+      isImminent: false, 
+      diffMs 
+    };
+  }
+
+  const diffMinutes = Math.floor(diffMs / (60 * 1000));
+  const diffHours = Math.floor(diffMs / (3600 * 1000));
+  const diffDays = Math.floor(diffMs / (24 * 3600 * 1000));
+
+  if (diffMinutes < 60) {
+    return {
+      text: `Bắt đầu sau ${diffMinutes} phút`,
+      badgeText: `CÒN ${diffMinutes} PHÚT NỮA`,
+      isLive: false,
+      isImminent: true,
+      diffMs
+    };
+  } else if (diffHours < 24) {
+    const remainingMins = diffMinutes % 60;
+    const minText = remainingMins > 0 ? ` ${remainingMins} phút` : '';
+    return {
+      text: `Còn ${diffHours} giờ${minText}`,
+      badgeText: `CÒN ${diffHours} GIỜ${minText.toUpperCase()}`,
+      isLive: false,
+      isImminent: true,
+      diffMs
+    };
+  } else {
+    const remainingHours = diffHours % 24;
+    const hourText = remainingHours > 0 ? ` ${remainingHours} giờ` : '';
+    return {
+      text: `Còn ${diffDays} ngày${hourText}`,
+      badgeText: `CÒN ${diffDays} NGÀY${hourText.toUpperCase()}`,
+      isLive: false,
+      isImminent: diffDays <= 1,
+      diffMs
+    };
+  }
+}
+
+/**
  * Render Thẻ Tiêu Điểm Buổi Học Mới Nhất / Sắp Diễn Ra (Member Spotlight Card)
  * Hiển thị nổi bật trên Tab 1 Dashboard của sinh viên
  * @param {Object} session Buổi học mới nhất
@@ -621,35 +869,50 @@ export function renderMemberSpotlightCard(session, userAttended = false) {
   const s = session;
   const sessionId = escapeHTML(s.SessionID || '');
   const tenBuoiHop = escapeHTML(s.TenBuoiHop || 'Chưa đặt tên');
-  const ngayDienRa = escapeHTML(s.NgayDienRa || 'Chưa xếp lịch');
+  const formattedDate = escapeHTML(formatSessionDateVN(s.NgayDienRa));
   const phongHoc = escapeHTML(s.PhongHoc || 'Lab 02 - A3 (Tòa CNTT)');
-  const isOpen = String(s.TrangThai || '').toLowerCase() === 'open';
+  const isTrangThaiOpen = String(s.TrangThai || '').toLowerCase() === 'open';
   const tagBadgeHtml = uiTopicTagBadge(s.TagChuyenDe || 'GENERAL');
 
+  const timeInfo = getSessionRemainingTime(s.NgayDienRa);
+  const diffMs = timeInfo ? timeInfo.diffMs : null;
+
+  // Buổi học chỉ thực sự "ĐANG DIỄN RA" khi:
+  // 1. Trạng thái là Open
+  // 2. VÀ thời gian thực tế đã tới giờ (diffMs <= 0) và chưa kết thúc quá 4 tiếng (hoặc không xác định ngày giờ cụ thể)
+  const isActuallyLive = isTrangThaiOpen && (diffMs === null || (diffMs <= 0 && diffMs > -4 * 3600 * 1000));
+  const isUpcoming = Boolean(diffMs !== null && diffMs > 0);
+  const isImminent = Boolean(timeInfo && timeInfo.diffMs > 0 && timeInfo.isImminent);
+
   return `
-    <div class="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#0B0F17] via-[#07241d] to-[#041a15] p-5 sm:p-6 flex flex-col justify-between emerald-glow-box h-full group">
+    <div class="relative overflow-hidden rounded-2xl border ${isActuallyLive ? 'border-emerald-500/35 shadow-[0_0_30px_rgba(16,185,129,0.2)]' : (isImminent ? 'border-amber-500/40 shadow-[0_0_25px_rgba(245,158,11,0.2)]' : 'border-emerald-500/20')} bg-gradient-to-br from-[#0B0F17] via-[#07241d] to-[#041a15] p-5 sm:p-6 flex flex-col justify-between emerald-glow-box h-full group">
       <!-- Ambient Glows -->
-      <div class="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -top-20 -right-20 w-64 h-64 ${isActuallyLive ? 'bg-emerald-500/15' : (isImminent ? 'bg-amber-500/15' : 'bg-teal-500/10')} rounded-full blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
       <div>
         <!-- Top Status Row -->
         <div class="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
-          <div class="flex items-center gap-2">
-            ${isOpen ? `
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono text-[11px] font-bold">
+          <div class="flex flex-wrap items-center gap-2">
+            ${isActuallyLive ? `
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-[11px] font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                 <span class="relative flex h-2 w-2">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
                 </span>
                 ĐANG DIỄN RA
               </span>
+            ` : (isUpcoming ? `
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${isImminent ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)] animate-pulse' : 'bg-teal-500/15 border border-teal-500/30 text-teal-300 shadow-[0_0_12px_rgba(45,212,191,0.15)]'} font-mono text-[11px] font-bold">
+                <i class="fa-solid ${isImminent ? 'fa-hourglass-half' : 'fa-clock'} ${isImminent ? 'text-amber-400' : 'text-teal-400'}"></i>
+                <span>${isImminent ? 'SẮP BẮT ĐẦU:' : 'SẮP DIỄN RA:'} ${timeInfo.badgeText}</span>
+              </span>
             ` : `
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800/80 border border-white/10 text-slate-400 font-mono text-[11px]">
                 <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
                 ${s.TrangThai === 'Closed' ? 'Đã kết thúc' : 'Sắp diễn ra'}
               </span>
-            `}
+            `)}
             ${tagBadgeHtml}
           </div>
         </div>
@@ -663,16 +926,43 @@ export function renderMemberSpotlightCard(session, userAttended = false) {
           ${tenBuoiHop}
         </h2>
 
+        <!-- Khung Hero Countdown Box Siêu Nổi Bật khi Buổi Học Chưa Diễn Ra -->
+        ${isUpcoming ? `
+          <div class="p-3.5 sm:p-4 rounded-xl bg-gradient-to-r ${isImminent ? 'from-amber-950/40 via-slate-900/80 to-amber-950/40 border-amber-500/35 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'from-emerald-950/50 via-slate-900/80 to-teal-950/50 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.15)]'} border flex items-center justify-between gap-3 mb-3.5">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl ${isImminent ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'} flex items-center justify-center text-lg shrink-0 shadow-sm">
+                <i class="fa-solid fa-hourglass-half ${isImminent ? 'animate-pulse' : ''}"></i>
+              </div>
+              <div>
+                <p class="text-[10px] uppercase font-mono tracking-wider ${isImminent ? 'text-amber-300/80' : 'text-emerald-300/80'} font-bold">Thời gian đếm ngược bắt đầu</p>
+                <p class="text-base sm:text-lg md:text-xl font-mono font-black ${isImminent ? 'text-amber-300' : 'text-emerald-300'} tracking-tight">
+                  ${timeInfo.badgeText}
+                </p>
+              </div>
+            </div>
+            <div class="hidden sm:flex flex-col items-end text-right font-mono text-xs text-slate-300">
+              <span class="text-[10px] text-slate-400 uppercase tracking-wider">Khởi hành lúc</span>
+              <span class="font-bold text-white">${formattedDate}</span>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- Single-line Compact Metadata Strip with Icons -->
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-300 font-mono p-3 rounded-xl bg-slate-950/60 border border-white/5 backdrop-blur-sm mb-4">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-300 font-mono p-3 rounded-xl bg-slate-950/60 border border-white/5 backdrop-blur-sm mb-4">
           <span class="flex items-center gap-1.5">
             <i class="fa-regular fa-calendar-check text-emerald-400"></i>
-            <span>${ngayDienRa}</span>
+            <span>${formattedDate}</span>
           </span>
           <span class="flex items-center gap-1.5 font-sans">
             <i class="fa-solid fa-location-dot text-rose-500"></i>
             <span class="text-slate-200 font-medium">${phongHoc}</span>
           </span>
+          ${isActuallyLive ? `
+            <div class="sm:ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold text-xs">
+              <i class="fa-solid fa-door-open text-emerald-400"></i>
+              <span>Phòng học đang mở</span>
+            </div>
+          ` : ''}
         </div>
       </div>
 
@@ -685,7 +975,7 @@ export function renderMemberSpotlightCard(session, userAttended = false) {
               <i class="fa-solid fa-circle-check"></i>
               <span>Bạn đã điểm danh có mặt</span>
             </span>
-          ` : (isOpen ? `
+          ` : (isActuallyLive ? `
             <button 
               data-action="open-quick-pin-modal" 
               data-id="${sessionId}"
@@ -697,7 +987,7 @@ export function renderMemberSpotlightCard(session, userAttended = false) {
           ` : `
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-white/5 text-slate-400 text-xs font-medium">
               <i class="fa-solid fa-clock"></i>
-              <span>Chưa mở điểm danh</span>
+              <span>${isUpcoming ? 'Điểm danh chưa mở (Sắp diễn ra)' : 'Điểm danh đã đóng'}</span>
             </span>
           `)}
         </div>
@@ -1127,48 +1417,69 @@ export function renderDocCard(doc = {}, options = {}) {
   const { isAdmin = false } = options;
   const docId = escapeHTML(d.DocID || '');
   const tenTaiLieu = escapeHTML(d.TenTaiLieu || 'Tài liệu học thuật');
-  const phanLoai = escapeHTML(d.PhanLoai || 'Tài liệu');
+  const phanLoai = escapeHTML(d.PhanLoai || 'Slide');
   const linkDrive = escapeHTML(d.LinkDrive || '#');
   const moTa = escapeHTML(d.MoTa || '');
 
   // Phân loại định dạng tài liệu để gán icon và màu sắc đặc trưng
-  const normType = (phanLoai + ' ' + tenTaiLieu).toLowerCase();
-  let iconClass = 'fa-file-lines text-ink-muted';
-  let badgeStyleClass = 'bg-subtle text-ink-muted';
-  let typeLabel = phanLoai;
+  const normCategory = (phanLoai || '').toLowerCase();
+  const normType = (normCategory + ' ' + (tenTaiLieu || '')).toLowerCase();
+  
+  let iconClass = 'fa-folder-open text-accent';
+  let badgeStyleClass = 'bg-accent-soft text-accent border border-accent/20';
+  let typeLabel = phanLoai || 'Slide';
 
-  if (normType.includes('chuẩn đầu ra') || normType.includes('mos') || normType.includes('ic3')) {
+  if (normCategory.includes('chuẩn đầu ra') || normCategory.includes('mos') || normCategory.includes('ic3')) {
     iconClass = 'fa-certificate text-teal-600 dark:text-teal-400';
     badgeStyleClass = 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20';
     typeLabel = 'Chuẩn đầu ra MOS/IC3';
-  } else if (normType.includes('word') || normType.includes('luận văn') || normType.includes('đồ án') || normType.includes('khóa luận')) {
+  } else if (normCategory.includes('word') || normCategory.includes('luận văn') || normCategory.includes('đồ án') || normCategory.includes('khóa luận')) {
     iconClass = 'fa-file-word text-blue-600 dark:text-blue-400';
     badgeStyleClass = 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20';
     typeLabel = 'Word & Đồ án';
-  } else if (normType.includes('excel') || normType.includes('số liệu') || normType.includes('dashboard') || normType.includes('bảng tính')) {
+  } else if (normCategory.includes('excel') || normCategory.includes('số liệu') || normCategory.includes('dashboard') || normCategory.includes('bảng tính')) {
     iconClass = 'fa-file-excel text-emerald-600 dark:text-emerald-400';
     badgeStyleClass = 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20';
     typeLabel = 'Excel & Số liệu';
-  } else if (normType.includes('ai') || normType.includes('prompt') || normType.includes('chatgpt') || normType.includes('trí tuệ nhân tạo')) {
+  } else if (normCategory.includes('ai') || normCategory.includes('prompt') || normCategory.includes('chatgpt') || normCategory.includes('trí tuệ nhân tạo')) {
     iconClass = 'fa-wand-magic-sparkles text-purple-600 dark:text-purple-400';
     badgeStyleClass = 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20';
     typeLabel = 'Prompt AI & Tools';
-  } else if (normType.includes('đề thi') || normType.includes('olympic') || normType.includes('thuật toán') || normType.includes('c++')) {
+  } else if (normCategory.includes('đề thi') || normCategory.includes('olympic') || normCategory.includes('thuật toán') || normCategory.includes('c++')) {
     iconClass = 'fa-award text-amber-500';
     badgeStyleClass = 'bht-media-badge-quiz';
     typeLabel = 'Olympic & Thi cử';
-  } else if (normType.includes('slide') || normType.includes('giảng') || normType.includes('ppt')) {
+  } else if (normCategory.includes('slide') || normCategory.includes('giảng') || normCategory.includes('ppt')) {
     iconClass = 'fa-file-powerpoint text-coral';
     badgeStyleClass = 'bht-media-badge-pdf';
     typeLabel = 'Slide bài giảng';
-  } else if (normType.includes('code') || normType.includes('git') || normType.includes('repo')) {
+  } else if (normCategory.includes('code') || normCategory.includes('git') || normCategory.includes('repo')) {
     iconClass = 'fa-code-branch text-emerald-500';
     badgeStyleClass = 'bht-media-badge-code';
     typeLabel = 'Source code / Git';
-  } else if (normType.includes('ebook') || normType.includes('sách') || normType.includes('giáo trình')) {
+  } else if (normCategory.includes('ebook') || normCategory.includes('sách')) {
     iconClass = 'fa-book-bookmark text-indigo-500';
     badgeStyleClass = 'bht-media-badge-book';
-    typeLabel = 'Ebook / Sách';
+    typeLabel = 'Ebook & Sách';
+  } else if (!phanLoai || phanLoai === 'Tài liệu') {
+    // Nếu không có phân loại cụ thể, mới suy luận từ tên tài liệu
+    if (normType.includes('chuẩn đầu ra') || normType.includes('mos') || normType.includes('ic3')) {
+      iconClass = 'fa-certificate text-teal-600 dark:text-teal-400';
+      badgeStyleClass = 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20';
+      typeLabel = 'Chuẩn đầu ra MOS/IC3';
+    } else if (normType.includes('word') || normType.includes('luận văn') || normType.includes('đồ án')) {
+      iconClass = 'fa-file-word text-blue-600 dark:text-blue-400';
+      badgeStyleClass = 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20';
+      typeLabel = 'Word & Đồ án';
+    } else if (normType.includes('excel')) {
+      iconClass = 'fa-file-excel text-emerald-600 dark:text-emerald-400';
+      badgeStyleClass = 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20';
+      typeLabel = 'Excel & Số liệu';
+    } else if (normType.includes('ai') || normType.includes('prompt')) {
+      iconClass = 'fa-wand-magic-sparkles text-purple-600 dark:text-purple-400';
+      badgeStyleClass = 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20';
+      typeLabel = 'Prompt AI & Tools';
+    }
   }
 
   return `
@@ -1293,49 +1604,4 @@ export function renderAdminTaskItem(task = {}) {
 // Alias tương thích ngược
 export const memberDocCardTemplate = renderDocCard;
 
-// ====================================================================
-// NHÓM SKELETON PLACEHOLDERS (HIỂN THỊ KHUNG TĨNH TRONG KHI FETCH DỮ LIỆU)
-// ====================================================================
-
-/**
- * Sinh các hàng skeleton dạng bảng nhấp nháy êm dịu
- */
-export function renderTableSkeleton(rows = 5, cols = 5) {
-  return Array.from({ length: rows }).map(() => `
-    <tr class="border-b border-hairline/60">
-      ${Array.from({ length: cols }).map((_, i) => `
-        <td class="p-3.5">
-          <div class="h-4 bg-subtle/80 rounded bht-skeleton ${i === 0 ? 'w-24' : i === 1 ? 'w-40' : 'w-20'}"></div>
-        </td>
-      `).join('')}
-    </tr>
-  `).join('');
-}
-
-/**
- * Sinh các card skeleton dạng danh sách / lưới
- */
-export function renderCardSkeleton(count = 3) {
-  return Array.from({ length: count }).map(() => `
-    <div class="bht-card p-5 border border-hairline bg-surface space-y-3.5">
-      <div class="flex items-center justify-between">
-        <div class="h-4 w-28 bg-subtle/80 rounded bht-skeleton"></div>
-        <div class="h-4 w-16 bg-subtle/80 rounded-full bht-skeleton"></div>
-      </div>
-      <div class="h-5 w-3/4 bg-subtle/80 rounded bht-skeleton"></div>
-      <div class="h-3.5 w-1/2 bg-subtle/80 rounded bht-skeleton"></div>
-      <div class="pt-2 border-t border-hairline/60 flex items-center justify-between">
-        <div class="h-3 w-20 bg-subtle/80 rounded bht-skeleton"></div>
-        <div class="h-6 w-20 bg-subtle/80 rounded bht-skeleton"></div>
-      </div>
-    </div>
-  `).join('');
-}
-
-/**
- * Sinh placeholder skeleton cho các con số thống kê
- */
-export function renderStatSkeleton() {
-  return `<div class="h-7 w-12 bg-subtle/80 rounded bht-skeleton inline-block"></div>`;
-}
 

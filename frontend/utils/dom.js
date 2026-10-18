@@ -393,3 +393,102 @@ export function setFormDisabled(formEl, disabled) {
     }
   });
 }
+
+/**
+ * Khởi tạo tính năng kéo chuột (Mouse Drag-to-Scroll) và lăn chuột (Wheel-to-Scroll)
+ * cho các dải container cuộn ngang trên Desktop (Notion / Spotify Style).
+ * Hoạt động qua Event Delegation toàn cục nên tự động áp dụng cho mọi thanh filter động.
+ */
+export function initHorizontalDragScroll() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  const SCROLL_CONTAINER_SELECTOR = '.scrollbar-none, .scrollbar-hide, [data-drag-scroll], .bht-scroll-x';
+
+  let isDown = false;
+  let startX = 0;
+  let initialScrollLeft = 0;
+  let activeContainer = null;
+  let hasDragged = false;
+  const dragThreshold = 6;
+
+  // 1. Mousedown: Bắt đầu theo dõi kéo
+  document.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return; // Chỉ xử lý chuột trái
+    const container = e.target.closest(SCROLL_CONTAINER_SELECTOR);
+    if (!container) return;
+
+    // Chỉ kích hoạt nếu container có nội dung bị tràn cần cuộn
+    if (container.scrollWidth <= container.clientWidth) return;
+
+    isDown = true;
+    hasDragged = false;
+    activeContainer = container;
+    startX = e.pageX - container.getBoundingClientRect().left;
+    initialScrollLeft = container.scrollLeft;
+  });
+
+  // 2. Mousemove: Di chuyển chuột kéo cuộn
+  window.addEventListener('mousemove', (e) => {
+    if (!isDown || !activeContainer) return;
+
+    const currentX = e.pageX - activeContainer.getBoundingClientRect().left;
+    const diff = currentX - startX;
+
+    if (Math.abs(diff) > dragThreshold) {
+      if (!hasDragged) {
+        hasDragged = true;
+        activeContainer.classList.add('is-dragging');
+        document.body.classList.add('select-none');
+      }
+      activeContainer.scrollLeft = initialScrollLeft - diff;
+    }
+  });
+
+  // 3. Mouseup / Mouseleave: Kết thúc kéo
+  const endDrag = () => {
+    if (!isDown) return;
+    isDown = false;
+    if (activeContainer) {
+      activeContainer.classList.remove('is-dragging');
+      activeContainer = null;
+    }
+    document.body.classList.remove('select-none');
+    if (hasDragged) {
+      setTimeout(() => {
+        hasDragged = false;
+      }, 60);
+    }
+  };
+
+  window.addEventListener('mouseup', endDrag);
+
+  // 4. Click capture: Chặn click kích hoạt nhầm action khi vừa kéo chuột xong
+  document.addEventListener('click', (e) => {
+    if (hasDragged) {
+      const container = e.target.closest(SCROLL_CONTAINER_SELECTOR);
+      if (container) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    }
+  }, true);
+
+  // 5. Wheel: Lăn chuột dọc chuyển thành cuộn ngang mượt mà trên desktop
+  document.addEventListener('wheel', (e) => {
+    const container = e.target.closest(SCROLL_CONTAINER_SELECTOR);
+    if (!container) return;
+
+    if (container.scrollWidth > container.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      const atStart = container.scrollLeft <= 1 && e.deltaY < 0;
+      const atEnd = container.scrollLeft >= maxScroll - 1 && e.deltaY > 0;
+
+      if (!atStart && !atEnd) {
+        container.scrollLeft += e.deltaY * 0.85;
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+}
+

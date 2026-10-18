@@ -69,6 +69,19 @@
           <span class="truncate sidebar-text">Nhân sự Thành viên</span>
         </div>
       </button>
+
+      <button 
+        data-action="switch-admin-tab"
+        data-tab="docs"
+        id="admin-tab-btn-docs" 
+        class="bht-nav-item justify-between"
+        title="Kho học liệu & Slide"
+      >
+        <div class="flex items-center gap-2.5 truncate sidebar-nav-content">
+          <i class="fa-solid fa-book-bookmark w-4 text-center text-ink-muted shrink-0"></i>
+          <span class="truncate sidebar-text">Kho học liệu &amp; Slide</span>
+        </div>
+      </button>
     </nav>
 
     <!-- Admin Profile & Footer Controls -->
@@ -142,7 +155,7 @@
   </header>
 
   <!-- ==================== BOTTOM TAB BAR (MOBILE < 768px) ==================== -->
-  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 h-16 bg-surface/95 backdrop-blur border-t border-hairline grid grid-cols-3 px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 h-16 bg-surface/95 backdrop-blur border-t border-hairline grid grid-cols-4 px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
     <button 
       data-action="switch-admin-tab"
       data-tab="submissions"
@@ -169,6 +182,15 @@
     >
       <i class="fa-solid fa-users-gear text-base"></i>
       <span class="text-[11px]">Thành viên</span>
+    </button>
+    <button 
+      data-action="switch-admin-tab"
+      data-tab="docs"
+      class="flex flex-col items-center justify-center gap-1 py-1 text-xs text-ink-muted hover:text-ink font-medium transition-colors"
+      data-mobile-admin-tab="docs"
+    >
+      <i class="fa-solid fa-book-bookmark text-base"></i>
+      <span class="text-[11px]">Học liệu</span>
     </button>
   </nav>
 
@@ -297,6 +319,26 @@
           <i class="fa-solid fa-plus text-xs"></i>
           <span>Tạo buổi sinh hoạt</span>
         </button>
+      </div>
+
+      <!-- Toolbar: Thanh tìm kiếm & Bộ lọc Chuyên đề (Tối ưu responsive & mobile swipe) -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="relative w-full max-w-sm">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-faint">
+            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+          </div>
+          <input 
+            type="text" 
+            id="admin-search-attendance" 
+            placeholder="Tìm theo tên chuyên đề, phòng học, nội dung..." 
+            class="bht-input pl-8 text-xs"
+          >
+        </div>
+
+        <!-- Category Filter Pills (Vuốt ngang mượt mà trên điện thoại - render động tái sử dụng) -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs select-none scrollbar-none" id="admin-attendance-category-filters">
+          <!-- Rendered dynamically via renderTopicFilterBarHtml -->
+        </div>
       </div>
 
       <div id="admin-attendance-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-4.5">
@@ -622,6 +664,53 @@
       <div id="admin-members-pagination"></div>
     </section>
 
+    <!-- ==================== TAB 4: KHO HỌC LIỆU & SLIDE ĐA PHƯƠNG TIỆN ==================== -->
+    <section id="admin-tab-docs" class="hidden space-y-4">
+      <!-- Top Bar: Tiêu đề + Nút Thêm tài liệu mới -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-hairline">
+        <div>
+          <h3 class="bht-heading-serif text-lg font-semibold text-ink flex items-center gap-2">
+            <i class="fa-solid fa-book-bookmark text-accent text-sm"></i>
+            <span>Kho Học Liệu &amp; Slide Đa Phương Tiện</span>
+          </h3>
+          <p class="text-xs text-ink-muted">Quản lý bài giảng chính thức, template luận văn VNUF2, đề thi MOS/IC3 và cẩm nang AI</p>
+        </div>
+        <button 
+          data-action="open-create-doc-modal"
+          class="bht-btn bht-btn-primary bht-btn-sm font-semibold shadow-sm self-start sm:self-auto"
+        >
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Thêm tài liệu mới</span>
+        </button>
+      </div>
+
+      <!-- Thanh tìm kiếm & Bộ lọc danh mục -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="relative w-full max-w-sm">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-faint">
+            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+          </div>
+          <input 
+            type="text" 
+            id="admin-search-docs" 
+            placeholder="Tìm theo tên tài liệu, phân loại, mô tả..." 
+            class="bht-input pl-8 text-xs"
+          >
+        </div>
+
+        <!-- Category Filter Pills (Vuốt ngang mượt mà trên điện thoại - render động tái sử dụng) -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs select-none scrollbar-none" id="admin-doc-category-filters">
+          <!-- Rendered dynamically via renderTopicFilterBarHtml -->
+        </div>
+      </div>
+
+      <!-- Lưới danh sách học liệu -->
+      <div id="admin-docs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered via renderAdminDocsGrid() -->
+      </div>
+      <div id="admin-docs-pagination"></div>
+    </section>
+
   </main>
 </div>
 
@@ -788,7 +877,17 @@
             <option value="EXCEL_DATA">Excel & Xử lý số liệu</option>
             <option value="AI_TOOLS">Kỹ năng AI thực chiến</option>
             <option value="OLYMPIC">Olympic & Thuật toán</option>
+            <option value="CUSTOM">+ Thêm chủ đề mới (Tự nhập)...</option>
           </select>
+          <div id="att-custom-tag-container" class="mt-2 hidden">
+            <label class="bht-label text-[11px] text-accent">Tên chủ đề mới <span class="text-err">*</span></label>
+            <input 
+              type="text" 
+              id="att-input-custom-tag" 
+              placeholder="VD: Lập trình Python, Web React, SQL..." 
+              class="bht-input text-xs"
+            >
+          </div>
         </div>
         <div>
           <label class="bht-label">Địa điểm / Phòng học</label>
@@ -1098,7 +1197,17 @@
             <option value="EXCEL_DATA">Excel & Xử lý số liệu</option>
             <option value="AI_TOOLS">Kỹ năng AI thực chiến</option>
             <option value="OLYMPIC">Olympic & Thuật toán</option>
+            <option value="CUSTOM">+ Thêm chủ đề mới (Tự nhập)...</option>
           </select>
+          <div id="edit-att-custom-tag-container" class="mt-2 hidden">
+            <label class="bht-label text-[11px] text-accent">Tên chủ đề mới <span class="text-err">*</span></label>
+            <input 
+              type="text" 
+              id="edit-att-input-custom-tag" 
+              placeholder="VD: Lập trình Python, Web React, SQL..." 
+              class="bht-input text-xs"
+            >
+          </div>
         </div>
         <div>
           <label class="bht-label">Địa điểm / Phòng học</label>
@@ -1257,14 +1366,24 @@
         <div>
           <label class="bht-label">Phân loại học liệu</label>
           <select id="edit-doc-category" class="bht-select text-xs">
-            <option value="Slide">Slide bài giảng</option>
+            <option value="Slide" selected>Slide bài giảng</option>
             <option value="Chuẩn đầu ra MOS/IC3">Chuẩn đầu ra MOS/IC3</option>
             <option value="Word & Đồ án">Word & Đồ án</option>
             <option value="Excel & Số liệu">Excel & Số liệu</option>
             <option value="Prompt AI & Tools">Prompt AI & Tools</option>
             <option value="Olympic & Thuật toán">Olympic & Thuật toán</option>
             <option value="Ebook & Sách">Ebook & Sách</option>
+            <option value="CUSTOM">+ Thêm phân loại mới (Tự nhập)...</option>
           </select>
+          <div id="edit-doc-custom-category-container" class="mt-2 hidden">
+            <label class="bht-label text-[11px] text-accent">Tên phân loại mới <span class="text-err">*</span></label>
+            <input 
+              type="text" 
+              id="edit-doc-input-custom-category" 
+              placeholder="Nhập tên phân loại học liệu mới..." 
+              class="bht-input text-xs"
+            >
+          </div>
         </div>
         <div>
           <label class="bht-label">Link Google Drive / Tải về <span class="text-err">*</span></label>

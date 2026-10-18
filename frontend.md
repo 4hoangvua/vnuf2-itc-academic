@@ -20,14 +20,16 @@ frontend/
 │   └── admin.html              # Cổng quản trị (Duyệt bài, Quản lý buổi học Master-Detail, PIN, Nhân sự)
 ├── modules/                    # Logic điều phối giao diện (Controllers & Reactive State)
 │   ├── store.js                # Quản lý State phản ứng tập trung (Pub/Sub + ES6 Proxy), thông báo UI tự động
-│   ├── templates.js            # Tách biệt toàn bộ HTML Template Literals khỏi logic API, lọc chống XSS
+│   ├── templates.js            # Tách biệt toàn bộ HTML Template Literals khỏi logic API, lọc chống XSS, taxonomy tags
 │   ├── ui.js                   # Điều phối giao diện, Theme Sáng/Tối, Toast, Loading overlay
 │   ├── auth.js                 # Xử lý xác thực OTP, đếm ngược 300s, Quản lý Token & Dọn sạch cache khi đăng xuất
-│   ├── member.js               # Render Dashboard thành viên, Dòng thời gian buổi học, Sub-view chi tiết
-│   ├── admin.js                # Render Dashboard admin, Quản lý buổi học, Sub-view chi tiết, Chấm bài
+│   ├── member.js               # Render Dashboard thành viên, Dòng thời gian buổi học, Sub-view chi tiết, Kho tài liệu
+│   ├── admin.js                # Render Dashboard admin, Quản lý buổi học, Sub-view chi tiết, Chấm bài, Quản lý tài liệu
+│   ├── skeleton.js             # Động cơ Skeleton Shimmer nạp mượt mà, chống giật layout (Anti-FOUC)
+│   ├── pagination.js           # Bộ quản lý phân trang độc lập đa thực thể (Multi-instance pagination)
 │   └── projector.js            # Chế độ máy chiếu PIN toàn màn hình (Chiếu hội trường)
 ├── utils/                      # Tiện ích bổ trợ dùng chung
-│   └── dom.js                  # Hàm escapeHTML chống XSS, Event Delegation tập trung, Auto Button Lock
+│   └── dom.js                  # Hàm escapeHTML chống XSS, Event Delegation tập trung, Auto Button Lock, Drag Scroll
 └── services/                   # Tầng giao tiếp dữ liệu & Dịch vụ ngầm
     ├── api.js                  # Lớp gọi API tập trung: Token-Based, Auto-Retry + Jitter, Deduplication, Cache SWR
     ├── mockData.js             # Dữ liệu giả lập chạy ngầm (Local Dev Mock Mode) hỗ trợ token giả lập
@@ -106,3 +108,21 @@ Thay vì dùng popup modal chật chội khiến giao diện bị phình to (blo
    - **Nút chuyển đổi chế độ:** `Mock Dev` <-> `GAS API`.
    - **Nút đổi quyền 1-click:** `[Xem quyền Member]` <-> `[Xem quyền Admin]` chuyển đổi tài khoản ngay trên cùng cửa sổ.
    - **Nút `Copy Mock` & `Dán Mock`:** Hỗ trợ đồng bộ dữ liệu mẫu sang Cửa sổ Ẩn danh (Incognito) hoặc trình duyệt khác.
+
+---
+
+## 5. Hệ Thống Phân Loại Học Thuật & Trải Nghiệm Tương Tác Dải Filter (Unified Taxonomy & Interactive Filter)
+
+1. **Kiến trúc Phân loại Dùng chung (Unified Academic Taxonomy):**
+   - Bộ danh mục lõi `CORE_ACADEMIC_TOPICS`: Chuẩn đầu ra (MOS/IC3), Word & Đồ án, Excel & Số liệu, Prompt AI & Kỹ năng, Olympic & Thuật toán, Slide bài giảng, Ebook & Sách.
+   - **Tự động gom Tag tùy biến (`extractDynamicTopics`):** Quét toàn bộ dữ liệu Buổi sinh hoạt (`TagChuyenDe`) và Kho học liệu (`PhanLoai`) để tự động nhận diện và đưa các Tag mới do Admin tạo vào dải Filter Pills.
+   - **So sánh chuẩn hóa (`matchesTopicCategory`):** So khớp không phân biệt hoa thường, hỗ trợ từ khóa mở rộng và tag tự do.
+   - **Render dải nút đồng nhất (`renderTopicFilterBarHtml`):** Sinh chuỗi HTML các nút `.bht-category-pill` tái sử dụng hoàn toàn giữa 2 bên Quản trị và Thành viên.
+   - **Đồng bộ Form Tạo/Sửa:** Tự động gom các tag đã tạo trước đó vào `<optgroup label="── Phân loại đã tạo trước đó ──">`.
+
+2. **Trải Nghiệm Cuộn Nâng Cao Trên Cả Mobile & Desktop:**
+   - **Mobile Touch Swiping:** Vuốt chạm cảm ứng mượt mà với `touch-action: manipulation`, ẩn thanh cuộn thô (`.scrollbar-none`, `.scrollbar-hide`).
+   - **Desktop Mouse Drag-to-Scroll (`initHorizontalDragScroll`):** Nhấn giữ chuột trái kéo qua lại như trên điện thoại; con trỏ chuyển thành `grab` / `grabbing`.
+   - **Chống click nhầm (Drag Threshold):** Ngăn kích hoạt sự kiện `click` của nút tag khi người dùng đang thực hiện động tác kéo chuột (> 6px).
+   - **Desktop Wheel-to-Horizontal-Scroll:** Tự động chuyển đổi lăn chuột giữa (`deltaY`) thành cuộn ngang dải tag mà không cần giữ phím `Shift`.
+

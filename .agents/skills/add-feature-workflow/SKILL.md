@@ -98,3 +98,32 @@ description: Quy trình chuẩn 6 bước khi triển khai một tính năng m�
 3. **Kiểm thử nghiệm thu:**
    - Chạy lệnh `node test_core.mjs` để đảm bảo không vi phạm các quy tắc cốt lõi.
    - Kiểm tra trên trình duyệt ở cả 2 vai trò Admin và Member.
+
+---
+
+## QUY TRÌNH DEPLOY & ĐỒNG BỘ CODE (GIT PUSH & CLASP PUSH)
+
+Hệ thống phân tách rạch ròi 2 kênh quản lý và triển khai:
+
+### 1. Triển khai Backend (Google Apps Script qua Clasp):
+- Thư mục `gas-backend/` và các file cấu hình `.clasp.json`, `.clasprc.json` được **lưu trữ tại local** và bắt buộc phải nằm trong `.gitignore` (ngăn chặn rò rỉ Script ID, Sheet ID, Folder ID nhạy cảm lên GitHub).
+- **Đẩy code Backend lên Apps Script:**
+  ```powershell
+  npx @google/clasp push
+  # hoặc: clasp push
+  ```
+- **Kéo code Backend mới nhất từ Apps Script về local:**
+  ```powershell
+  npx @google/clasp pull
+  # hoặc: clasp pull
+  ```
+- **LƯU Ý SỐNG CÒN:** Tuyệt đối không xóa thư mục `gas-backend/` hay `.clasp.json` ở local. Nếu vô tình bị xóa do `git pull` các commit cũ từ GitHub, khôi phục lại tức thì bằng:
+  - `npx @google/clasp pull`
+  - Hoặc: `git checkout e05dd8a~1 -- gas-backend/ .clasp.json` rồi unstage (`git restore --staged gas-backend/ .clasp.json`).
+
+### 2. Triển khai Frontend (Git & GitHub):
+- Chỉ commit và push các thay đổi của `frontend/`, tài liệu, rules, skills hoặc test scripts lên GitHub.
+- Trước khi push code Git:
+  1. Kiểm tra `git status` đảm bảo không có file nhạy cảm (`gas-backend/`, `.clasp.json`, `.env`) bị vô tình đưa vào commit.
+  2. Chạy `node test_core.mjs` để đảm bảo 100% tests vượt qua.
+  3. Thực hiện commit có ý nghĩa và `git push origin main`.
