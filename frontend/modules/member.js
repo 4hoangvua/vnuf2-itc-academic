@@ -30,9 +30,6 @@ import {
   setPaginationPageSize 
 } from './pagination.js';
 
-// Thời điểm tải dữ liệu Member gần nhất (dùng để throttle visibilitychange)
-let lastMemberDataLoadTime = 0;
-
 /**
  * Hiển thị các khối Skeleton nhấp nháy êm dịu trên danh sách buổi học, bài tập, học liệu của Thành viên
  */
@@ -199,18 +196,6 @@ export function initMemberView(silent = true) {
     window.addEventListener('bht_sync_event', () => {
       triggerSync('local_event');
     });
-
-    // 3. Tự động đồng bộ khi chuyển quay lại Tab (Visibility change) với Cooldown 3 phút
-    document.addEventListener('visibilitychange', () => {
-      const isViewingAs = sessionStorage.getItem('bht_viewing_as_member');
-      if (!document.hidden && (isViewingAs || (appState.user && appState.user.role === 'MEMBER'))) {
-        const now = Date.now();
-        if (now - lastMemberDataLoadTime >= 180000) {
-          console.log('[Member Sync] Đã quá 3 phút kể từ lần tải gần nhất, tự động làm mới dữ liệu...');
-          loadMemberData(true, false);
-        }
-      }
-    });
   }
 }
 
@@ -234,7 +219,6 @@ export async function loadMemberData(silent = true, skipCache = false) {
     ]);
 
     hideGlobalLoading();
-    lastMemberDataLoadTime = Date.now();
 
     if (tasksRes && tasksRes.success) appState.tasks = tasksRes.data || [];
     if (subsRes && subsRes.success) appState.submissions = subsRes.data || [];
