@@ -81,7 +81,7 @@ export async function checkAuthSession() {
     }
 
     if (res.status === 'AUTHENTICATED' && res.user) {
-      handleAuthSuccess(res.user);
+      handleAuthSuccess(res.user, null, true);
       return;
     }
 
@@ -382,23 +382,40 @@ export async function handleLogout() {
 /**
  * Xử lý sau khi người dùng đăng nhập thành công
  */
-function handleAuthSuccess(user, token) {
+function handleAuthSuccess(user, token, isSessionVerification = false) {
   const currentToken = token || getToken();
   const cleanRole = String(user.role || 'MEMBER').trim().toUpperCase();
+  const cachedRole = String(localStorage.getItem('bht_role') || '').trim().toUpperCase();
   user.role = cleanRole;
   store.setState({ user: user, token: currentToken });
   localStorage.setItem('bht_mssv', user.mssv);
   localStorage.setItem('bht_role', cleanRole);
   sessionStorage.setItem('bht_user', JSON.stringify(user));
 
-  if (cleanRole === 'ADMIN') {
-    if (sessionStorage.getItem('bht_viewing_as_member')) {
-      initMemberView(true);
+  // Nếu là phiên xác thực tự động khi mở trang và role không đổi, không nạp lại view lần 2 (tránh duplicate 5-11 request)
+  const isAlreadyRendered = isSessionVerification && (cachedRole === cleanRole);
+
+  if (!isAlreadyRendered) {
+    if (cleanRole === 'ADMIN') {
+      if (sessionStorage.getItem('bht_viewing_as_member')) {
+        initMemberView(true);
+      } else {
+        initAdminView(true);
+      }
     } else {
-      initAdminView(true);
+      initMemberView(true);
     }
   } else {
-    initMemberView(true);
+    // Cập nhật tên hiển thị lên header giao diện nếu có
+    const adminNameEl = document.getElementById('admin-display-name');
+    const adminEmailEl = document.getElementById('admin-display-email');
+    if (adminNameEl && user.hoTen) adminNameEl.textContent = user.hoTen;
+    if (adminEmailEl && user.email) adminEmailEl.textContent = user.email;
+
+    const memNameEl = document.getElementById('member-display-name');
+    const memEmailEl = document.getElementById('member-display-email');
+    if (memNameEl && user.hoTen) memNameEl.textContent = user.hoTen;
+    if (memEmailEl && user.email) memEmailEl.textContent = user.email || user.mssv;
   }
 
   // Cập nhật lại thanh Dev Helper hiển thị đúng nút chuyển vai trò

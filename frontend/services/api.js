@@ -22,6 +22,9 @@ export const API_CONFIG = {
   // Thời gian sống tối đa của Cache Stale-While-Revalidate (10 phút)
   CACHE_TTL_MS: 10 * 60 * 1000,
 
+  // Thời gian dữ liệu được xem là tươi mới (không kích hoạt revalidate ngầm lên GAS)
+  STALE_TIME_MS: 90 * 1000, // 90 giây
+
   // Số lần thử lại tối đa khi gặp sự cố mạng hoặc LOCK_TIMEOUT
   MAX_RETRIES: 4,
 
@@ -238,8 +241,15 @@ export async function callApi(action, payload = {}, options = {}) {
   if (isCacheable) {
     const cachedEntry = getLocalCache(cacheKey);
     if (cachedEntry) {
-      // Trả ngay cache cho UI render tức thì không độ trễ
-      // Đồng thời chạy background fetch cập nhật lại cache
+      const cacheAge = Date.now() - (cachedEntry.timestamp || 0);
+      const isFresh = cacheAge < (API_CONFIG.STALE_TIME_MS || 90000);
+
+      // Nếu dữ liệu vẫn còn tươi mới (< 90s), trả về ngay và TUYỆT ĐỐI KHÔNG gửi request ngầm lên máy chủ
+      if (isFresh) {
+        return cachedEntry.data;
+      }
+
+      // Nếu dữ liệu đã cũ (stale) nhưng trong hạn TTL, trả ngay cho UI và revalidate ngầm 1 lần duy nhất
       revalidateCacheInBackground(apiUrl, action, payload, cacheKey);
       return cachedEntry.data;
     }
@@ -386,8 +396,13 @@ async function sendGasRequest(url, action, payload, method = 'POST') {
 
 /**
  * Cập nhật ngầm dữ liệu cache từ server (Background Revalidation)
+ * Có cơ chế chống gọi trùng lặp nền (Background Deduplication)
  */
+const activeRevalidations = new Set();
 async function revalidateCacheInBackground(apiUrl, action, payload, cacheKey) {
+  if (activeRevalidations.has(cacheKey)) return;
+  activeRevalidations.add(cacheKey);
+
   try {
     const freshRes = await sendGasRequest(apiUrl, action, payload, 'POST');
     if (freshRes && freshRes.success) {
@@ -395,6 +410,8 @@ async function revalidateCacheInBackground(apiUrl, action, payload, cacheKey) {
     }
   } catch (err) {
     console.warn('[API Background] Tự động cập nhật cache thất bại:', err);
+  } finally {
+    activeRevalidations.delete(cacheKey);
   }
 }
 

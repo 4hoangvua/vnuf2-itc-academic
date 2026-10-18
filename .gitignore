@@ -20,3 +20,9 @@ desktop.ini
 # Environment variables
 .env
 .env.local
+
+# Document generation scripts & artifacts
+create_diagrams.py
+build_full_document.py
+docs_diagrams/
+*.docx

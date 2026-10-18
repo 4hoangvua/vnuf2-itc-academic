@@ -37,6 +37,9 @@ import {
   setPaginationPageSize 
 } from './pagination.js';
 
+// Thời điểm tải dữ liệu Admin gần nhất (dùng để throttle visibilitychange)
+let lastAdminDataLoadTime = 0;
+
 /**
  * Hiển thị các khối Skeleton nhấp nháy êm dịu trên các bảng và card của Admin
  */
@@ -153,10 +156,14 @@ export function initAdminView(silent = true) {
       });
     }
 
-    // Tự động đồng bộ làm mới dữ liệu khi Admin quay lại Tab trình duyệt
+    // Tự động đồng bộ làm mới dữ liệu khi Admin quay lại Tab trình duyệt (Áp dụng Cooldown 3 phút, tận dụng cache)
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && appState.user && appState.user.role === 'ADMIN') {
-        loadAdminData(true, true);
+        const now = Date.now();
+        if (now - lastAdminDataLoadTime >= 180000) {
+          console.log('[Admin Sync] Đã quá 3 phút kể từ lần tải gần nhất, tự động làm mới dữ liệu...');
+          loadAdminData(true, false);
+        }
       }
     });
   }
@@ -189,6 +196,7 @@ export async function loadAdminData(silent = true, skipCache = false) {
     ]);
 
     hideGlobalLoading();
+    lastAdminDataLoadTime = Date.now();
 
     if (membersRes && membersRes.success) appState.members = membersRes.data || [];
     if (tasksRes && tasksRes.success) appState.tasks = tasksRes.data || [];
