@@ -405,8 +405,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /**
  * Hiển thị thanh Dev Helper nhỏ dưới góc phải màn hình (không che Sidebar và Logout)
+ * CHỈ HIỂN THỊ KHI CHẠY Ở MÔI TRƯỜNG LOCAL (localhost, 127.0.0.1, file://)
  */
 export function renderDevHelperBanner() {
+  const isLocal = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.protocol === 'file:' ||
+    new URLSearchParams(window.location.search).has('dev')
+  );
+
+  // Gỡ bỏ và không hiển thị nếu không phải môi trường local
+  if (!isLocal) {
+    const existing = document.getElementById('dev-mode-indicator');
+    if (existing) existing.remove();
+    return;
+  }
+
   const isMock = isMockMode();
   const user = store.getState('user');
   const currentMssv = localStorage.getItem('bht_mssv') || (user ? user.mssv : '');

@@ -153,20 +153,29 @@ export function setApiUrl(url) {
  * Kiểm tra xem hệ thống có đang chạy ở chế độ Mock Data hay không
  */
 export function isMockMode() {
-  const manualMock = safeStorage.getItem('bht_force_mock');
-  if (manualMock === 'true') return true;
-  if (manualMock === 'false') return false;
-
   const currentUrl = getApiUrl();
-  if (!currentUrl) return true; // Bắt buộc Mock nếu chưa có URL
 
   const isLocal = typeof window !== 'undefined' && (
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1' ||
-    window.location.protocol === 'file:'
+    window.location.protocol === 'file:' ||
+    new URLSearchParams(window.location.search).has('dev')
   );
 
-  return isLocal && API_CONFIG.AUTO_MOCK_ON_LOCALHOST && !manualMock;
+  // Trên Production / GitHub Pages: Bắt buộc dùng API thật (trừ khi chưa cấu hình URL)
+  if (!isLocal) {
+    if (!currentUrl) return true;
+    return false;
+  }
+
+  // Trên Localhost / Dev:
+  const manualMock = safeStorage.getItem('bht_force_mock');
+  if (manualMock === 'true') return true;
+  if (manualMock === 'false') return false;
+
+  if (!currentUrl) return true;
+
+  return API_CONFIG.AUTO_MOCK_ON_LOCALHOST && !manualMock;
 }
 
 /**
