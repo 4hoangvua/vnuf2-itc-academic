@@ -101,3 +101,24 @@ Trước khi triển khai action mới lên môi trường Google Apps Script th
 - [ ] 3. **Kiểm tra Cache Invalidation:** Gọi mutation xong, các truy vấn query liên quan tự động xóa cache và nạp lại dữ liệu mới nhất.
 - [ ] 4. **Kiểm tra Guard Role & Identity Injection:** Router thật tự tiêm `currentUser.mssv` cho Member, và chặn 403 Forbidden đối với Admin actions.
 - [ ] 5. **Chạy Test Tự Động:** Chạy `node test_core.mjs` đảm bảo 100% test suites vượt qua (0 failure).
+
+---
+
+## 5. NGUYÊN TẮC PHÂN TÁCH KÊNH TRIỂN KHAI GIT (FRONTEND) VS CLASP (BACKEND GAS)
+
+Để bảo mật tuyệt đối các cấu hình Google Apps Script, SheetID, RootFolderID và thông tin nhạy cảm của hệ thống:
+
+1. **Kênh Git Remote (GitHub):**
+   - **CHỈ ĐẨY MÃ NGUỒN FRONTEND, TÀI LIỆU VÀ CẤU HÌNH DỰ ÁN.**
+   - Thư mục `gas-backend/`, các file `.clasp.json`, `.clasprc.json` **BẮT BUỘC** nằm trong `.gitignore`.
+   - **Bảo toàn dữ liệu máy Local:** Việc ignore `gas-backend/` đảm bảo git không track hoặc push lên remote, trong khi toàn bộ mã nguồn backend trên máy local của lập trình viên vẫn được giữ nguyên vẹn 100%, tuyệt đối không được xóa.
+
+2. **Kênh Clasp (Google Apps Script Backend):**
+   - Mọi thay đổi trong `gas-backend/` (Router, Services, Config) chỉ được đồng bộ và triển khai trực tiếp lên Google Apps Script qua lệnh:
+     ```powershell
+     npm run push      # Tương đương: clasp push --force
+     ```
+   - Đồng bộ ngược từ Google Apps Script về máy local qua:
+     ```powershell
+     npm run pull      # Tương đương: clasp pull
+     ```
