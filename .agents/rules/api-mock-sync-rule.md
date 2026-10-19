@@ -116,7 +116,11 @@ Trước khi triển khai action mới lên môi trường Google Apps Script th
 2. **Kênh Clasp (Google Apps Script Backend):**
    - Mọi thay đổi trong `gas-backend/` (Router, Services, Config) chỉ được đồng bộ và triển khai trực tiếp lên Google Apps Script qua lệnh:
      ```powershell
-     npm run push      # Tương đương: clasp push --force
+     npm run push      # Tương đương: clasp push --force (đẩy code lên @HEAD)
+     ```
+   - **Triển khai phiên bản Web App thực tế:** Do Web App production gắn với version snapshot (không tự ăn theo @HEAD), sau khi `push` cần cập nhật deployment hiện tại:
+     ```powershell
+     npx @google/clasp deploy -i <DeploymentID> -d "Mô tả phiên bản mới"
      ```
    - Đồng bộ ngược từ Google Apps Script về máy local qua:
      ```powershell
