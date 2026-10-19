@@ -16,22 +16,27 @@ gas-backend/
 ├── Service_Auth.js             # Dịch vụ xác thực: Sinh sessionToken (UUID), Cache OTP 5 phút, gửi mã qua Gmail
 ├── Service_Member.js           # Dịch vụ nhân sự & Buổi sinh hoạt: Điểm danh PIN tốc độ cao (OPEN_SESSION_CACHE)
 ├── Service_Task.js             # Dịch vụ nhiệm vụ: Tạo bài tập, tự động cấp phát Folder trên Google Drive
-└── Service_Submit.js           # Dịch vụ nộp bài: Lưu tệp Base64 vào Google Drive TRƯỚC khi khóa, duyệt bài, kho học liệu
+├── Service_Submit.js           # Dịch vụ nộp bài: Lưu tệp Base64 vào Google Drive TRƯỚC khi khóa, duyệt bài
+├── Service_Doc.js              # Dịch vụ kho tài liệu học thuật: Phân loại chuyên đề, lưu trữ link Drive
+└── Service_Quiz.js             # Dịch vụ trắc nghiệm & ôn luyện: Đề thi, bảng xếp hạng, Zen Focus Arena, hồ sơ luyện tập
 ```
 
 ---
 
 ## 2. Cấu Trúc Cơ Sở Dữ Liệu Google Sheets
 
-Hệ thống lưu trữ trên Google Spreadsheet thông qua 5 sheet tiêu chuẩn:
+Hệ thống lưu trữ trên Google Spreadsheet thông qua các sheet tiêu chuẩn:
 
 | Tên Sheet | Mục đích | Các cột dữ liệu (Schema) |
 | :--- | :--- | :--- |
 | `ThanhVien` | Quản lý nhân sự | `MSSV`, `HoTen`, `Email`, `Role` (ADMIN/MEMBER), `TrangThai` (Active/Inactive), `NgayThamGia` |
-| `DiemDanh` | Buổi học & Chuyên đề | `SessionID`, `TenBuoiHop`, `MaPin`, `TrangThai` (Open/Closed), `DS_CoMat` (JSON array MSSV), `NgayDienRa`, `NoiDungChuyenDe`, `LinkTaiLieu` |
+| `DiemDanh` | Buổi học & Chuyên đề | `SessionID`, `TenBuoiHop`, `MaPin`, `TrangThai` (Open/Closed), `DS_CoMat` (JSON array MSSV), `NgayDienRa`, `NoiDungChuyenDe`, `LinkTaiLieu`, `TagChuyenDe`, `PhongHoc` |
 | `NhiemVu` | Danh mục bài tập | `TaskID`, `TieuDe`, `MoTa`, `NguoiNhan` (ALL hoặc MSSV), `Deadline`, `FolderID`, `TrangThai` (Open/Closed), `SessionID` |
 | `BaiNop` | Danh sách nộp bài | `SubID`, `TaskID`, `MSSV`, `HoTen`, `Email`, `TenFile`, `DriveLink`, `ThoiGianNop`, `TrangThaiDuyet` (Pending/Approved/Rejected), `Feedback` |
 | `TaiLieu` | Kho học liệu CLB | `DocID`, `TenTaiLieu`, `PhanLoai`, `LinkDrive`, `MoTa` |
+| `TracNghiem` | Ngân hàng đề thi trắc nghiệm | `QuizID`, `SessionID`, `TieuDe`, `ThoiGianLamBai`, `TrangThai` (Open/Closed), `DanhSachCauHoi` (JSON), `DiemToiDa`, `NgayTao` |
+| `KetQuaQuiz` | Lịch sử nộp bài & Bảng điểm | `ResultID`, `QuizID`, `MSSV`, `HoTen`, `DiemSo`, `CauDung`, `TongCau`, `ChiTietTraLoi` (JSON), `ThoiGianNop`, `TrangThai` (Pass/Fail) |
+| `HoSoQuiz` | Hồ sơ gamification & Ôn luyện | `MSSV`, `WrongQuestionIds` (JSON), `BookmarkedQuestionIds` (JSON), `StreakDays`, `LastActiveDate` |
 
 ---
 
@@ -83,6 +88,23 @@ Hệ thống lưu trữ trên Google Spreadsheet thông qua 5 sheet tiêu chuẩ
   - Sau khi có URL tệp thành công, chỉ mở `withScriptLock(10000)` trong vài chục mili-giây để append một dòng ghi nhận vào sheet `BaiNop` rồi nhả khóa ngay.
   - MSSV, Họ tên, Email luôn được lấy trực tiếp từ `currentUser` (Session Token) bảo đảm chính chủ.
 - `reviewSubmission(data)`: Quản trị viên cập nhật trạng thái duyệt bài (`Approved` / `Rejected`) và lưu nhận xét phản hồi.
+
+### 4.4. Trắc Nghiệm Ôn Luyện & Thi Thật (`Service_Quiz.js`)
+1. **Lưu trữ & Bảo mật đề thi (`getQuizBySession`, `saveQuiz`):**
+   - Đề thi lưu trữ dưới dạng JSON mảng câu hỏi trong sheet `TracNghiem`.
+   - **Bảo mật chống lộ đề:** Khi sinh viên chưa hoàn thành bài thi chính thức, API tự động lược bỏ `dapAnDung` và `giaiThich` trước khi trả về client. Chỉ khi đã nộp bài thành công hoặc người yêu cầu là Quản trị viên (`role === 'ADMIN'`), các trường đáp án và giải thích mới được trả về.
+2. **Nộp bài thi chính thức (`submitQuiz`):**
+   - **Single Official Submission Guard:** Kiểm tra sheet `KetQuaQuiz`. Nếu sinh viên đã có bản ghi thi chính thức cho `QuizID` đó, chặn với mã lỗi `ALREADY_SUBMITTED`.
+   - Chế độ ôn luyện tự do (`isPractice = true`) cho phép sinh viên nộp bài nhiều lần để xem điểm và giải thích mà không ảnh hưởng kết quả thi chính thức.
+   - Chấm điểm tự động trên server, tính điểm theo thang 100 và ghi nhận vào `KetQuaQuiz`.
+3. **Ôn luyện Gamification (`recordQuizAnswer`, `toggleQuestionBookmark`, `getPersonalQuizPool`):**
+   - Lưu trữ các câu hỏi làm sai (`WrongQuestionIds`) và câu hỏi đánh dấu sao (`BookmarkedQuestionIds`) trong sheet `HoSoQuiz`.
+   - Hỗ trợ Zen Focus Arena lấy ngân hàng câu hỏi sai / bookmark để sinh viên ôn tập trước kỳ thi.
+   - Các thao tác ghi nhận câu trả lời cá nhân được tối ưu ghi không block hệ thống.
+
+### 4.5. Kho Học Liệu & Quản Lý Tài Liệu (`Service_Doc.js`)
+- `getAllDocuments()`: Đọc danh sách tài liệu từ sheet `TaiLieu`, hỗ trợ CacheService 3 phút.
+- `createDocument`, `updateDocument`, `deleteDocument`: Quản lý tài liệu theo danh mục chuẩn học thuật và danh mục tùy biến.
 
 ---
 

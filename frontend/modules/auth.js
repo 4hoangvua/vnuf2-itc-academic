@@ -3,7 +3,7 @@
 // ====================================================================
 
 import { callApi, isMockMode, setToken, clearToken, getToken } from '../services/api.js';
-import { appState, store, showToast, showView, showGlobalLoading, hideGlobalLoading, setButtonLoading, showFormError, clearFormError } from './ui.js';
+import { appState, store, showToast, showView, showGlobalLoading, hideGlobalLoading, setButtonLoading, showFormError, clearFormError, registerViewCleanup, runViewCleanup } from './ui.js';
 import { initMemberView } from './member.js';
 import { initAdminView } from './admin.js';
 
@@ -254,7 +254,10 @@ export async function handleVerifyOtp(e) {
  * Quay lại bước nhập MSSV từ bước nhập OTP
  */
 export function backToMssvStep() {
-  if (appState.otpTimer) clearInterval(appState.otpTimer);
+  if (appState.otpTimer) {
+    clearInterval(appState.otpTimer);
+    appState.otpTimer = null;
+  }
   const reqForm = document.getElementById('form-request-otp');
   const verForm = document.getElementById('form-verify-otp');
   if (verForm) verForm.classList.add('hidden');
@@ -271,7 +274,10 @@ export function backToMssvStep() {
  * Đếm ngược thời gian hết hạn mã OTP
  */
 export function startOtpCountdown(seconds = 300) {
-  if (appState.otpTimer) clearInterval(appState.otpTimer);
+  if (appState.otpTimer) {
+    clearInterval(appState.otpTimer);
+    appState.otpTimer = null;
+  }
 
   let remaining = seconds;
   const timerEl = document.getElementById('otp-countdown') || document.getElementById('otp-timer');
@@ -295,7 +301,10 @@ export function startOtpCountdown(seconds = 300) {
   appState.otpTimer = setInterval(() => {
     remaining--;
     if (remaining <= 0) {
-      clearInterval(appState.otpTimer);
+      if (appState.otpTimer) {
+        clearInterval(appState.otpTimer);
+        appState.otpTimer = null;
+      }
       if (timerEl) timerEl.textContent = '00:00';
       if (resendBtn) {
         resendBtn.classList.remove('opacity-50', 'pointer-events-none');
@@ -306,6 +315,14 @@ export function startOtpCountdown(seconds = 300) {
       updateDisplay();
     }
   }, 1000);
+
+  // Đăng ký dọn dẹp timer vào View Lifecycle để tránh memory leak khi đổi view hoặc đăng xuất
+  registerViewCleanup(() => {
+    if (appState.otpTimer) {
+      clearInterval(appState.otpTimer);
+      appState.otpTimer = null;
+    }
+  });
 }
 
 /**
@@ -355,6 +372,9 @@ export async function handleResendOtp() {
  */
 export async function handleLogout() {
   if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?')) {
+    // Kích hoạt dọn dẹp toàn bộ timers, subscriptions và handlers trước khi thoát
+    runViewCleanup();
+
     try {
       await callApi('logoutUser', {});
     } catch (e) {

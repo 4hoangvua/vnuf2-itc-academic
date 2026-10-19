@@ -544,21 +544,14 @@
         </div>
       </div>
 
-      <!-- TAB 4: TRẮC NGHIỆM ÔN TẬP (MỞ RỘNG) -->
+      <!-- TAB 4: TRẮC NGHIỆM ÔN TẬP (MASTER-DETAIL SUBTAB) -->
       <div id="member-subtab-quiz-content" class="space-y-4 hidden">
+        <!-- Rendered dynamically via JS (renderMemberQuizView) -->
         <div class="bht-card p-8 text-center bg-surface border border-dashed border-hairline space-y-3">
           <div class="w-14 h-14 rounded-2xl bg-accent-soft text-accent mx-auto flex items-center justify-center text-2xl shadow-sm">
-            <i class="fa-solid fa-circle-question"></i>
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
           </div>
-          <h3 class="bht-heading-serif text-lg font-bold text-ink">Trắc Nghiệm Ôn Tập & Củng Cố Kiến Thức</h3>
-          <p class="text-xs text-ink-muted max-w-md mx-auto leading-relaxed">
-            Hệ thống câu hỏi trắc nghiệm kiểm tra nhanh kiến thức buổi học sẽ được mở sau khi kết thúc phần giảng bài.
-          </p>
-          <div class="pt-2">
-            <button class="bht-btn bht-btn-secondary bht-btn-sm" disabled>
-              <span>Chưa mở đề trắc nghiệm</span>
-            </button>
-          </div>
+          <p class="text-xs text-ink-muted">Đang tải đề trắc nghiệm...</p>
         </div>
       </div>
     </section>
@@ -736,6 +729,113 @@
     </form>
   </div>
 </div>
+
+<!-- Modal Popup Ma Trận Câu Hỏi Trắc Nghiệm Cho Thành Viên -->
+<div id="modal-quiz-question-grid" class="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+  <div class="bht-card bg-elevated max-w-lg w-full p-4 sm:p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)] space-y-3.5 sm:space-y-4 max-h-[90vh] flex flex-col justify-between">
+    <div class="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-hairline">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-table-cells text-accent text-sm sm:text-base"></i>
+        <h3 class="bht-heading-serif text-sm sm:text-base font-bold text-ink">Ma Trận Câu Hỏi</h3>
+      </div>
+      <button type="button" data-action="close-quiz-grid-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <!-- Container render ma trận các nút 1..N -->
+    <div id="modal-quiz-grid-container" class="grow overflow-y-auto">
+      <p class="text-xs text-ink-muted text-center py-4">Đang tải ma trận câu hỏi...</p>
+    </div>
+
+    <div class="pt-2.5 sm:pt-3 border-t border-hairline flex items-center justify-between text-[11px] sm:text-xs text-ink-muted">
+      <span class="truncate pr-2">Bấm số câu để chuyển nhanh</span>
+      <button type="button" data-action="close-quiz-grid-modal" class="bht-btn bht-btn-secondary bht-btn-xs shrink-0">
+        <span>Đóng lại</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Zen Focus Arena (Phòng Thi Tính Giờ & Ôn Luyện Toàn Màn Hình) -->
+<div id="modal-quiz-zen-arena" class="fixed inset-0 z-50 bg-canvas text-ink flex flex-col justify-between hidden animate-fade-in overflow-y-auto">
+  <!-- TOP STICKY HEADER -->
+  <header class="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-hairline px-3 sm:px-8 py-2 sm:py-3 flex flex-col gap-2 shadow-sm">
+    <div class="flex items-center justify-between gap-2 sm:gap-3">
+      <!-- Left: Exit button & Mode tag -->
+      <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <button 
+          type="button" 
+          data-action="exit-taking-quiz" 
+          class="bht-btn bht-btn-ghost bht-btn-xs sm:bht-btn-sm text-ink-muted hover:text-ink flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3"
+          title="Quay lại bảng điều khiển"
+        >
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+          <span class="hidden xs:inline sm:inline">Thoát</span>
+        </button>
+        <span id="zen-quiz-mode-badge" class="bht-badge bg-accent-soft text-accent text-[11px] sm:text-xs font-semibold px-2 py-0.5">
+          Luyện tập
+        </span>
+        <span id="zen-quiz-pool-badge" class="bht-badge bg-subtle text-ink-muted text-[10px] hidden font-mono">
+          Pool
+        </span>
+      </div>
+
+      <!-- Center: Title (Desktop) -->
+      <div class="hidden md:block text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-md">
+        <h3 id="zen-quiz-header-title" class="bht-heading-serif text-sm font-bold text-ink truncate">Đề trắc nghiệm</h3>
+      </div>
+
+      <!-- Right: Timer (if exam), Bookmark & Matrix Grid Trigger -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div id="zen-quiz-timer-container" class="hidden items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-mono font-bold text-xs sm:text-sm">
+          <i class="fa-regular fa-clock text-xs"></i>
+          <span id="zen-quiz-countdown-timer">--:--</span>
+        </div>
+
+        <button 
+          type="button" 
+          id="zen-btn-bookmark" 
+          data-action="toggle-quiz-bookmark" 
+          class="bht-btn bht-btn-ghost bht-btn-xs sm:bht-btn-sm text-ink-muted hover:text-amber-500 p-1.5 sm:p-2 active:scale-95"
+          title="Đánh dấu sao câu hỏi này (Phím S)"
+        >
+          <i class="fa-solid fa-star text-xs sm:text-sm"></i>
+        </button>
+
+        <button 
+          type="button" 
+          data-action="open-quiz-grid-modal" 
+          class="bht-btn bht-btn-secondary bht-btn-xs sm:bht-btn-sm px-2 sm:px-2.5"
+          title="Mở ma trận câu hỏi (Phím M)"
+        >
+          <i class="fa-solid fa-table-cells text-xs mr-1 text-accent"></i>
+          <span id="zen-quiz-counter" class="font-mono font-bold text-xs">1/10</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Thin Top Progress Bar -->
+    <div class="w-full bg-subtle h-1 rounded-full overflow-hidden">
+      <div id="zen-quiz-progress-bar" class="bg-accent h-full transition-all duration-300 rounded-full" style="width: 10%;"></div>
+    </div>
+  </header>
+
+  <!-- CENTER QUESTION ARENA (MAX WIDTH 800PX) -->
+  <main class="grow w-full max-w-3xl mx-auto px-3 sm:px-6 py-3 sm:py-6 flex flex-col justify-start">
+    <div id="zen-quiz-question-container" class="space-y-4 sm:space-y-6 w-full">
+      <!-- Nội dung Single-Question Focus Card được render động qua templates.js -->
+    </div>
+  </main>
+
+  <!-- BOTTOM STICKY NAVIGATION DOCK -->
+  <footer class="sticky bottom-0 z-30 bg-surface/95 backdrop-blur-md border-t border-hairline px-3 sm:px-8 py-2.5 sm:py-3.5 shadow-sm">
+    <div class="max-w-3xl mx-auto flex items-center justify-between gap-2 sm:gap-3" id="zen-quiz-footer-dock">
+      <!-- Cụm nút chuyển câu Prev / Next / Submit -->
+    </div>
+  </footer>
+</div>
+
 
 
 

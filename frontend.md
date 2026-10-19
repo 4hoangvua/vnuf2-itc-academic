@@ -20,11 +20,24 @@ frontend/
 │   └── admin.html              # Cổng quản trị (Duyệt bài, Quản lý buổi học Master-Detail, PIN, Nhân sự)
 ├── modules/                    # Logic điều phối giao diện (Controllers & Reactive State)
 │   ├── store.js                # Quản lý State phản ứng tập trung (Pub/Sub + ES6 Proxy), thông báo UI tự động
-│   ├── templates.js            # Tách biệt toàn bộ HTML Template Literals khỏi logic API, lọc chống XSS, taxonomy tags
+│   ├── templates.js            # Barrel & Base Templates (Thẻ, Bảng, Huy hiệu, Taxonomy tags)
+│   ├── templates/              # Sub-templates chuyên biệt theo phân hệ
+│   │   └── quizTemplates.js    # Template trắc nghiệm (Zen Focus Arena, Bảng câu hỏi, Scorecard, Review)
 │   ├── ui.js                   # Điều phối giao diện, Theme Sáng/Tối, Toast, Loading overlay
 │   ├── auth.js                 # Xử lý xác thực OTP, đếm ngược 300s, Quản lý Token & Dọn sạch cache khi đăng xuất
-│   ├── member.js               # Render Dashboard thành viên, Dòng thời gian buổi học, Sub-view chi tiết, Kho tài liệu
-│   ├── admin.js                # Render Dashboard admin, Quản lý buổi học, Sub-view chi tiết, Chấm bài, Quản lý tài liệu
+│   ├── member.js               # Barrel module Thành viên (Re-export các sub-modules bên dưới)
+│   ├── member/                 # Phân hệ thành viên tách nhỏ (Single Responsibility)
+│   │   ├── memberSessions.js   # Dòng thời gian, Master-Detail chi tiết, Điểm danh PIN, Lộ trình học
+│   │   ├── memberQuiz.js       # Phòng thi trắc nghiệm Zen Focus Arena, Bookmark, Luyện sai, Leaderboard
+│   │   ├── memberDocs.js       # Kho tài liệu, Lọc phân loại chuyên đề học thuật
+│   │   └── memberSubmissions.js# Danh sách bài nộp, Trạng thái chấm, Giới hạn nộp tối đa 3 lần
+│   ├── admin.js                # Barrel module Quản trị viên (Re-export các sub-modules bên dưới)
+│   ├── admin/                  # Phân hệ quản trị tách nhỏ (Single Responsibility)
+│   │   ├── adminMembers.js     # Quản lý danh sách thành viên, thêm mới, reset Gmail, toggle active
+│   │   ├── adminSessions.js    # Master-Detail buổi học, tạo/sửa session, chiếu PIN, quản lý bài tập
+│   │   ├── adminQuiz.js        # Ngân hàng câu hỏi trắc nghiệm, tạo đề thi, reset lượt thi, thống kê
+│   │   ├── adminDocs.js        # Quản lý kho học liệu, phân loại tài liệu
+│   │   └── adminSubmissions.js # Duyệt bài nộp, nhập điểm, feedback nhận xét cho sinh viên
 │   ├── skeleton.js             # Động cơ Skeleton Shimmer nạp mượt mà, chống giật layout (Anti-FOUC)
 │   ├── pagination.js           # Bộ quản lý phân trang độc lập đa thực thể (Multi-instance pagination)
 │   └── projector.js            # Chế độ máy chiếu PIN toàn màn hình (Chiếu hội trường)
@@ -146,5 +159,34 @@ Tính năng cho phép Quản trị viên (Admin) trải nghiệm hệ thống d�
    - Tại bảng Quản lý Nhân sự Thành viên (`admin-members-tbody`), mỗi hàng sinh viên có nút **`[👁️ Xem]`** (`data-action="view-as-member"`).
    - Khi Admin bấm vào nút này, hệ thống lưu thông tin `{ mssv, hoTen, email }` vào `bht_viewing_as_member` và nạp giao diện Thành viên.
    - Toàn bộ dữ liệu Điểm rèn luyện (ĐRL), Lịch sử điểm danh học vụ, Danh sách bài tập đã nộp / cần làm sẽ phản ánh chính xác 100% hồ sơ học tập của sinh viên đó, giúp Ban Học Thuật kiểm tra phản ánh của sinh viên một cách trực quan nhất.
+
+---
+
+## 7. Kiến Trúc Module Hóa (Modular Architecture) & Định Hướng MVC / State Observer
+
+Nhằm giải quyết triệt để tình trạng các file điều phối phình to (>2,500 dòng/file gây khó bảo trì), hệ thống đã được tái cấu trúc sang kiến trúc Module hóa dựa trên **Native ES6 Modules**:
+
+### 7.1. Đánh giá tính hợp lý của việc tách file bằng ES Modules (`import`/`export`)
+1. **Lợi ích vượt trội:**
+   - **Tách biệt nghiệp vụ (Domain Separation):** Mỗi sub-module chỉ phục vụ đúng 1 phân hệ (`adminMembers`, `adminSessions`, `adminQuiz`, `memberQuiz`...). Dung lượng trung bình giảm xuống còn 200 – 700 dòng/file.
+   - **Kiểm soát phạm vi biến (Scope Isolation):** Không còn tình trạng khai báo biến biến toàn cục trên `window`. Mỗi biến nội bộ được đóng gói chặt chẽ trong file.
+   - **Tương thích ngược 100% (Barrel Re-export Pattern):** Các file gốc `admin.js`, `member.js`, `templates.js` đóng vai trò cổng giao tiếp tổng (`export * from ...`), giữ nguyên giao diện API bên ngoài cho `app.js` và bộ kiểm thử `test_core.mjs` (226/226 test suites passed).
+2. **Quy tắc cốt lõi cần tuân thủ:**
+   - **ES Modules Live Bindings là Read-Only:** Khi một module import một biến `let` từ module khác, biến đó chỉ đọc được chứ không thể gán lại trực tiếp (`a = b` sẽ gây `TypeError: Assignment to constant variable`). Mọi thao tác gán lại State giữa các module **bắt buộc** dùng hàm setter (ví dụ: `setCurrentMemberDetailSessionId(id)`).
+   - **Phân cấp phụ thuộc 1 chiều (Unidirectional Dependency):** Cấm tạo import chéo phụ thuộc vòng (Circular Dependency). Luồng dữ liệu đi thẳng: `API/Mock` -> `Store` -> `Templates` -> `Sub-modules` -> `Main Module` -> `App.js`.
+
+### 7.2. So sánh với mô hình MVC (Model - View - Controller)
+Hệ thống hiện tại đã tiệm cận cấu trúc **MVC cải tiến (Store-based MVC)**:
+- **Model (Dữ liệu & Nghiệp vụ):** `modules/store.js` (quản lý state ứng dụng), `services/api.js` (giao tiếp mạng, retry, deduplication), `services/mockData.js` (kho lưu trữ local).
+- **View (Giao diện hiển thị):** `views/*.html` (khung cấu trúc), `modules/templates.js` & `modules/templates/quizTemplates.js` (hàm template literals sinh HTML thuần, escape XSS).
+- **Controller (Điều phối hành động):** Các sub-modules trong `modules/admin/` và `modules/member/` (xử lý logic, gọi Model cập nhật và chỉ định View render).
+- **Dispatcher / Router:** `app.js` với `CENTRAL_ACTION_MAP` và `CENTRAL_FORM_MAP` (Event Delegation tập trung).
+
+### 7.3. Định hướng nâng cấp tiếp theo
+1. **Mức 1 - Reactive Store Observer (Tự động cập nhật View):**
+   - Nâng cấp `store.js` bằng Observer Pattern (`store.subscribe(key, callback)`). Khi State thay đổi, View tương ứng tự động re-render mà không cần Controller gọi hàm render thủ công.
+2. **Mức 2 - Triển khai Bundler khi Deploy Production:**
+   - Trong môi trường phát triển local, sử dụng native ESM giúp tải code tức thì không cần chờ compile.
+   - Khi triển khai chính thức lên GitHub Pages hoặc nhúng vào Google Apps Script HTML Service, sử dụng Vite hoặc Rollup để đóng gói (bundle & minify) toàn bộ các sub-modules thành 1 file JS duy nhất để tối ưu tối đa số lượng HTTP request.
 
 

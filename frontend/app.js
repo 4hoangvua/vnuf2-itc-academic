@@ -54,8 +54,24 @@ import {
   openQuickPinModal,
   closeQuickPinModal,
   handleSubmitQuickPinModal,
-  filterMemberAuditTable
-} from './modules/member.js?v=20261017_1';
+  filterMemberAuditTable,
+  handleStartMemberQuiz,
+  handleSelectQuizOption,
+  handleSubmitMemberQuiz,
+  handleRetakeMemberQuiz,
+  handleNextQuizQuestion,
+  handlePrevQuizQuestion,
+  handleJumpQuizQuestion,
+  handleToggleQuizAutoNext,
+  handleToggleQuizBookmark,
+  handleSwitchQuizPool,
+  handleOpenQuizGridModal,
+  handleCloseQuizGridModal,
+  handleExitTakingQuiz,
+  handleStartOfficialQuiz,
+  handleStartPracticeQuiz,
+  handleOpenQuizReviewDrawer
+} from './modules/member.js?v=20261020_2';
 
 import {
   initAdminView,
@@ -113,8 +129,17 @@ import {
   handleFilterAdminDocs,
   handleFilterAdminAttendance,
   switchToMemberView,
-  returnToAdminView
-} from './modules/admin.js?v=20261017_1';
+  returnToAdminView,
+  handleToggleAdminQuizStatus,
+  handleOpenCreateQuizModal,
+  handleOpenEditQuizModal,
+  handleCloseEditQuizModal,
+  handleInsertQuizTemplateSample,
+  handleSubmitEditQuizForm,
+  handleDeleteAdminQuiz,
+  handleResetMemberQuizSubmission,
+  handleResetAllQuizSubmissions
+} from './modules/admin.js?v=20261020_1';
 
 import {
   openProjectorMode,
@@ -171,6 +196,22 @@ const CENTRAL_ACTION_MAP = {
   'show-drl-notice': () => {
     showToast('Điểm Rèn Luyện học kỳ sẽ được Ban Học Thuật tổng kết và công bố chính thức vào cuối kỳ.', 'info');
   },
+  'start-member-quiz': (el, ev, ds) => handleStartMemberQuiz(ds.sessionId, ds.quizId),
+  'start-official-quiz': (el, ev, ds) => handleStartOfficialQuiz(ds.sessionId, ds.quizId),
+  'start-practice-quiz': (el, ev, ds) => handleStartPracticeQuiz(ds.sessionId, ds.quizId),
+  'open-quiz-review-drawer': () => handleOpenQuizReviewDrawer(),
+  'select-quiz-option': (el, ev, ds) => handleSelectQuizOption(ds.questionId, ds.optionIndex),
+  'submit-member-quiz': (el, ev, ds) => handleSubmitMemberQuiz(ds.sessionId, ds.quizId),
+  'retake-member-quiz': (el, ev, ds) => handleRetakeMemberQuiz(ds.sessionId, ds.quizId),
+  'prev-quiz-question': () => handlePrevQuizQuestion(),
+  'next-quiz-question': () => handleNextQuizQuestion(),
+  'jump-quiz-question': (el, ev, ds) => handleJumpQuizQuestion(ds.index),
+  'toggle-quiz-auto-next': (el, ev) => handleToggleQuizAutoNext(ev),
+  'toggle-quiz-bookmark': (el, ev, ds) => handleToggleQuizBookmark(ds.questionId),
+  'switch-quiz-pool': (el, ev, ds) => handleSwitchQuizPool(ds.pool),
+  'open-quiz-grid-modal': () => handleOpenQuizGridModal(),
+  'close-quiz-grid-modal': () => handleCloseQuizGridModal(),
+  'exit-taking-quiz': () => handleExitTakingQuiz(),
 
   // --- QUẢN TRỊ VIÊN (ADMIN ACTIONS) ---
   'refresh-admin-data': () => refreshAdminData(),
@@ -232,6 +273,16 @@ const CENTRAL_ACTION_MAP = {
   'delete-doc': (el, ev, ds) => handleDeleteDocument(ds.id),
   'filter-admin-docs': (el, ev, ds) => handleFilterAdminDocs(ds.cat || ds.category),
   'filter-admin-attendance': (el, ev, ds) => handleFilterAdminAttendance(ds.cat || ds.category),
+
+  // --- TRẮC NGHIỆM ADMIN (ADMIN QUIZ ACTIONS) ---
+  'toggle-admin-quiz-status': (el, ev, ds) => handleToggleAdminQuizStatus(ds.sessionId, ds.quizId, ds.status),
+  'open-create-quiz-modal': (el, ev, ds) => handleOpenCreateQuizModal(ds.sessionId),
+  'open-edit-quiz-modal': (el, ev, ds) => handleOpenEditQuizModal(ds.sessionId, ds.quizId),
+  'close-edit-quiz-modal': () => handleCloseEditQuizModal(),
+  'insert-quiz-template-sample': () => handleInsertQuizTemplateSample(),
+  'delete-admin-quiz': (el, ev, ds) => handleDeleteAdminQuiz(ds.sessionId, ds.quizId),
+  'reset-member-quiz-submission': (el, ev, ds) => handleResetMemberQuizSubmission(ds.sessionId, ds.quizId, ds.mssv),
+  'reset-all-quiz-submissions': (el, ev, ds) => handleResetAllQuizSubmissions(ds.sessionId, ds.quizId),
 
   // --- MÁY CHIẾU PIN (PROJECTOR MODE) ---
   'open-projector-mode': (el, ev, ds) => openProjectorMode(ds.id),
@@ -335,7 +386,8 @@ const CENTRAL_FORM_MAP = {
   'save-document': (form, ev) => handleSaveDocument(ev),
   'quick-attendance': (form, ev) => handleQuickAttendance(ev),
   'checkin-from-detail': (form, ev) => handleCheckInFromDetail(ev),
-  'submit-quick-pin-modal': (form, ev) => handleSubmitQuickPinModal(ev)
+  'submit-quick-pin-modal': (form, ev) => handleSubmitQuickPinModal(ev),
+  'submit-edit-quiz': (form, ev) => handleSubmitEditQuizForm(ev)
 };
 
 // ====================================================================

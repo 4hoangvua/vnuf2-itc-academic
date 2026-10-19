@@ -69,16 +69,22 @@
 ### BƯỚC 5: STATE PHẢN ỨNG & HTML TEMPLATES (`frontend/modules/`)
 1. **Cập nhật Store (`modules/store.js`):**
    - Nếu dữ liệu mới cần dùng chung ở nhiều nơi, khai báo state trong `store.js` và cập nhật bằng `store.setState({ ... })`.
-2. **Tách biệt Template vào `modules/templates.js`:**
+2. **Tách biệt Template vào `modules/templates.js` hoặc Sub-Templates:**
    - Viết các hàm Template Literals xuất ra chuỗi HTML tinh gọn.
+   - Nếu là phân hệ độc lập hoặc lớn (như Quiz, Rubric chấm bài), **bắt buộc** tách vào file riêng trong `frontend/modules/templates/` (ví dụ: `modules/templates/quizTemplates.js`), sau đó re-export qua `modules/templates.js`.
    - **BẮT BUỘC** bọc mọi biến dữ liệu người dùng qua hàm `escapeHTML(str)` từ `utils/dom.js`.
    - **BẮT BUỘC** dùng thuộc tính `data-action="..."` và `data-id="..."`, **CẤM** gắn `onclick` inline.
 
 ---
 
-### BƯỚC 6: CONTROLLER & EVENT DELEGATION (`modules/*.js` & `app.js`)
-1. **Viết Controller logic:**
-   - Đặt hàm nghiệp vụ trong module tương ứng (`admin.js`, `member.js`, `auth.js`).
+### BƯỚC 6: CONTROLLER SUB-MODULES & EVENT DELEGATION (`modules/` & `app.js`)
+1. **Viết Controller logic trong Sub-Modules chuyên trách:**
+   - **TUYỆT ĐỐI KHÔNG** nhồi nhét code vào file gốc `admin.js` hay `member.js`.
+   - Phân loại và đặt hàm nghiệp vụ vào đúng Sub-Module tương ứng:
+     - Admin: `frontend/modules/admin/adminMembers.js`, `adminSessions.js`, `adminQuiz.js`, `adminDocs.js`, `adminSubmissions.js`.
+     - Member: `frontend/modules/member/memberSessions.js`, `memberQuiz.js`, `memberDocs.js`, `memberSubmissions.js`.
+   - Re-export toàn bộ hàm cần dùng ra ngoài qua Barrel file (`admin.js`, `member.js`) bằng cú pháp `export * from './admin/admin<Feature>.js'`.
+   - **Quy tắc ES Module Live Bindings:** Biến import từ module khác là Read-only. Khi cần gán lại state giữa các module, bắt buộc sử dụng các hàm setter (ví dụ: `setCurrentMemberDetailSessionId(id)`).
    - Gọi API qua `await callApi(action, payload)`. Cấm dùng `fetch()` trực tiếp.
    - Dùng helper `withButtonLock(btnEl, asyncFn)` để tự động disable nút và hiện spinner khi gọi API, ngăn double-click.
 2. **Đăng ký Action vào `frontend/app.js`:**
@@ -91,5 +97,5 @@
      'ten-form-moi': (form, ev) => handleFormSubmitMoi(ev),
      ```
 3. **Kiểm thử nghiệm thu:**
-   - Chạy lệnh `node test_core.mjs` để đảm bảo không vi phạm các quy tắc cốt lõi.
+   - Chạy lệnh `node test_core.mjs` để đảm bảo 100% test suites vượt qua (226/226 tests).
    - Kiểm tra trên trình duyệt ở cả 2 vai trò Admin và Member.

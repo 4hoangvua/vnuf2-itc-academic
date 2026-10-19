@@ -615,22 +615,14 @@
         </div>
       </div>
 
-      <!-- TAB 4: TRẮC NGHIỆM & ÔN TẬP (MỞ RỘNG TƯƠNG LAI) -->
+      <!-- TAB 4: TRẮC NGHIỆM & ÔN TẬP (MASTER-DETAIL SUBTAB) -->
       <div id="admin-subtab-quiz-content" class="space-y-4 hidden">
+        <!-- Rendered dynamically via JS (renderAdminQuizPanel) -->
         <div class="bht-card p-8 text-center bg-surface border border-dashed border-hairline space-y-3">
           <div class="w-14 h-14 rounded-2xl bg-accent-soft text-accent mx-auto flex items-center justify-center text-2xl shadow-sm">
-            <i class="fa-solid fa-circle-question"></i>
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
           </div>
-          <h3 class="bht-heading-serif text-lg font-bold text-ink">Mô-đun Trắc Nghiệm & Kiểm Tra Nhanh</h3>
-          <p class="text-xs text-ink-muted max-w-md mx-auto leading-relaxed">
-            Hệ thống ngân hàng câu hỏi trắc nghiệm, tạo đề kiểm tra 10 phút cuối buổi và chấm điểm tự động cho buổi học này đang được chuẩn bị kích hoạt.
-          </p>
-          <div class="pt-2">
-            <button class="bht-btn bht-btn-secondary bht-btn-sm" disabled>
-              <i class="fa-solid fa-plus text-xs"></i>
-              <span>Thêm câu hỏi trắc nghiệm (Coming Soon)</span>
-            </button>
-          </div>
+          <p class="text-xs text-ink-muted">Đang tải dữ liệu trắc nghiệm...</p>
         </div>
       </div>
     </section>
@@ -1330,6 +1322,17 @@
       </div>
 
       <div>
+        <label class="bht-label">Folder Google Drive lưu bài nộp (ID hoặc Link)</label>
+        <div class="relative">
+          <input type="text" id="edit-task-folder-id" placeholder="Nhập ID hoặc dán link Google Drive folder..." class="bht-input text-xs font-mono pr-8">
+          <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-faint text-xs pointer-events-none">
+            <i class="fa-brands fa-google-drive"></i>
+          </span>
+        </div>
+        <p class="text-[11px] text-ink-muted mt-1">Để trống nếu muốn hệ thống dùng folder mặc định.</p>
+      </div>
+
+      <div>
         <label class="bht-label">Trạng thái bài tập</label>
         <select id="edit-task-status" class="bht-select text-xs">
           <option value="Open">Open (Đang nhận bài nộp)</option>
@@ -1421,4 +1424,124 @@
     </form>
   </div>
 </div>
+
+<!-- ==================== MODAL: SOẠN & SỬA ĐỀ TRẮC NGHIỆM ==================== -->
+<div id="modal-edit-quiz" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm hidden">
+  <div class="bht-card w-full max-w-2xl bg-surface p-4 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto space-y-3.5 sm:space-y-4">
+    <div class="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-hairline">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center text-sm shrink-0">
+          <i class="fa-solid fa-file-circle-question"></i>
+        </div>
+        <h3 id="modal-edit-quiz-title" class="bht-heading-serif text-base sm:text-lg font-bold text-ink">Soạn Đề Trắc Nghiệm Ôn Tập</h3>
+      </div>
+      <button data-action="close-edit-quiz-modal" class="text-ink-muted hover:text-ink p-1">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <form id="form-edit-quiz" data-action="submit-edit-quiz" novalidate class="space-y-3.5 sm:space-y-4">
+      <input type="hidden" id="edit-quiz-id">
+      <input type="hidden" id="edit-quiz-session-id">
+
+      <!-- Form Error Alert Container -->
+      <div id="edit-quiz-error-alert" class="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 text-xs hidden">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="edit-quiz-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
+
+      <div>
+        <label class="bht-label">Tiêu đề đề thi / Bài trắc nghiệm <span class="text-err">*</span></label>
+        <input 
+          type="text" 
+          id="edit-quiz-title" 
+          required 
+          placeholder="VD: Trắc nghiệm 10 phút: Kiến trúc Headless & Git" 
+          class="bht-input text-xs sm:text-sm"
+        >
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+        <div>
+          <label class="bht-label">Thời gian thi (Phút)</label>
+          <input 
+            type="number" 
+            id="edit-quiz-duration" 
+            min="1" 
+            max="180" 
+            value="10" 
+            required 
+            class="bht-input text-xs font-mono"
+          >
+        </div>
+        <div>
+          <label class="bht-label" title="Số câu lấy từ ngân hàng để sinh viên thi tính giờ">Số câu thi (Nhánh 1) <span class="text-accent text-[11px] font-mono">*</span></label>
+          <input 
+            type="number" 
+            id="edit-quiz-exam-questions-count" 
+            min="1" 
+            max="100" 
+            value="10" 
+            required 
+            placeholder="VD: 10" 
+            class="bht-input text-xs font-mono"
+          >
+        </div>
+        <div>
+          <label class="bht-label">Trạng thái phát hành</label>
+          <select id="edit-quiz-status" class="bht-select text-xs">
+            <option value="Open">Mở đề ngay (Cho phép thi)</option>
+            <option value="Closed">Đóng đề (Tạm ngưng)</option>
+            <option value="Draft">Bản nháp (Chuẩn bị)</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="bht-label">Mô tả tóm tắt nội dung củng cố</label>
+        <textarea 
+          id="edit-quiz-desc" 
+          rows="2" 
+          placeholder="Tóm tắt phạm vi kiến thức kiểm tra, hướng dẫn làm bài..." 
+          class="bht-textarea text-xs"
+        ></textarea>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="bht-label mb-0">Ngân hàng câu hỏi (JSON Chuẩn) <span class="text-err">*</span></label>
+          <button 
+            type="button" 
+            data-action="insert-quiz-template-sample" 
+            class="text-[11px] text-accent hover:underline flex items-center gap-1 font-mono"
+          >
+            <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+            <span>Dán mẫu 2 câu</span>
+          </button>
+        </div>
+        <textarea 
+          id="edit-quiz-questions-json" 
+          rows="6" 
+          required 
+          placeholder='[\n  {\n    "id": 1,\n    "cauHoi": "Nội dung câu hỏi...",\n    "luaChon": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],\n    "dapAnDung": 0,\n    "giaiThich": "Giải thích vì sao A đúng..."\n  }\n]' 
+          class="bht-textarea text-xs font-mono leading-relaxed"
+        ></textarea>
+        <p class="text-[11px] text-ink-muted mt-1 leading-relaxed">
+          * Lưu ý: <code class="text-accent font-mono">dapAnDung</code> là số thứ tự index bắt đầu từ 0 (0: A, 1: B, 2: C, 3: D). Đáp án đúng sẽ được bảo mật tự động và chỉ mở sau khi sinh viên nộp bài.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
+        <button type="button" data-action="close-edit-quiz-modal" class="bht-btn bht-btn-secondary bht-btn-sm w-full sm:w-auto justify-center">Hủy</button>
+        <button type="submit" id="btn-submit-edit-quiz" class="bht-btn bht-btn-primary bht-btn-sm w-full sm:w-auto justify-center">
+          <i class="fa-solid fa-floppy-disk text-xs mr-1"></i>
+          <span>Lưu đề trắc nghiệm</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 

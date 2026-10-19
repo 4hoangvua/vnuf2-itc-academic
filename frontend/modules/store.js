@@ -195,6 +195,10 @@ class ReactiveStore {
    * @param {boolean} keepAuth Giữ lại phiên đăng nhập hay xóa trắng
    */
   reset(keepAuth = false) {
+    if (this._state.otpTimer) {
+      clearInterval(this._state.otpTimer);
+      this._state.otpTimer = null;
+    }
     const fresh = { ...INITIAL_STATE };
     if (keepAuth) {
       fresh.user = this._state.user;
@@ -202,7 +206,16 @@ class ReactiveStore {
     }
     this.setState(fresh);
   }
+
+  /**
+   * Xóa sạch toàn bộ các listeners đã đăng ký
+   */
+  clearAllSubscriptions() {
+    this._listeners.clear();
+    this._wildcardListeners.clear();
+  }
 }
+
 
 // Khởi tạo Singleton Store instance
 export const store = new ReactiveStore(INITIAL_STATE);

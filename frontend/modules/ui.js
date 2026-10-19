@@ -22,11 +22,14 @@ export {
   setFormDisabled as setFormControlsDisabled,
   attachEventDelegation,
   attachFormDelegation,
+  diffRenderList,
   initHorizontalDragScroll,
   $,
   $$
 } from '../utils/dom.js';
 
+export { registerViewCleanup, runViewCleanup } from '../services/viewLoader.js';
+import { runViewCleanup } from '../services/viewLoader.js';
 import { store } from './store.js';
 
 // Khóa thao tác UI chống spam click (Liên kết với Store.uiLocks)
@@ -36,6 +39,9 @@ export const uiActionLocks = store.getState('uiLocks');
  * Chuyển đổi màn hình chính (App Shell view routing)
  */
 export function showView(viewId) {
+  // Dọn dẹp tài nguyên (timers, listeners) của view trước đó
+  runViewCleanup();
+
   const views = [
     'view-unauthenticated',
     'view-bind-account',
@@ -56,6 +62,7 @@ export function showView(viewId) {
   // Tự động cuộn lên đầu trang mượt mà
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
 
 /**
  * Bật/tắt Giao diện Sáng/Tối (Dark/Light Theme)

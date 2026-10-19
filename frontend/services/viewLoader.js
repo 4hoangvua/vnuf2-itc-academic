@@ -92,3 +92,40 @@ export async function loadAllViews() {
     `;
   }
 }
+
+// ====================================================================
+// VIEW LIFECYCLE & CLEANUP REGISTRY (CHỐNG MEMORY LEAKS & TIMER LƯU HÀNH)
+// ====================================================================
+
+const viewCleanupFns = [];
+
+/**
+ * Đăng ký hàm dọn dẹp khi chuyển đổi view (Cleanup Registry)
+ * @param {Function} fn Hàm cleanup được gọi khi unmount view hoặc logout
+ * @returns {Function} Hàm hủy đăng ký thủ công nếu cần
+ */
+export function registerViewCleanup(fn) {
+  if (typeof fn === 'function') {
+    viewCleanupFns.push(fn);
+    return () => {
+      const idx = viewCleanupFns.indexOf(fn);
+      if (idx !== -1) viewCleanupFns.splice(idx, 1);
+    };
+  }
+  return () => {};
+}
+
+/**
+ * Thực thi toàn bộ các hàm dọn dẹp đã đăng ký
+ */
+export function runViewCleanup() {
+  while (viewCleanupFns.length > 0) {
+    const fn = viewCleanupFns.pop();
+    try {
+      fn();
+    } catch (err) {
+      console.warn('[ViewLoader] Lỗi khi thực thi cleanup function:', err);
+    }
+  }
+}
+

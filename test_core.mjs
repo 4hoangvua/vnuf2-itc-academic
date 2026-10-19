@@ -38,7 +38,8 @@ import {
   getSessionRemainingTime,
   formatSessionDateVN
 } from './frontend/modules/templates.js';
-import { calculateDrlProgress } from './frontend/modules/member.js';
+import { calculateDrlProgress, getMemberSubmissionsForTask } from './frontend/modules/member.js';
+import { getLatestSubmissionsPerMember } from './frontend/modules/admin.js';
 import { mockCallApi, getLocalMockState } from './frontend/services/mockData.js';
 
 let failed = 0;
@@ -381,7 +382,7 @@ viewFiles.forEach(file => {
     assert(`Form #${formId} in ${file} has novalidate attribute (no native tooltips)`, tag.includes('novalidate'));
   });
 });
-assert('All 10 project forms were found and validated for novalidate', totalFormsFound === 10);
+assert('All project forms were found and validated for novalidate', totalFormsFound === 11);
 
 // Test mock element behavior for showFormError and clearFormError
 function createMockClassList() {
@@ -602,11 +603,532 @@ assert('app.js registers switch-to-member-view action', appJsContent.includes("'
 assert('app.js registers return-to-admin-view action', appJsContent.includes("'return-to-admin-view'"));
 assert('app.js registers view-as-member action', appJsContent.includes("'view-as-member'"));
 
+// --------------------------------------------------------------------
+// 14. Testing Frontend Improvement Plan Implementations
+// --------------------------------------------------------------------
+console.log('\n--- 14. Testing Frontend Plan Architecture & Hardening ---');
+
+// 14.1 View Lifecycle & Cleanup Registry
+const { registerViewCleanup, runViewCleanup } = await import('./frontend/services/viewLoader.js');
+let cleanupRan = false;
+registerViewCleanup(() => { cleanupRan = true; });
+runViewCleanup();
+assert('runViewCleanup executes registered cleanup handlers', cleanupRan === true);
+
+let unregisterRan = false;
+const unregisterFn = registerViewCleanup(() => { unregisterRan = true; });
+unregisterFn(); // Unregister manually
+runViewCleanup();
+assert('unregisterViewCleanup removes handler prior to execution', unregisterRan === false);
+
+// 14.2 Store reset clears timer and subscriptions
+store.setState({ otpTimer: 999 });
+assert('store has otpTimer set before reset', store.getState('otpTimer') === 999);
+store.reset();
+assert('store.reset clears otpTimer state', store.getState('otpTimer') === null);
+
+// 14.3 Keyed templates have data-key attributes
+const sessionCardSample = adminSessionCardTemplate({
+  SessionID: 'MEET_SAMPLE_KEY',
+  TenBuoiHop: 'Kiểm thử Keyed Diff Card',
+  NgayDienRa: '2026-10-25'
+});
+assert('adminSessionCardTemplate includes data-key attribute', sessionCardSample.includes('data-key="MEET_SAMPLE_KEY"'));
+
+const memberRowSample = adminMemberRowTemplate({
+  MSSV: '2351120099',
+  HoTen: 'Nguyễn Văn Key'
+});
+assert('adminMemberRowTemplate includes data-key attribute', memberRowSample.includes('data-key="2351120099"'));
+
+const subRowSample = adminSubmissionRowTemplate({
+  SubID: 'SUB_KEY_01',
+  TaskID: 'TASK_01',
+  MSSV: '2351120015',
+  TenFile: 'BaoCao.docx'
+});
+assert('adminSubmissionRowTemplate includes data-key attribute', subRowSample.includes('data-key="SUB_KEY_01"'));
+
+const docCardSample = renderDocCard({
+  DocID: 'DOC_KEY_01',
+  TenTaiLieu: 'TaiLieu.pdf',
+  PhanLoai: 'Slide'
+});
+assert('renderDocCard includes data-key attribute', docCardSample.includes('data-key="DOC_KEY_01"'));
+
+const taskItemSample = renderAdminTaskItem({
+  TaskID: 'TASK_KEY_01',
+  TieuDe: 'Nhiệm vụ Keyed'
+});
+assert('renderAdminTaskItem includes data-key attribute', taskItemSample.includes('data-key="TASK_KEY_01"'));
+
+// 14.4 XSS filter escaping in renderMemberAttendanceAuditTable
+const xssPayload = '<script>alert(1)</script>';
+const auditXssResult = renderMemberAttendanceAuditTable([{ SessionID: 'MEET_01', TrangThai: 'Closed' }], '2351120015', xssPayload);
+assert('renderMemberAttendanceAuditTable escapes XSS filter string', auditXssResult.includes('&lt;script&gt;alert(1)&lt;/script&gt;') && !auditXssResult.includes('<script>'));
+
+// 14.5 Central JSDoc types definition file
+const typesContent = fs.readFileSync('frontend/types.js', 'utf8');
+assert('frontend/types.js exists and exports AttendanceSession typedef', typesContent.includes('@typedef {Object} AttendanceSession'));
+assert('frontend/types.js exports Member typedef', typesContent.includes('@typedef {Object} Member'));
+assert('frontend/types.js exports Task typedef', typesContent.includes('@typedef {Object} Task'));
+assert('frontend/types.js exports Submission typedef', typesContent.includes('@typedef {Object} Submission'));
+assert('frontend/types.js exports AcademicDocument typedef', typesContent.includes('@typedef {Object} AcademicDocument'));
+
+// 14.6 CDN Resilience & Preconnect in index.html
+const frontendIndexHtml = fs.readFileSync('frontend/index.html', 'utf8');
+assert('frontend/index.html has dns-prefetch for cdnjs', frontendIndexHtml.includes('<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">'));
+assert('frontend/index.html has FontAwesome CDN fallback onerror', frontendIndexHtml.includes('onerror="this.onerror=null;this.href=\'https://cdn.jsdelivr.net'));
+
+// 15. Testing 3-Submission Limit, Single Active Latest Submission & Drive Folder
+console.log('\n--- 15. Testing 3-Submission Limit, Single Active Latest Submission & Drive Folder ---');
+
+// 15.1 Giới hạn 3 lần nộp bài
+const testTaskId = 'TASK_LIMIT_TEST_' + Date.now();
+const testMssv = '2351120999';
+
+const sub1 = await mockCallApi('submitTaskAssignment', {
+  taskId: testTaskId,
+  mssv: testMssv,
+  hoTen: 'Sinh Viên Test',
+  fileName: 'BaiTap_Lan1.zip'
+});
+assert('First submission succeeds (turn 1)', sub1.success && sub1.turn === 1);
+
+const sub2 = await mockCallApi('submitTaskAssignment', {
+  taskId: testTaskId,
+  mssv: testMssv,
+  hoTen: 'Sinh Viên Test',
+  fileName: 'BaiTap_Lan2.zip'
+});
+assert('Second submission succeeds (turn 2)', sub2.success && sub2.turn === 2);
+
+const sub3 = await mockCallApi('submitTaskAssignment', {
+  taskId: testTaskId,
+  mssv: testMssv,
+  hoTen: 'Sinh Viên Test',
+  fileName: 'BaiTap_Lan3.zip'
+});
+assert('Third submission succeeds (turn 3)', sub3.success && sub3.turn === 3);
+
+const sub4 = await mockCallApi('submitTaskAssignment', {
+  taskId: testTaskId,
+  mssv: testMssv,
+  hoTen: 'Sinh Viên Test',
+  fileName: 'BaiTap_Lan4.zip'
+});
+assert('Fourth submission is BLOCKED with SUBMISSION_LIMIT_EXCEEDED', !sub4.success && sub4.errorCode === 'SUBMISSION_LIMIT_EXCEEDED');
+
+// 15.2 Single Active Latest Submission in Admin Table
+const rawSubs = [
+  { SubID: 'SUB_01', TaskID: 'T1', MSSV: '2351120001', ThoiGianNop: '10/10/2026 10:00:00', TenFile: 'Lan1.zip' },
+  { SubID: 'SUB_02', TaskID: 'T1', MSSV: '2351120001', ThoiGianNop: '10/10/2026 11:00:00', TenFile: 'Lan2.zip' },
+  { SubID: 'SUB_03', TaskID: 'T1', MSSV: '2351120001', ThoiGianNop: '10/10/2026 12:00:00', TenFile: 'Lan3.zip' },
+  { SubID: 'SUB_04', TaskID: 'T1', MSSV: '2351120002', ThoiGianNop: '10/10/2026 09:00:00', TenFile: 'Lan1_B.zip' }
+];
+
+const latestSubs = getLatestSubmissionsPerMember(rawSubs);
+assert('getLatestSubmissionsPerMember returns exactly 1 item per (TaskID, MSSV)', latestSubs.length === 2);
+
+const student1Sub = latestSubs.find(s => s.MSSV === '2351120001');
+assert('Latest submission for student 1 is the most recent (SUB_03)', student1Sub && student1Sub.SubID === 'SUB_03');
+assert('Latest submission correctly tracks total turn count (3)', student1Sub && student1Sub._submissionTurn === 3);
+
+// 15.3 Member submission ordering (newest first)
+const memberOrderedSubs = getMemberSubmissionsForTask(rawSubs, 'T1');
+assert('getMemberSubmissionsForTask places latest submission at index 0', memberOrderedSubs[0].SubID === 'SUB_03');
+
+// 15.4 Update Drive Folder ID in updateTask
+const updateFolderRes = await mockCallApi('updateTask', {
+  taskId: 'TASK_20261015_001',
+  folderId: 'https://drive.google.com/drive/folders/1abcXYZ_FOLDER_ID_1234567890?usp=sharing'
+});
+assert('updateTask accepts full Drive URL and extracts FolderID regex', updateFolderRes.success && updateFolderRes.folderId === '1abcXYZ_FOLDER_ID_1234567890');
+
+// 15.5 Render turn badge in renderSubmissionRow
+const rowHtmlWithTurn = renderSubmissionRow(student1Sub, { showTaskColumn: true });
+assert('renderSubmissionRow renders [Lần 3/3] badge', rowHtmlWithTurn.includes('Lần 3/3'));
+
+// 15.6 Render Drive button in renderAdminTaskItem
+const taskWithDrive = renderAdminTaskItem({
+  TaskID: 'T_DRIVE',
+  TieuDe: 'Bài tập Drive',
+  FolderID: 'FOLDER_ID_SAMPLE_1234567890'
+});
+assert('renderAdminTaskItem renders Drive link button when FolderID is present', taskWithDrive.includes('https://drive.google.com/drive/folders/FOLDER_ID_SAMPLE_1234567890'));
+
+// 15.7 diffRenderList cleans up unkeyed skeleton/placeholder elements
+let skeletonRemoved = false;
+const mockSkeletonChild = {
+  getAttribute: () => null,
+  remove: () => { skeletonRemoved = true; }
+};
+const mockExistingChild = {
+  getAttribute: (attr) => attr === 'data-key' ? 'DOC_EXISTING' : null,
+  outerHTML: '<div data-key="DOC_EXISTING">Old</div>',
+  replaceWith: () => {}
+};
+const mockContainer = {
+  children: [mockSkeletonChild, mockExistingChild],
+  insertBefore: () => {}
+};
+import { diffRenderList } from './frontend/utils/dom.js';
+diffRenderList(mockContainer, [{ DocID: 'DOC_EXISTING' }], 'DocID', () => '<div data-key="DOC_EXISTING">New</div>');
+assert('diffRenderList automatically removes unkeyed skeleton elements', skeletonRemoved === true);
+
+// ====================================================================
+// 16. TESTING QUIZ & PRACTICE MODULE MOCK DATA (ZERO DISCREPANCY)
+// ====================================================================
+console.log('\n--- 16. Testing Quiz & Practice Module Mock Data ---');
+
+// 16.1 Invalidation Map
+assert('MUTATION_INVALIDATION_MAP contains saveQuiz', MUTATION_INVALIDATION_MAP.saveQuiz && MUTATION_INVALIDATION_MAP.saveQuiz.includes('getQuizBySession'));
+assert('MUTATION_INVALIDATION_MAP contains toggleQuizStatus', MUTATION_INVALIDATION_MAP.toggleQuizStatus && MUTATION_INVALIDATION_MAP.toggleQuizStatus.includes('getQuizBySession'));
+assert('MUTATION_INVALIDATION_MAP contains submitQuiz', MUTATION_INVALIDATION_MAP.submitQuiz && MUTATION_INVALIDATION_MAP.submitQuiz.includes('getQuizBySession'));
+assert('MUTATION_INVALIDATION_MAP contains deleteQuiz', MUTATION_INVALIDATION_MAP.deleteQuiz && MUTATION_INVALIDATION_MAP.deleteQuiz.includes('getQuizBySession'));
+assert('MUTATION_INVALIDATION_MAP contains resetQuizSubmission', MUTATION_INVALIDATION_MAP.resetQuizSubmission && MUTATION_INVALIDATION_MAP.resetQuizSubmission.includes('getQuizResultsBySession'));
+assert('MUTATION_INVALIDATION_MAP contains resetAllQuizSubmissions', MUTATION_INVALIDATION_MAP.resetAllQuizSubmissions && MUTATION_INVALIDATION_MAP.resetAllQuizSubmissions.includes('getQuizResultsBySession'));
+
+// 16.2 getQuizBySession for student who has NOT submitted (anti-cheat: hide dapAnDung)
+const newStudentRes = await mockCallApi('getQuizBySession', {
+  sessionId: 'MEET_20261015_190000',
+  mssv: '2451120099', // Chưa làm bài
+  isAdmin: false
+});
+assert('getQuizBySession returns quiz data', newStudentRes.success && newStudentRes.data.quiz !== null);
+assert('getQuizBySession for unsubmitted student hides dapAnDung', newStudentRes.data.quiz.DanhSachCauHoi[0].dapAnDung === undefined);
+assert('getQuizBySession for unsubmitted student keeps question choices', newStudentRes.data.quiz.DanhSachCauHoi[0].luaChon.length === 4);
+
+// 16.3 getQuizBySession for ADMIN returns full answers and explanations
+const adminQuizRes = await mockCallApi('getQuizBySession', {
+  sessionId: 'MEET_20261015_190000',
+  isAdmin: true
+});
+assert('getQuizBySession for Admin preserves dapAnDung', adminQuizRes.data.quiz.DanhSachCauHoi[0].dapAnDung !== undefined);
+assert('getQuizBySession for Admin preserves giaiThich', !!adminQuizRes.data.quiz.DanhSachCauHoi[0].giaiThich);
+
+// 16.4 submitQuiz calculates exact score & correct answers
+const submitRes = await mockCallApi('submitQuiz', {
+  sessionId: 'MEET_20261015_190000',
+  quizId: 'QUIZ_20261015_01',
+  mssv: '2451120099',
+  hoTen: 'Sinh Viên Test',
+  chiTietTraLoi: { 1: 1, 2: 1, 3: 0, 4: 1, 5: 1 }, // Đúng cả 5 câu (100 điểm)
+  thoiGianLamGiay: 180
+});
+assert('submitQuiz succeeds', submitRes.success === true);
+assert('submitQuiz calculates 100/100 score for all correct answers', submitRes.data.result.DiemSo === 100 && submitRes.data.result.SoCauDung === 5);
+assert('submitQuiz returns explanations for student review', !!submitRes.data.quiz.DanhSachCauHoi[0].giaiThich);
+
+// 16.5 toggleQuizStatus and deleteQuiz
+const toggleRes = await mockCallApi('toggleQuizStatus', {
+  sessionId: 'MEET_20261015_190000',
+  trangThai: 'Closed'
+});
+assert('toggleQuizStatus sets status to Closed', toggleRes.success && toggleRes.trangThai === 'Closed');
+
+// 16.6 submitQuiz is blocked when quiz is Closed
+const blockedSubmit = await mockCallApi('submitQuiz', {
+  sessionId: 'MEET_20261015_190000',
+  quizId: 'QUIZ_20261015_01',
+  mssv: '2451120088',
+  chiTietTraLoi: {}
+});
+assert('submitQuiz blocked when quiz status is Closed', blockedSubmit.success === false);
+
+// Re-open for subsequent tests
+await mockCallApi('toggleQuizStatus', {
+  sessionId: 'MEET_20261015_190000',
+  trangThai: 'Open'
+});
+
+// 16.7 OOP C++ Quiz Bank from tracnhiem.html
+const oopQuizRes = await mockCallApi('getQuizBySession', {
+  sessionId: 'MEET_20261008_190000',
+  isAdmin: true
+});
+assert('QUIZ_OOP_CPP_01 exists in mock bank', oopQuizRes.success && oopQuizRes.data.quiz !== null && oopQuizRes.data.quiz.QuizID === 'QUIZ_OOP_CPP_01');
+assert('QUIZ_OOP_CPP_01 has 8 core OOP questions with explanations', oopQuizRes.data.quiz.DanhSachCauHoi.length === 8 && Boolean(oopQuizRes.data.quiz.DanhSachCauHoi[0].giaiThich));
+
+// 16.8 getMemberQuizProfile returns streak and pools
+const profileRes = await mockCallApi('getMemberQuizProfile', { mssv: '2351120015' });
+assert('getMemberQuizProfile returns member streak and badging info', profileRes.success && profileRes.data.StreakDays >= 1 && Array.isArray(profileRes.data.Badges));
+assert('getMemberQuizProfile includes Wrong and Bookmark pools', Array.isArray(profileRes.data.WrongQuestionIds) && Array.isArray(profileRes.data.BookmarkedQuestionIds));
+
+// 16.9 recordQuizAnswer: Instant Feedback & Wrong Pool auto-management
+const answerWrongRes = await mockCallApi('recordQuizAnswer', {
+  quizId: 'QUIZ_OOP_CPP_01',
+  questionId: 1,
+  selectedIndex: 0, // Sai (chọn 0 thay vì 1)
+  mssv: '2351120015'
+});
+assert('recordQuizAnswer correctly identifies wrong answer', answerWrongRes.success && answerWrongRes.data.isCorrect === false);
+assert('recordQuizAnswer returns correct answer index and explanation', answerWrongRes.data.correctAnswer === 1 && Boolean(answerWrongRes.data.explanation));
+
+// Now answer correctly -> auto-removes from wrong pool
+const answerCorrectRes = await mockCallApi('recordQuizAnswer', {
+  quizId: 'QUIZ_OOP_CPP_01',
+  questionId: 1,
+  selectedIndex: 1, // Đúng
+  mssv: '2351120015'
+});
+assert('recordQuizAnswer correctly identifies right answer', answerCorrectRes.success && answerCorrectRes.data.isCorrect === true);
+
+// 16.10 toggleQuestionBookmark
+const toggleBmRes = await mockCallApi('toggleQuestionBookmark', {
+  quizId: 'QUIZ_OOP_CPP_01',
+  questionId: 3,
+  mssv: '2351120015'
+});
+assert('toggleQuestionBookmark toggles state to bookmarked', toggleBmRes.success && typeof toggleBmRes.data.isBookmarked === 'boolean');
+
+// 16.11 getPersonalQuizPool returns extracted questions
+const poolRes = await mockCallApi('getPersonalQuizPool', {
+  mssv: '2351120015',
+  poolType: 'bookmark'
+});
+assert('getPersonalQuizPool returns bookmarked questions list', poolRes.success && Array.isArray(poolRes.data.questions));
+
+// 16.12 clearWrongHistory resets wrong list
+const clearWrongRes = await mockCallApi('clearWrongHistory', { mssv: '2351120015' });
+assert('clearWrongHistory succeeds', clearWrongRes.success === true);
+const profileAfterClear = await mockCallApi('getMemberQuizProfile', { mssv: '2351120015' });
+assert('WrongQuestionIds is empty after clearWrongHistory', profileAfterClear.data.WrongQuestionIds.length === 0);
+
+// 16.13 resetQuizSubmission allows student to retake 10-minute quiz
+const resetSingleRes = await mockCallApi('resetQuizSubmission', {
+  quizId: 'QUIZ_20261015_01',
+  sessionId: 'MEET_20261015_190000',
+  mssv: '2451120099'
+});
+assert('resetQuizSubmission succeeds', resetSingleRes.success === true);
+
+// 16.14 resetAllQuizSubmissions resets class submissions and reopens quiz
+const resetAllRes = await mockCallApi('resetAllQuizSubmissions', {
+  quizId: 'QUIZ_20261015_01',
+  sessionId: 'MEET_20261015_190000'
+});
+assert('resetAllQuizSubmissions succeeds', resetAllRes.success === true);
+
+// --------------------------------------------------------------------
+// 17. Testing Single-Question Focus UI & Gamification Trắc Nghiệm
+// --------------------------------------------------------------------
+console.log('\n--- 17. Testing Single-Question Focus UI & Gamification Trắc Nghiệm ---');
+
+const {
+  renderQuizQuestionGridContent,
+  renderMemberQuizView,
+  renderZenQuestionCard,
+  renderZenFooterDock
+} = await import('./frontend/modules/templates.js');
+
+// 17.1 renderQuizQuestionGridContent Matrix
+const sampleQuestions = [
+  { id: 1, cauHoi: 'Tính chất nào ẩn chi tiết cài đặt?', luaChon: ['Kế thừa', 'Đóng gói', 'Đa hình', 'Trừu tượng'], dapAnDung: 1 },
+  { id: 2, cauHoi: 'Từ khóa tạo kế thừa trong C++?', luaChon: ['extends', ':', 'inherits', 'implements'], dapAnDung: 1 },
+  { id: 3, cauHoi: 'Hàm ảo thuần ảo kết thúc bằng gì?', luaChon: ['= 0', 'virtual', 'abstract', '= null'], dapAnDung: 0 }
+];
+
+const gridHtml = renderQuizQuestionGridContent(
+  sampleQuestions,
+  { 1: 1, 2: 0 }, // currentAnswers
+  { 1: { isCorrect: true, correctAnswer: 1 }, 2: { isCorrect: false, correctAnswer: 1 } }, // answerResults
+  1, // currentIndex (đang ở câu 2)
+  [3] // bookmarkedIds (câu 3 được bookmark)
+);
+
+assert('renderQuizQuestionGridContent renders question 1 with emerald (correct) style', gridHtml.includes('border-emerald-500'));
+assert('renderQuizQuestionGridContent renders question 2 with rose (wrong) style', gridHtml.includes('border-rose-500'));
+assert('renderQuizQuestionGridContent highlights current question with ring indicator', gridHtml.includes('ring-accent'));
+assert('renderQuizQuestionGridContent shows star icon for bookmarked question', gridHtml.includes('fa-star') && gridHtml.includes('text-amber-500'));
+assert('renderQuizQuestionGridContent assigns jump-quiz-question data-action to buttons', gridHtml.includes('data-action="jump-quiz-question"'));
+
+// 17.2 Zen Focus Arena UI Components (Modal làm bài tập trung toàn màn hình)
+const zenQuestionHtml = renderZenQuestionCard(
+  sampleQuestions[0],
+  0, // safeIndex 0 (câu 1)
+  3, // totalCount 3
+  1, // selectedOpt
+  { isCorrect: true, correctIndex: 1, explanation: 'Đóng gói giúp ẩn thông tin cài đặt' },
+  true, // isPractice = true (kích hoạt Instant Feedback & auto-next checkbox)
+  false, // isBookmarked
+  true // autoNext
+);
+
+assert('renderZenQuestionCard renders #1 question counter', zenQuestionHtml.includes('#1'));
+assert('renderZenQuestionCard renders keyboard shortcuts hint', zenQuestionHtml.includes('Phím tắt:') && zenQuestionHtml.includes('A-D'));
+assert('renderZenQuestionCard renders Instant Explanation for correct answer', zenQuestionHtml.includes('Chính xác tuyệt đối!') && zenQuestionHtml.includes('Đóng gói giúp ẩn thông tin cài đặt'));
+assert('renderZenQuestionCard renders choices with select-quiz-option action', zenQuestionHtml.includes('data-action="select-quiz-option"'));
+assert('renderZenQuestionCard includes 1.2s auto-next checkbox', zenQuestionHtml.includes('id="chk-quiz-auto-next"') && zenQuestionHtml.includes('1.2s'));
+
+const zenFooterHtml = renderZenFooterDock(0, 3, 1, true, 'MEET_20261019_TEST', 'QUIZ_TEST');
+assert('renderZenFooterDock includes Prev and Next navigation buttons', zenFooterHtml.includes('data-action="prev-quiz-question"') && zenFooterHtml.includes('data-action="next-quiz-question"'));
+assert('renderZenFooterDock includes Question Grid drawer trigger', zenFooterHtml.includes('data-action="open-quiz-grid-modal"'));
+
+const zenFooterLastHtml = renderZenFooterDock(2, 3, 3, true, 'MEET_20261019_TEST', 'QUIZ_TEST');
+assert('renderZenFooterDock on last question includes Submit button', zenFooterLastHtml.includes('data-action="submit-member-quiz"'));
+
+// 17.3 Member Quiz View as Dashboard & Leaderboard (Hiển thị tiến trình & kết quả trong sub-view)
+const sampleQuiz = {
+  QuizID: 'QUIZ_TEST_DASHBOARD',
+  SessionID: 'MEET_20261019_TEST',
+  TieuDe: 'Kiểm thử Dashboard & Leaderboard',
+  ThoiGianPhut: 15,
+  TrangThai: 'Open',
+  DanhSachCauHoi: sampleQuestions
+};
+
+const dashboardUnsubmittedHtml = renderMemberQuizView(sampleQuiz, null, {
+  memberProfile: { StreakDays: 5, WrongQuestionIds: [2], BookmarkedQuestionIds: [3] },
+  leaderboard: [
+    { MSSV: '2251120001', HoTen: 'Lê Văn Admin', DiemSo: 100, SoCauDung: 3, TongSoCau: 3, ThoiGianLamGiay: 45 }
+  ],
+  sessionId: 'MEET_20261019_TEST'
+});
+
+assert('renderMemberQuizView Dashboard renders Leaderboard section', dashboardUnsubmittedHtml.includes('Bảng Xếp Hạng Buổi Sinh Hoạt'));
+assert('renderMemberQuizView Dashboard renders top 1 member in leaderboard', dashboardUnsubmittedHtml.includes('Lê Văn Admin') && dashboardUnsubmittedHtml.includes('100'));
+assert('renderMemberQuizView Dashboard displays Start Official Exam button', dashboardUnsubmittedHtml.includes('data-action="start-official-quiz"'));
+
+const sampleExistingResult = {
+  ResultID: 'RES_OFFICIAL_01',
+  QuizID: 'QUIZ_TEST_DASHBOARD',
+  MSSV: '2351120015',
+  DiemSo: 100,
+  SoCauDung: 3,
+  TongSoCau: 3,
+  IsOfficial: true
+};
+
+const dashboardSubmittedHtml = renderMemberQuizView(sampleQuiz, sampleExistingResult, {
+  memberProfile: { StreakDays: 5, WrongQuestionIds: [], BookmarkedQuestionIds: [1] },
+  leaderboard: [
+    { MSSV: '2351120015', HoTen: 'Nguyễn Văn Member', DiemSo: 100, SoCauDung: 3, TongSoCau: 3, ThoiGianLamGiay: 60 }
+  ],
+  sessionId: 'MEET_20261019_TEST'
+});
+
+assert('renderMemberQuizView displays Official Score Card when submitted', dashboardSubmittedHtml.includes('Đã hoàn thành bài thi chính thức'));
+assert('renderMemberQuizView submitted state offers Practice Arena button', dashboardSubmittedHtml.includes('Vào Phòng Ôn Luyện Toàn Màn Hình'));
+assert('renderMemberQuizView submitted state allows opening Review Drawer', dashboardSubmittedHtml.includes('data-action="open-quiz-review-drawer"'));
+
+// 17.4 Strict Official vs Practice Submission in Mock Backend
+const officialRes1 = await mockCallApi('submitQuiz', {
+  quizId: 'QUIZ_OOP_CPP_01',
+  answers: { 1: 1, 2: 1, 3: 0, 4: 1, 5: 1, 6: 2, 7: 1, 8: 1 },
+  durationSeconds: 120,
+  isPractice: false
+});
+assert('First official exam submission succeeds', officialRes1.success === true);
+
+const officialRes2 = await mockCallApi('submitQuiz', {
+  quizId: 'QUIZ_OOP_CPP_01',
+  answers: { 1: 1, 2: 1, 3: 0, 4: 1, 5: 1, 6: 2, 7: 1, 8: 1 },
+  durationSeconds: 90,
+  isPractice: false
+});
+assert('Second official exam submission is BLOCKED with ALREADY_SUBMITTED', officialRes2.success === false && officialRes2.errorCode === 'ALREADY_SUBMITTED');
+
+const practiceRes = await mockCallApi('submitQuiz', {
+  quizId: 'QUIZ_OOP_CPP_01',
+  answers: { 1: 1, 2: 1, 3: 0, 4: 1, 5: 1, 6: 2, 7: 1, 8: 1 },
+  durationSeconds: 80,
+  isPractice: true
+});
+assert('Practice submission is allowed even after official exam submission', practiceRes.success === true);
+
+// 17.5 Zen Arena Modal Presence & Registered Actions in app.js
+assert('member.html has #modal-quiz-zen-arena modal', memberHtmlContent.includes('id="modal-quiz-zen-arena"'));
+assert('member.html has #modal-quiz-question-grid modal', memberHtmlContent.includes('id="modal-quiz-question-grid"'));
+assert('app.js registers start-official-quiz action', appJsContent.includes("'start-official-quiz'"));
+assert('app.js registers start-practice-quiz action', appJsContent.includes("'start-practice-quiz'"));
+assert('app.js registers open-quiz-review-drawer action', appJsContent.includes("'open-quiz-review-drawer'"));
+assert('app.js registers prev-quiz-question action', appJsContent.includes("'prev-quiz-question'"));
+assert('app.js registers next-quiz-question action', appJsContent.includes("'next-quiz-question'"));
+assert('app.js registers jump-quiz-question action', appJsContent.includes("'jump-quiz-question'"));
+assert('app.js registers toggle-quiz-auto-next action', appJsContent.includes("'toggle-quiz-auto-next'"));
+assert('app.js registers toggle-quiz-bookmark action', appJsContent.includes("'toggle-quiz-bookmark'"));
+assert('app.js registers switch-quiz-pool action', appJsContent.includes("'switch-quiz-pool'"));
+assert('app.js registers open-quiz-grid-modal action', appJsContent.includes("'open-quiz-grid-modal'"));
+assert('app.js registers close-quiz-grid-modal action', appJsContent.includes("'close-quiz-grid-modal'"));
+assert('app.js registers exit-taking-quiz action', appJsContent.includes("'exit-taking-quiz'"));
+assert('app.js registers reset-member-quiz-submission action', appJsContent.includes("'reset-member-quiz-submission'"));
+assert('app.js registers reset-all-quiz-submissions action', appJsContent.includes("'reset-all-quiz-submissions'"));
+
+// --------------------------------------------------------------------
+// 18. Testing GAS Backend Quiz API & Router Contract (Zero Discrepancy)
+// --------------------------------------------------------------------
+console.log('\n--- 18. Testing GAS Backend Quiz API & Router Contract ---');
+
+const gasConfigContent = fs.readFileSync('./gas-backend/Config.js', 'utf8');
+const gasRouterContent = fs.readFileSync('./gas-backend/Router.js', 'utf8');
+const gasQuizServiceContent = fs.readFileSync('./gas-backend/Service_Quiz.js', 'utf8');
+
+// 18.1 Config.js Sheet Names and Schema Headers
+assert('Config.js defines TRAC_NGHIEM sheet name', gasConfigContent.includes("TRAC_NGHIEM: 'TracNghiem'"));
+assert('Config.js defines KET_QUA_TRAC_NGHIEM sheet name', gasConfigContent.includes("KET_QUA_TRAC_NGHIEM: 'KetQuaTracNghiem'"));
+assert('Config.js defines HO_SO_TRAC_NGHIEM sheet name', gasConfigContent.includes("HO_SO_TRAC_NGHIEM: 'HoSoTracNghiem'"));
+
+assert('Config.js defines TracNghiem schema headers', gasConfigContent.includes("TracNghiem: ['QuizID', 'SessionID', 'TieuDe', 'MoTa', 'ThoiGianPhut', 'TrangThai', 'NgayTao', 'DanhSachCauHoi', 'SoCauThi']"));
+assert('Config.js defines KetQuaTracNghiem schema headers', gasConfigContent.includes("KetQuaTracNghiem: ['ResultID', 'QuizID', 'SessionID', 'MSSV', 'HoTen', 'DiemSo', 'SoCauDung', 'TongSoCau', 'ChiTietTraLoi', 'ThoiGianNop', 'ThoiGianLamGiay', 'IsOfficial']"));
+assert('Config.js defines HoSoTracNghiem schema headers', gasConfigContent.includes("HoSoTracNghiem: ['MSSV', 'StreakDays', 'LastActiveDate', 'TotalQuestionsAnswered', 'TotalCorrect', 'Badges', 'WrongQuestionIds', 'BookmarkedQuestionIds']"));
+
+// 18.2 Router.js routing for Quiz actions
+assert('Router.js routes saveQuiz', gasRouterContent.includes("case 'saveQuiz':") && gasRouterContent.includes("return saveQuiz(data);"));
+assert('Router.js routes toggleQuizStatus', gasRouterContent.includes("case 'toggleQuizStatus':") && gasRouterContent.includes("return toggleQuizStatus(data);"));
+assert('Router.js routes deleteQuiz', gasRouterContent.includes("case 'deleteQuiz':") && gasRouterContent.includes("return deleteQuiz("));
+assert('Router.js routes resetQuizSubmission', gasRouterContent.includes("case 'resetQuizSubmission':") && gasRouterContent.includes("return resetQuizSubmission(data);"));
+assert('Router.js routes resetAllQuizSubmissions', gasRouterContent.includes("case 'resetAllQuizSubmissions':") && gasRouterContent.includes("return resetAllQuizSubmissions(data);"));
+assert('Router.js routes getQuizResultsBySession', gasRouterContent.includes("case 'getQuizResultsBySession':") && gasRouterContent.includes("return getQuizResultsBySession("));
+
+// 18.3 Router.js Identity injection on Member actions (Zero Trust Client MSSV)
+assert('Router.js injects currentUser.mssv for submitQuiz', gasRouterContent.includes("case 'submitQuiz':") && gasRouterContent.includes("data.mssv = currentUser.mssv;"));
+assert('Router.js injects currentUser.mssv for recordQuizAnswer', gasRouterContent.includes("case 'recordQuizAnswer':") && gasRouterContent.includes("data.mssv = currentUser.mssv;"));
+assert('Router.js injects currentUser.mssv for toggleQuestionBookmark', gasRouterContent.includes("case 'toggleQuestionBookmark':") && gasRouterContent.includes("data.mssv = currentUser.mssv;"));
+assert('Router.js injects currentUser.mssv for clearWrongHistory', gasRouterContent.includes("case 'clearWrongHistory':") && gasRouterContent.includes("clearWrongHistory(currentUser.mssv)"));
+
+// 18.4 Router.js Query routes
+assert('Router.js routes getQuizBySession with admin check', gasRouterContent.includes("case 'getQuizBySession':") && gasRouterContent.includes("currentUser.role === CONFIG.ROLES.ADMIN"));
+assert('Router.js routes getMemberQuizProfile', gasRouterContent.includes("case 'getMemberQuizProfile':") && gasRouterContent.includes("getMemberQuizProfile("));
+assert('Router.js routes getPersonalQuizPool', gasRouterContent.includes("case 'getPersonalQuizPool':") && gasRouterContent.includes("getPersonalQuizPool(currentUser.mssv"));
+
+// 18.5 Service_Quiz.js implementation verification
+assert('Service_Quiz.js defines getQuizBySession', gasQuizServiceContent.includes('function getQuizBySession('));
+assert('Service_Quiz.js defines saveQuiz', gasQuizServiceContent.includes('function saveQuiz('));
+assert('Service_Quiz.js defines toggleQuizStatus', gasQuizServiceContent.includes('function toggleQuizStatus('));
+assert('Service_Quiz.js defines deleteQuiz', gasQuizServiceContent.includes('function deleteQuiz('));
+assert('Service_Quiz.js defines resetQuizSubmission', gasQuizServiceContent.includes('function resetQuizSubmission('));
+assert('Service_Quiz.js defines resetAllQuizSubmissions', gasQuizServiceContent.includes('function resetAllQuizSubmissions('));
+assert('Service_Quiz.js defines getQuizResultsBySession', gasQuizServiceContent.includes('function getQuizResultsBySession('));
+assert('Service_Quiz.js defines submitQuiz', gasQuizServiceContent.includes('function submitQuiz('));
+assert('Service_Quiz.js defines getMemberQuizProfile', gasQuizServiceContent.includes('function getMemberQuizProfile('));
+assert('Service_Quiz.js defines recordQuizAnswer', gasQuizServiceContent.includes('function recordQuizAnswer('));
+assert('Service_Quiz.js defines toggleQuestionBookmark', gasQuizServiceContent.includes('function toggleQuestionBookmark('));
+assert('Service_Quiz.js defines getPersonalQuizPool', gasQuizServiceContent.includes('function getPersonalQuizPool('));
+assert('Service_Quiz.js defines clearWrongHistory', gasQuizServiceContent.includes('function clearWrongHistory('));
+
+// 18.6 ScriptLock & Invalidation safety in Service_Quiz.js
+assert('Service_Quiz.js uses withScriptLock for race protection', gasQuizServiceContent.includes('withScriptLock('));
+assert('Service_Quiz.js invalidates TRAC_NGHIEM cache on write', gasQuizServiceContent.includes('invalidateSheetCache(CONFIG.SHEET_NAMES.TRAC_NGHIEM)'));
+assert('Service_Quiz.js invalidates KET_QUA_TRAC_NGHIEM cache on write', gasQuizServiceContent.includes('invalidateSheetCache(CONFIG.SHEET_NAMES.KET_QUA_TRAC_NGHIEM)'));
+assert('Service_Quiz.js invalidates HO_SO_TRAC_NGHIEM cache on write', gasQuizServiceContent.includes('invalidateSheetCache(CONFIG.SHEET_NAMES.HO_SO_TRAC_NGHIEM)'));
+
+// 18.7 Admin Exam Question Count (SoCauThi) & Local-First Practice
+const adminHtmlContentLocal = fs.readFileSync('./frontend/views/admin.html', 'utf8');
+const adminQuizJsContentLocal = fs.readFileSync('./frontend/modules/admin/adminQuiz.js', 'utf8');
+const memberQuizJsContentLocal = fs.readFileSync('./frontend/modules/member/memberQuiz.js', 'utf8');
+
+assert('admin.html has #edit-quiz-exam-questions-count input', adminHtmlContentLocal.includes('id="edit-quiz-exam-questions-count"'));
+assert('adminQuiz.js passes soCauThi in saveQuiz', adminQuizJsContentLocal.includes('soCauThi'));
+assert('Service_Quiz.js limits unsubmitted exam pool to SoCauThi', gasQuizServiceContent.includes('Number(quizObj.SoCauThi)'));
+assert('memberQuiz.js implements Local-First instant evaluation in practice mode', memberQuizJsContentLocal.includes('Chấm điểm tại chỗ tức thì (Local-First: 0ms latency'));
+
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
   process.exit(1);
 } else {
   console.log(`\nALL ${passed} CORE ARCHITECTURE & UI COMPONENT TESTS PASSED! (0 failures)\n`);
 }
+
 
 

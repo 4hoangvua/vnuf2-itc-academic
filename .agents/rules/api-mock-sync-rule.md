@@ -44,42 +44,60 @@ Mọi yêu cầu và phản hồi dù chạy qua Google Apps Script thật hay c
 
 ---
 
-## 2. QUY TRÌNH BẮT BUỘC KHI THÊM / SỬA MỘT ACTION MỚI
+## 2. DANH MỤC ACTIONS & HỢP ĐỒNG NGHIỆP VỤ HIỆN HÀNH
 
-Mỗi khi định nghĩa thêm hoặc thay đổi bất kỳ Action nào, lập trình viên/AI **BẮT BUỘC** cập nhật đồng bộ qua 4 vị trí sau:
+Hệ thống phân chia 4 nhóm quyền truy cập chuẩn hóa:
 
-### Vị trí 1: Khai báo nhóm quyền tại `gas-backend/Config.js`
-Phải đăng ký action vào đúng mảng:
-- `PUBLIC_ACTIONS`: Không cần token (`ping`, `requestLoginOtp`, `verifyLoginOtp`, `getAuthStatus`).
-- `MEMBER_ACTIONS`: Cần token thành viên, tự tiêm `currentUser.mssv` (`checkInAttendance`, `submitTaskAssignment`, `getMemberSubmissions`...).
-- `ADMIN_ACTIONS`: Cần token admin (`role === 'ADMIN'`) (`createAttendanceSession`, `createTask`, `reviewSubmission`...).
-- `QUERY_ACTIONS`: Truy vấn đọc dữ liệu (`getAttendanceSessions`, `getAllTasks`, `getAllDocuments`...).
-
-### Vị trí 2: Xử lý định tuyến tại `gas-backend/Router.js` & `Service_*.js`
-- Tiếp nhận action trong switch-case.
-- Trả về đúng mã lỗi chuẩn (`UNAUTHORIZED`, `FORBIDDEN`, `LOCK_TIMEOUT`, `BAD_REQUEST`).
-
-### Vị trí 3: Cập nhật hàm giả lập trong `frontend/services/mockData.js`
-- Thêm case tương ứng vào `mockCallApi(action, payload)`.
-- **Cấu trúc trường dữ liệu (Schema & Types) của Mock PHẢI GIỐNG 100% dữ liệu từ Sheet thật** (ví dụ: `SessionID`, `TenBuoiHop`, `MaPin`, `TrangThai`, `DS_CoMat` dạng JSON string mảng MSSV).
-- Lưu thay đổi vào `localStorage.getItem('bht_mock_store')` để dữ liệu mock có tính liên tục khi refresh trang.
-
-### Vị trí 4: Cấu hình Cache Invalidation trong `frontend/services/api.js`
-Nếu Action là một thao tác thay đổi dữ liệu (Mutation), **BẮT BUỘC** đăng ký vào `MUTATION_INVALIDATION_MAP` trong `api.js`:
-```javascript
-const MUTATION_INVALIDATION_MAP = {
-  // Mỗi khi Action này thành công, tự động xóa cache của các Query sau:
-  'tenActionMoi': ['getAttendanceSessions', 'getAllTasks']
-};
-```
-Đồng thời đảm bảo `api.js` tự động phát sự kiện đồng bộ `bht_sync_event` sau khi ghi dữ liệu thành công.
+| Phân nhóm | Mục đích | Danh sách Actions chuẩn |
+| :--- | :--- | :--- |
+| **`PUBLIC_ACTIONS`** | Không cần Token, người dùng vãng lai | `ping`, `getAuthStatus`, `requestLoginOtp`, `verifyLoginOtp` |
+| **`MEMBER_ACTIONS`** | Cần Token, Router tự tiêm `currentUser.mssv` | `checkInAttendance`, `submitTaskAssignment`, `getMemberSubmissions`, `logoutUser`, `submitQuiz`, `recordQuizAnswer`, `toggleQuestionBookmark`, `clearWrongHistory` |
+| **`ADMIN_ACTIONS`** | Cần Token & `role === 'ADMIN'` | `getAllMembers`, `addMember`, `resetMemberEmail`, `toggleMemberStatus`, `createAttendanceSession`, `updateAttendanceSession`, `deleteAttendanceSession`, `updateAttendanceTopic`, `toggleAttendanceSession`, `createTask`, `updateTask`, `deleteTask`, `toggleTaskStatus`, `getAllSubmissions`, `reviewSubmission`, `addDocument`, `createDocument`, `updateDocument`, `deleteDocument`, `saveQuiz`, `toggleQuizStatus`, `deleteQuiz`, `resetQuizSubmission`, `resetAllQuizSubmissions`, `getQuizResultsBySession` |
+| **`QUERY_ACTIONS`** | Truy vấn đọc dữ liệu (đã xác thực) | `getAttendanceSessions`, `getAllTasks`, `getAllDocuments`, `getQuizBySession`, `getMemberQuizProfile`, `getPersonalQuizPool` |
 
 ---
 
-## 3. CHECKLIST ĐỒNG BỘ (SYNC VERIFICATION)
+## 3. QUY TRÌNH BẮT BUỘC KHI THÊM / SỬA MỘT ACTION MỚI
 
-Trước khi coi một Action là hoàn thành:
-- [ ] 1. Đổi sang `Mock Dev Mode` trên thanh Dev Helper -> Chạy thử tính năng -> Hoạt động trơn tru.
-- [ ] 2. Kiểm tra `localStorage` -> Key cache cũ đã bị xóa sạch (Invalidation).
-- [ ] 3. Mở tab thứ 2 của trình duyệt -> Dữ liệu mới xuất hiện tự động qua `bht_sync_event`.
-- [ ] 4. Không có thuộc tính nào tồn tại ở Backend mà bị thiếu ở MockData hoặc ngược lại.
+Mỗi khi định nghĩa thêm hoặc thay đổi bất kỳ Action nào, lập trình viên/AI **BẮT BUỘC** cập nhật đồng bộ qua 5 vị trí sau:
+
+### Vị trí 1: Khai báo nhóm quyền tại `gas-backend/Config.js`
+Đăng ký action vào đúng mảng: `PUBLIC_ACTIONS`, `MEMBER_ACTIONS`, `ADMIN_ACTIONS`, hoặc `QUERY_ACTIONS`.
+
+### Vị trí 2: Xử lý định tuyến tại `gas-backend/Router.js` & Dịch vụ nghiệp vụ `Service_*.js`
+- Tiếp nhận action trong switch-case của `Router.js`.
+- Ủy quyền xử lý cho Service tương ứng (`Service_Auth.js`, `Service_Member.js`, `Service_Task.js`, `Service_Submit.js`, `Service_Quiz.js`, `Service_Doc.js`).
+- Trả về đúng mã lỗi chuẩn (`UNAUTHORIZED`, `FORBIDDEN`, `LOCK_TIMEOUT`, `BAD_REQUEST`).
+
+### Vị trí 3: Cập nhật hàm giả lập trong `frontend/services/mockData.js`
+- Thêm case tương ứng vào `handleMockAction(action, data)` (alias `mockCallApi`).
+- **Cấu trúc trường dữ liệu (Schema & Types) của Mock PHẢI GIỐNG 100% dữ liệu từ Sheet thật**.
+- Lưu thay đổi vào `localStorage.getItem('bht_mock_store')` để dữ liệu mock có tính liên tục khi refresh trang.
+
+### Vị trí 4: Cấu hình Cache Invalidation & Sync Broadcast trong `frontend/services/api.js`
+- Nếu Action là Mutation thay đổi dữ liệu chung: Đăng ký vào `MUTATION_INVALIDATION_MAP` trong `api.js`:
+  ```javascript
+  const MUTATION_INVALIDATION_MAP = {
+    'tenActionMoi': ['getQueryLienQuan1', 'getQueryLienQuan2']
+  };
+  ```
+- **Quy tắc cô lập Sync cá nhân (Individual Sync Isolation):** Các tác vụ chỉ ghi nhận trạng thái cục bộ cá nhân (như `recordQuizAnswer`, `toggleQuestionBookmark`) **CẤM** phát `broadcastDataSync` để tránh kích hoạt reload view làm gián đoạn bài làm thi/ôn luyện của sinh viên.
+
+### Vị trí 5: Gọi API từ Sub-Module chuyên trách (Frontend Sub-Modules)
+- **TUYỆT ĐỐI CẤM** viết thêm logic nghiệp vụ trực tiếp vào các file gốc `admin.js` hoặc `member.js`.
+- Mọi hàm gọi API và xử lý dữ liệu phải nằm trong các sub-modules chuyên biệt:
+  - Phía Admin: `frontend/modules/admin/admin<Domain>.js` (`adminMembers.js`, `adminSessions.js`, `adminQuiz.js`, `adminDocs.js`, `adminSubmissions.js`).
+  - Phía Member: `frontend/modules/member/member<Domain>.js` (`memberSessions.js`, `memberQuiz.js`, `memberDocs.js`, `memberSubmissions.js`).
+  - Giao diện HTML Template: `frontend/modules/templates/` (tách theo domain như `quizTemplates.js`).
+- Tái xuất (re-export) hàm qua file Barrel gốc (`admin.js`, `member.js`, `templates.js`) để đảm bảo tương thích ngược 100%.
+
+---
+
+## 4. CHECKLIST ĐỒNG BỘ TRƯỚC KHI DEPLOY & XÂY DỰNG API GAS THẬT
+
+Trước khi triển khai action mới lên môi trường Google Apps Script thật:
+- [ ] 1. **Kiểm tra Mock Dev Mode:** Tính năng hoạt động trơn tru trên `mockData.js`.
+- [ ] 2. **Kiểm tra Schema Đồng Nhất:** Các key (như `SessionID`, `QuizID`, `DanhSachCauHoi`, `DapAnDung`, `ThoiGianLamBai`) khớp chính xác giữa Mock và Headers trên Google Sheet.
+- [ ] 3. **Kiểm tra Cache Invalidation:** Gọi mutation xong, các truy vấn query liên quan tự động xóa cache và nạp lại dữ liệu mới nhất.
+- [ ] 4. **Kiểm tra Guard Role & Identity Injection:** Router thật tự tiêm `currentUser.mssv` cho Member, và chặn 403 Forbidden đối với Admin actions.
+- [ ] 5. **Chạy Test Tự Động:** Chạy `node test_core.mjs` đảm bảo 100% test suites vượt qua (0 failure).

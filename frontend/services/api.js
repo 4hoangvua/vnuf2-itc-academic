@@ -12,6 +12,11 @@
 
 import { handleMockAction } from './mockData.js';
 
+/**
+ * @typedef {import('../types.js').ApiResponse} ApiResponse
+ * @typedef {import('../types.js').UserSession} UserSession
+ */
+
 export const API_CONFIG = {
   // Điền URL Web App Google Apps Script (/exec)
   DEFAULT_GAS_URL: 'https://script.google.com/macros/s/AKfycby0HwfnxfbqyfhmuIPKQpxK9pYCxc8DgvAtGWMNq62AbkOdYnhEIAczpmYj-mi3M2Ehqg/exec',
@@ -38,7 +43,10 @@ export const API_CONFIG = {
     'getAttendanceSessions',
     'getAllDocuments',
     'getAllSubmissions',
-    'getMemberSubmissions'
+    'getMemberSubmissions',
+    'getQuizBySession',
+    'getMemberQuizProfile',
+    'getPersonalQuizPool'
   ]
 };
 
@@ -64,7 +72,16 @@ export const MUTATION_INVALIDATION_MAP = {
   addDocument: ['getAllDocuments'],
   createDocument: ['getAllDocuments'],
   updateDocument: ['getAllDocuments'],
-  deleteDocument: ['getAllDocuments']
+  deleteDocument: ['getAllDocuments'],
+  saveQuiz: ['getQuizBySession'],
+  toggleQuizStatus: ['getQuizBySession'],
+  submitQuiz: ['getQuizBySession', 'getMemberQuizProfile'],
+  deleteQuiz: ['getQuizBySession'],
+  resetQuizSubmission: ['getQuizBySession', 'getQuizResultsBySession'],
+  resetAllQuizSubmissions: ['getQuizBySession', 'getQuizResultsBySession'],
+  recordQuizAnswer: ['getMemberQuizProfile', 'getPersonalQuizPool'],
+  toggleQuestionBookmark: ['getMemberQuizProfile', 'getPersonalQuizPool'],
+  clearWrongHistory: ['getMemberQuizProfile', 'getPersonalQuizPool']
 };
 
 // Bể lưu trữ các request đang chạy để Deduplicate (Chống gọi trùng lặp khi Double-click)
@@ -475,7 +492,10 @@ function handleMutationInvalidation(action) {
   const targets = MUTATION_INVALIDATION_MAP[action];
   if (targets) {
     invalidateCache(targets);
-    broadcastDataSync(action);
+    // Các thao tác trả lời trắc nghiệm & bookmark là tác vụ cá nhân tức thì, không phát broadcast làm reload giao diện
+    if (action !== 'recordQuizAnswer' && action !== 'toggleQuestionBookmark') {
+      broadcastDataSync(action);
+    }
   }
 }
 

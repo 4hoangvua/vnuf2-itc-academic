@@ -26,3 +26,4 @@ create_diagrams.py
 build_full_document.py
 docs_diagrams/
 *.docx
+*.wbk

@@ -8,6 +8,14 @@
 // ====================================================================
 
 import { escapeHTML } from '../utils/dom.js';
+
+/**
+ * @typedef {import('../types.js').Member} Member
+ * @typedef {import('../types.js').AttendanceSession} AttendanceSession
+ * @typedef {import('../types.js').Task} Task
+ * @typedef {import('../types.js').Submission} Submission
+ * @typedef {import('../types.js').AcademicDocument} AcademicDocument
+ */
 export {
   renderSpotlightSkeleton,
   renderDrlWidgetSkeleton,
@@ -392,6 +400,8 @@ export function renderSubmissionRow(submission = {}, options = {}) {
   const thoiGianNop = escapeHTML(s.ThoiGianNop ? s.ThoiGianNop.replace('T', ' ') : '');
   const feedback = escapeHTML(s.Feedback || '');
   const statusBadge = uiStatusBadge(s.TrangThaiDuyet || 'Pending');
+  const turn = Number(options.submissionTurn || s._submissionTurn || 0);
+  const turnBadge = turn > 0 ? `<span class="bht-badge-mono text-[9px] px-1 py-0.5 bg-subtle text-ink-muted border border-hairline ml-1 font-semibold">Lần ${turn}/3</span>` : '';
 
   // Nút duyệt Đạt / Sửa
   const disabledClass = isProcessing ? 'opacity-60 pointer-events-none' : '';
@@ -400,7 +410,7 @@ export function renderSubmissionRow(submission = {}, options = {}) {
   if (showTaskColumn) {
     // 5 CỘT: [Thành viên (Họ tên + MSSV)] | [Nhiệm vụ] | [File nộp & Giờ] | [Trạng thái] | [Nhận xét & Duyệt]
     return `
-      <tr class="hover:bg-subtle/40 transition-colors">
+      <tr data-key="${subId}" class="hover:bg-subtle/40 transition-colors">
         <td class="py-3 px-4">
           <p class="font-semibold text-ink">${hoTen}</p>
           ${uiMonoBadge(mssv, 'text-[10px] mt-0.5')}
@@ -409,10 +419,13 @@ export function renderSubmissionRow(submission = {}, options = {}) {
           ${uiMonoBadge(taskId, 'text-accent font-semibold')}
         </td>
         <td class="py-3 px-4">
-          <a href="${driveLink}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline font-medium inline-flex items-center gap-1.5">
-            <i class="fa-solid fa-file-arrow-down text-ink-faint"></i>
-            <span class="truncate max-w-[190px]" title="${tenFile}">${tenFile}</span>
-          </a>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <a href="${driveLink}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline font-medium inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-file-arrow-down text-ink-faint"></i>
+              <span class="truncate max-w-[190px]" title="${tenFile}">${tenFile}</span>
+            </a>
+            ${turnBadge}
+          </div>
           <p class="text-[10px] text-ink-faint font-mono mt-0.5">${thoiGianNop}</p>
         </td>
         <td class="py-3 px-4 text-center">${statusBadge}</td>
@@ -465,15 +478,16 @@ export function renderSubmissionRow(submission = {}, options = {}) {
 
   // 5 CỘT (Trong chi tiết buổi học): [MSSV] | [Họ tên] | [File nộp] | [Trạng thái] | [Nhận xét & Duyệt]
   return `
-    <tr class="hover:bg-subtle/30 transition-colors">
+    <tr data-key="${subId}" class="hover:bg-subtle/30 transition-colors">
       <td class="py-3 px-3.5 font-mono text-accent font-bold">${mssv}</td>
       <td class="py-3 px-3.5 font-medium text-ink">${hoTen}</td>
       <td class="py-3 px-3.5">
-        <div class="font-mono text-xs text-accent truncate max-w-[200px]">
+        <div class="font-mono text-xs text-accent truncate max-w-[200px] flex items-center gap-1.5 flex-wrap">
           <a href="${driveLink}" target="_blank" rel="noopener noreferrer" class="hover:underline inline-flex items-center gap-1">
             <i class="fa-solid fa-file-code"></i>
             <span class="truncate" title="${tenFile}">${tenFile}</span>
           </a>
+          ${turnBadge}
         </div>
         <div class="text-[10px] text-ink-faint font-mono mt-0.5">${thoiGianNop}</div>
       </td>
@@ -564,6 +578,7 @@ export function renderSessionCard(session = {}, options = {}) {
     // Master Card Quản Trị Viên
     return `
       <div 
+        data-key="${sessionId}"
         data-action="open-admin-session-detail"
         data-id="${sessionId}"
         class="bht-card p-4 sm:p-5 hover:border-strong transition-all cursor-pointer group hover:shadow-md flex flex-col justify-between"
@@ -626,7 +641,7 @@ export function renderSessionCard(session = {}, options = {}) {
   const nodeIcon = isOpen ? '<i class="fa-solid fa-play text-[8px]"></i>' : (hasAttended ? '<i class="fa-solid fa-check text-[9px]"></i>' : '<i class="fa-solid fa-circle text-[6px] text-ink-faint"></i>');
 
   return `
-    <div class="bht-timeline-item">
+    <div data-key="${sessionId}" class="bht-timeline-item">
       <!-- Dấu mốc dòng thời gian -->
       <div class="bht-timeline-node ${nodeStatusClass}" title="${isOpen ? 'Buổi học đang diễn ra' : (hasAttended ? 'Đã tham gia' : 'Buổi học')}">
         ${nodeIcon}
@@ -1030,6 +1045,10 @@ export function renderMemberAttendanceAuditTable(sessions = [], currentMssv = ''
   const filtered = sessions.filter(s => {
     if (filter === 'OPEN') return String(s.TrangThai || '').toLowerCase() === 'open';
     if (filter === 'CLOSED') return String(s.TrangThai || '').toLowerCase() === 'closed';
+    if (filter && filter !== 'ALL') {
+      const tag = String(s.TagChuyenDe || '').toUpperCase();
+      return tag === String(filter).toUpperCase();
+    }
     return true;
   });
 
@@ -1037,7 +1056,7 @@ export function renderMemberAttendanceAuditTable(sessions = [], currentMssv = ''
     return `
       <tr>
         <td colspan="5" class="py-8 text-center text-ink-muted italic font-mono text-xs">
-          Không có buổi sinh hoạt nào phù hợp với bộ lọc "${filter}".
+          Không có buổi sinh hoạt nào phù hợp với bộ lọc "${escapeHTML(filter)}".
         </td>
       </tr>
     `;
@@ -1285,7 +1304,7 @@ export function renderAttendeeRow(member = {}, checkinTime = '') {
   const timeStr = escapeHTML(checkinTime || 'Trong buổi học');
 
   return `
-    <tr class="hover:bg-subtle/30 transition-colors">
+    <tr data-key="${mssv}" class="hover:bg-subtle/30 transition-colors">
       <td class="py-3 px-3.5 font-mono text-accent font-bold">${mssv}</td>
       <td class="py-3 px-3.5">
         <div class="font-semibold text-ink">${hoTen}</div>
@@ -1318,7 +1337,7 @@ export function renderMemberRow(member = {}, options = {}) {
   const isActive = String(m.TrangThai || 'Active').toLowerCase() === 'active';
 
   return `
-    <tr class="hover:bg-subtle/40 transition-colors">
+    <tr data-key="${mssv}" class="hover:bg-subtle/40 transition-colors">
       <td class="py-3 px-4 font-mono font-bold text-ink">${mssv}</td>
       <td class="py-3 px-4">
         <div class="flex items-center gap-2.5">
@@ -1492,7 +1511,7 @@ export function renderDocCard(doc = {}, options = {}) {
   }
 
   return `
-    <div class="bht-card p-5 hover:border-strong transition-all flex flex-col justify-between group hover:shadow-md">
+    <div data-key="${docId}" class="bht-card p-5 hover:border-strong transition-all flex flex-col justify-between group hover:shadow-md">
       <div>
         <div class="flex items-center justify-between mb-3">
           <span class="bht-badge ${badgeStyleClass} text-[10px] font-semibold">
@@ -1565,7 +1584,7 @@ export function renderAdminTaskItem(task = {}) {
   const isOpen = String(t.TrangThai || 'Open').toLowerCase() === 'open';
 
   return `
-    <div class="bht-card p-4 sm:p-5 bg-surface border border-hairline space-y-3">
+    <div data-key="${taskId}" class="bht-card p-4 sm:p-5 bg-surface border border-hairline space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-hairline">
         <div class="flex items-center gap-2">
           ${uiMonoBadge(taskId, 'text-xs text-accent font-bold')}
@@ -1577,6 +1596,18 @@ export function renderAdminTaskItem(task = {}) {
           </span>
         </div>
         <div class="flex items-center gap-1.5">
+          ${t.FolderID ? `
+            <a 
+              href="https://drive.google.com/drive/folders/${encodeURIComponent(t.FolderID)}" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="bht-btn bht-btn-secondary bht-btn-xs text-accent"
+              title="Mở thư mục Google Drive bài nộp"
+            >
+              <i class="fa-brands fa-google-drive mr-1 text-[10px]"></i>
+              <span>Drive</span>
+            </a>
+          ` : ''}
           <button 
             data-action="open-edit-task-modal"
             data-id="${taskId}"
@@ -1613,4 +1644,8 @@ export function renderAdminTaskItem(task = {}) {
 // Alias tương thích ngược
 export const memberDocCardTemplate = renderDocCard;
 
-
+// ====================================================================
+// 17. QUIZ & PRACTICE MODULE TEMPLATES (EDITORIAL ACADEMIC STYLE)
+// Re-export từ ./templates/quizTemplates.js để tinh giản kích thước module
+// ====================================================================
+export * from './templates/quizTemplates.js';

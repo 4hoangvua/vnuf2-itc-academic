@@ -36,6 +36,96 @@ export const $ = (selector, scope = document) => scope.querySelector(selector);
 export const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
 
 /**
+ * So sánh danh sách DOM cũ và dữ liệu mới theo key duy nhất,
+ * chỉ cập nhật / thay thế những phần tử thực sự thay đổi hoặc thêm mới.
+ * Giữ nguyên trạng thái DOM (focus, selection, scroll) của các phần tử không đổi.
+ *
+ * @param {HTMLElement|string} container Container chứa danh sách
+ * @param {Array<Object>} items Mảng dữ liệu mới cần hiển thị
+ * @param {string} keyField Tên trường định danh duy nhất (vd: 'SessionID', 'SubID', 'MSSV', 'DocID')
+ * @param {Function} renderFn Hàm render từng item: (item, index) => string HTML
+ */
+export function diffRenderList(container, items, keyField, renderFn) {
+  const rootEl = typeof container === 'string' ? $(container) : container;
+  if (!rootEl) return;
+
+  if (!items || items.length === 0) {
+    rootEl.innerHTML = '';
+    return;
+  }
+
+  // 1. Ánh xạ các phần tử con hiện có có thuộc tính [data-key]
+  // Đồng thời dọn dẹp ngay các phần tử skeleton loading hoặc placeholder không có data-key
+  const existingMap = new Map();
+  Array.from(rootEl.children).forEach(child => {
+    const key = child.getAttribute('data-key');
+    if (key) {
+      existingMap.set(key, child);
+    } else {
+      child.remove();
+    }
+  });
+
+  const seenKeys = new Set();
+  const template = typeof document !== 'undefined' && document.createElement ? document.createElement('template') : null;
+
+  items.forEach((item, index) => {
+    const rawKey = item[keyField];
+    const key = rawKey !== undefined && rawKey !== null ? String(rawKey) : String(index);
+    seenKeys.add(key);
+
+    const newHtml = renderFn(item, index);
+    let newEl = null;
+
+    if (template && template.content) {
+      template.innerHTML = newHtml.trim();
+      newEl = template.content.firstElementChild;
+    } else if (typeof document !== 'undefined' && document.createElement) {
+      const isTr = /^\s*<tr[\s>]/i.test(newHtml);
+      const wrapper = document.createElement(isTr ? 'tbody' : 'div');
+      wrapper.innerHTML = newHtml.trim();
+      newEl = wrapper.firstElementChild;
+    }
+
+    if (!newEl) return;
+
+    // Đảm bảo data-key hiện diện trên phần tử gốc
+    if (!newEl.hasAttribute('data-key')) {
+      newEl.setAttribute('data-key', key);
+    }
+
+    let targetEl;
+    if (existingMap.has(key)) {
+      const existingEl = existingMap.get(key);
+      // So sánh outerHTML; nếu có khác biệt mới thay thế để tránh repaint / mất trạng thái focus
+      if (existingEl.outerHTML !== newEl.outerHTML) {
+        existingEl.replaceWith(newEl);
+        targetEl = newEl;
+        existingMap.set(key, newEl);
+      } else {
+        targetEl = existingEl;
+      }
+    } else {
+      targetEl = newEl;
+      existingMap.set(key, newEl);
+    }
+
+    // 2. Định vị thứ tự (Reorder)
+    const currentChildAtIndex = rootEl.children[index];
+    if (currentChildAtIndex !== targetEl) {
+      rootEl.insertBefore(targetEl, currentChildAtIndex || null);
+    }
+  });
+
+  // 3. Xóa các phần tử cũ không còn nằm trong danh sách mới
+  existingMap.forEach((el, key) => {
+    if (!seenKeys.has(key)) {
+      el.remove();
+    }
+  });
+}
+
+/**
  * CƠ CHẾ EVENT DELEGATION TẬP TRUNG
  * Gắn 1 listener duy nhất trên Container để quản lý toàn bộ các phần tử con có data-action="..."
  * 

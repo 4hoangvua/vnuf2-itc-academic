@@ -423,6 +423,300 @@ export const INITIAL_MOCK_DATA = {
       LinkDrive: 'https://drive.google.com',
       MoTa: 'Tuyển tập đề thi khối Chuyên tin và Không chuyên tin có kèm code mẫu C++ và test case chi tiết.'
     }
+  ],
+
+  // 6. Ngân hàng đề trắc nghiệm ôn tập & củng cố kiến thức theo buổi sinh hoạt
+  quizzes: [
+    {
+      QuizID: 'QUIZ_20261015_01',
+      SessionID: 'MEET_20261015_190000',
+      TieuDe: 'Trắc nghiệm 10 phút: Kiến trúc Headless & Git Collaboration',
+      MoTa: 'Củng cố kiến thức về mô hình Headless, tương tác Apps Script API và quy trình phối hợp Git nhóm.',
+      ThoiGianPhut: 10,
+      TrangThai: 'Open', // 'Draft' | 'Open' | 'Closed'
+      NgayTao: '15/10/2026 18:00',
+      DanhSachCauHoi: [
+        {
+          id: 1,
+          cauHoi: 'Mô hình Headless Architecture trong ứng dụng web có đặc điểm cốt lõi nào sau đây?',
+          luaChon: [
+            'Frontend và Backend tích hợp chặt chẽ trong cùng một file mã nguồn duy nhất',
+            'Tách biệt hoàn toàn tầng giao diện (Frontend) và tầng logic/dữ liệu (Backend) qua API',
+            'Không cần sử dụng CSS và HTML để render trang web',
+            'Chỉ chạy được trên môi trường máy chủ nội bộ (Localhost)'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'Kiến trúc Headless tách rời hoàn toàn Frontend (ví dụ GitHub Pages) và Backend (Google Apps Script API), giao tiếp độc lập thông qua HTTP/JSON.'
+        },
+        {
+          id: 2,
+          cauHoi: 'Để tải toàn bộ các commit mới từ remote repository về và tự động gộp vào nhánh hiện tại, ta dùng lệnh Git nào?',
+          luaChon: [
+            'git fetch origin',
+            'git pull origin <branch>',
+            'git commit -am "update"',
+            'git merge --remote-only'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'Lệnh git pull kết hợp giữa git fetch (tải metadata và object mới về) và git merge (gộp nhánh upstream vào nhánh đang checkout).'
+        },
+        {
+          id: 3,
+          cauHoi: 'Tại sao khi gửi request POST từ GitHub Pages sang Google Apps Script API cần dùng Content-Type: text/plain?',
+          luaChon: [
+            'Để tránh kích hoạt Preflight CORS (OPTIONS request) mà Google Apps Script không hỗ trợ',
+            'Để dữ liệu được mã hóa bảo mật hơn định dạng JSON',
+            'Vì Google Apps Script không thể đọc dữ liệu dạng văn bản',
+            'Google Apps Script chỉ chấp nhận phương thức GET'
+          ],
+          dapAnDung: 0,
+          giaiThich: 'Khi dùng text/plain, trình duyệt coi đây là Simple Request nên không gửi OPTIONS preflight, khắc phục triệt để lỗi chặn CORS của Google Apps Script.'
+        },
+        {
+          id: 4,
+          cauHoi: 'Lệnh Git nào sau đây giúp kiểm tra trạng thái các file đã thay đổi, đã stage hoặc untracked?',
+          luaChon: [
+            'git log --oneline',
+            'git status',
+            'git branch -a',
+            'git show-branch'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'git status cung cấp bức tranh toàn diện về thư mục làm việc (Working Tree) và khu vực chuẩn bị commit (Staging Area).'
+        },
+        {
+          id: 5,
+          cauHoi: 'Kỹ thuật ScriptLock (LockService) trong Google Apps Script được áp dụng nhằm mục đích gì?',
+          luaChon: [
+            'Tăng tốc độ tải trang cho trình duyệt client',
+            'Ngăn ngừa xung đột ghi đồng thời (Race Condition) khi nhiều sinh viên nộp bài cùng lúc',
+            'Khóa quyền chỉnh sửa file của chủ sở hữu Google Drive',
+            'Tự động gửi email thông báo kết quả cho phụ huynh'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'LockService.getScriptLock() tạo khóa mutex độc quyền để chỉ một phiên ghi dữ liệu vào Google Sheets tại một thời điểm, bảo vệ toàn vẹn dữ liệu.'
+        }
+      ]
+    },
+    {
+      QuizID: 'QUIZ_20261022_01',
+      SessionID: 'MEET_20261022_190000',
+      TieuDe: 'Trắc nghiệm: Quy chuẩn Soạn thảo Văn bản & Báo cáo VNUF2',
+      MoTa: 'Kiểm tra nắm vững thể thức văn bản: canh lề, kiểu heading, styles và mục lục tự động.',
+      ThoiGianPhut: 15,
+      TrangThai: 'Closed',
+      NgayTao: '22/10/2026 18:00',
+      DanhSachCauHoi: [
+        {
+          id: 1,
+          cauHoi: 'Quy chuẩn lề trang cho báo cáo tiểu luận / khóa luận tốt nghiệp theo thể thức chuẩn là gì?',
+          luaChon: [
+            'Trên 2cm, Dưới 2cm, Trái 3cm, Phải 2cm',
+            'Trên 2.5cm, Dưới 2.5cm, Trái 2.5cm, Phải 2.5cm',
+            'Trên 1.5cm, Dưới 1.5cm, Trái 2cm, Phải 1.5cm',
+            'Trên 3cm, Dưới 3cm, Trái 3cm, Phải 3cm'
+          ],
+          dapAnDung: 0,
+          giaiThich: 'Quy định chuẩn của Bộ GD&ĐT và VNUF2: Lề trên 20-25mm, dưới 20-25mm, trái 30-35mm (đóng gáy), phải 15-20mm.'
+        },
+        {
+          id: 2,
+          cauHoi: 'Trong Microsoft Word, để tạo mục lục tự động chính xác, người soạn thảo bắt buộc phải sử dụng công cụ nào?',
+          luaChon: [
+            'Chỉnh cỡ chữ to nhỏ thủ công và in đậm từng tiêu đề',
+            'Gán các cấp độ Styles (Heading 1, Heading 2, Heading 3...) chuẩn',
+            'Dùng dấu chấm (...) kéo dài sang số trang ở lề phải',
+            'Chèn bảng Table ẩn đường viền để căn chỉnh số trang'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'Mục lục tự động (Table of Contents) quét dựa trên cây cấu trúc Heading Styles để lập danh mục và định vị số trang.'
+        }
+      ]
+    },
+    {
+      QuizID: 'QUIZ_OOP_CPP_01',
+      SessionID: 'MEET_20261008_190000',
+      TieuDe: 'Ngân Hàng Trắc Nghiệm: Lập Trình Hướng Đối Tượng OOP C++',
+      MoTa: 'Tuyển tập các câu hỏi cốt lõi về 4 tính chất OOP, hàm ảo (virtual), nạp chồng toán tử và giải phóng bộ nhớ trong C++.',
+      ThoiGianPhut: 20,
+      TrangThai: 'Open',
+      NgayTao: '08/10/2026 18:00',
+      DanhSachCauHoi: [
+        {
+          id: 1,
+          cauHoi: 'Tính chất nào trong OOP giúp gom dữ liệu và hàm xử lý vào trong một lớp, đồng thời che giấu chi tiết nội bộ bằng private/protected?',
+          luaChon: [
+            'Tính kế thừa (Inheritance)',
+            'Tính đóng gói (Encapsulation)',
+            'Tính đa hình (Polymorphism)',
+            'Tính trừu tượng (Abstraction)'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'Đóng gói (Encapsulation) gom thuộc tính và phương thức vào class, hạn chế truy cập trực tiếp từ bên ngoài qua access modifiers để bảo toàn tính toàn vẹn dữ liệu.'
+        },
+        {
+          id: 2,
+          cauHoi: 'Trong C++, từ khóa nào được sử dụng trước khai báo phương thức của lớp cơ sở để kích hoạt cơ chế liên kết động (Dynamic Binding / Late Binding)?',
+          luaChon: [
+            'friend',
+            'virtual',
+            'static',
+            'explicit'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'Từ khóa virtual cho phép hàm được ghi đè (override) tại các lớp con và trình biên dịch xác định hàm thực thi tại thời điểm runtime (đa hình động).'
+        },
+        {
+          id: 3,
+          cauHoi: 'Một hàm thuần ảo (Pure Virtual Function) trong C++ được khai báo với cú pháp kết thúc nào sau đây?',
+          luaChon: [
+            '= null;',
+            '= default;',
+            '= 0;',
+            '= void;'
+          ],
+          dapAnDung: 2,
+          giaiThich: 'Cú pháp virtual void foo() = 0; biến hàm thành thuần ảo, và lớp chứa nó trở thành Lớp trừu tượng (Abstract Class) không thể khởi tạo đối tượng trực tiếp.'
+        },
+        {
+          id: 4,
+          cauHoi: 'Đặc điểm nào sau đây là ĐÚNG đối với hàm tạo (Constructor) trong C++?',
+          luaChon: [
+            'Có kiểu trả về là void',
+            'Phải có tên trùng khớp với tên của Lớp (Class) và không có kiểu trả về',
+            'Chỉ được phép khai báo duy nhất một hàm tạo trong một lớp',
+            'Được gọi thủ công bởi lập trình viên sau khi đối tượng đã tạo xong'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'Constructor trùng tên với class, không khai báo kiểu trả về (kể cả void), tự động được hệ thống triệu gọi ngay khi đối tượng được cấp phát bộ nhớ.'
+        },
+        {
+          id: 5,
+          cauHoi: 'Hàm hủy (Destructor) trong C++ có ký tự đặc biệt nào đứng ngay trước tên của lớp?',
+          luaChon: [
+            'Dấu và (&)',
+            'Dấu sao (*)',
+            'Dấu ngã (~)',
+            'Dấu chấm than (!)'
+          ],
+          dapAnDung: 2,
+          giaiThich: 'Destructor có dấu ngã ~ trước tên class (ví dụ ~SinhVien()), không có tham số và không có kiểu trả về, tự động giải phóng tài nguyên khi đối tượng kết thúc vòng đời.'
+        },
+        {
+          id: 6,
+          cauHoi: 'Cơ chế friend (hàm bạn / lớp bạn) trong C++ mang lại đặc quyền nào?',
+          luaChon: [
+            'Tự động sao chép toàn bộ mã nguồn của lớp khác',
+            'Cho phép hàm hoặc lớp bên ngoài truy cập trực tiếp vào các thành viên private và protected của lớp khai báo nó',
+            'Ngăn chặn mọi lớp con kế thừa lại phương thức',
+            'Tăng gấp đôi tốc độ xử lý vòng lặp'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'Khai báo friend cho phép hàm hoặc lớp ngoài truy cập dữ liệu private/protected của lớp, thường dùng khi nạp chồng toán tử nhập xuất (operator<<, operator>>).'
+        },
+        {
+          id: 7,
+          cauHoi: 'Trong biểu đồ lớp UML, quan hệ Composition (Hợp thành / Cấu thành chặt chẽ) được biểu diễn bằng ký hiệu nào?',
+          luaChon: [
+            'Hình thoi rỗng (White diamond)',
+            'Hình thoi tô đặc màu đen (Solid black diamond)',
+            'Mũi tên nét đứt (Dashed arrow)',
+            'Đường thẳng không có mũi tên'
+          ],
+          dapAnDung: 1,
+          giaiThich: 'Composition (thoi đặc) thể hiện quan hệ has-a chặt chẽ, đối tượng con phụ thuộc hoàn toàn vào vòng đời của đối tượng cha (cha mất thì con bị hủy).'
+        },
+        {
+          id: 8,
+          cauHoi: 'Để ngăn ngừa rò rỉ bộ nhớ (Memory Leak) khi hủy đối tượng con thông qua con trỏ lớp cơ sở, hàm hủy của lớp cơ sở CẦN được khai báo là gì?',
+          luaChon: [
+            'Hàm inline',
+            'Hàm static',
+            'Hàm virtual destructor',
+            'Hàm const'
+          ],
+          dapAnDung: 2,
+          giaiThich: 'Virtual destructor (virtual ~Base()) đảm bảo khi gọi delete con trỏ lớp cơ sở, hàm hủy của lớp con (Derived) sẽ được triệu gọi trước, sau đó mới đến hàm hủy lớp cha.'
+        }
+      ]
+    }
+  ],
+
+  // 7. Lịch sử làm bài trắc nghiệm & điểm số tích lũy của thành viên
+  quizResults: [
+    {
+      ResultID: 'RES_2351120015_QUIZ_20261015_01',
+      QuizID: 'QUIZ_20261015_01',
+      SessionID: 'MEET_20261015_190000',
+      MSSV: '2351120015',
+      HoTen: 'Lê Hoàng Minh',
+      DiemSo: 80,
+      SoCauDung: 4,
+      TongSoCau: 5,
+      ChiTietTraLoi: { 1: 1, 2: 1, 3: 0, 4: 1, 5: 0 },
+      ThoiGianNop: '15/10/2026 20:30:15',
+      ThoiGianLamGiay: 285
+    },
+    {
+      ResultID: 'RES_2251120002_QUIZ_20261015_01',
+      QuizID: 'QUIZ_20261015_01',
+      SessionID: 'MEET_20261015_190000',
+      MSSV: '2251120002',
+      HoTen: 'Trần Thị Thu Trang',
+      DiemSo: 100,
+      SoCauDung: 5,
+      TongSoCau: 5,
+      ChiTietTraLoi: { 1: 1, 2: 1, 3: 0, 4: 1, 5: 1 },
+      ThoiGianNop: '15/10/2026 20:25:40',
+      ThoiGianLamGiay: 210
+    },
+    {
+      ResultID: 'RES_2351120028_QUIZ_20261015_01',
+      QuizID: 'QUIZ_20261015_01',
+      SessionID: 'MEET_20261015_190000',
+      MSSV: '2351120028',
+      HoTen: 'Phạm Phương Anh',
+      DiemSo: 60,
+      SoCauDung: 3,
+      TongSoCau: 5,
+      ChiTietTraLoi: { 1: 1, 2: 0, 3: 0, 4: 1, 5: 0 },
+      ThoiGianNop: '15/10/2026 20:32:10',
+      ThoiGianLamGiay: 340
+    }
+  ],
+
+  // 8. Hồ sơ học tập trắc nghiệm, Chuỗi ngày học (Streak) & Kho câu sai cá nhân (Gamification Engine)
+  memberQuizProfiles: [
+    {
+      MSSV: '2351120015',
+      StreakDays: 5,
+      LastActiveDate: '19/10/2026',
+      TotalQuestionsAnswered: 48,
+      TotalCorrect: 42,
+      Badges: ['STREAK_3', 'ACCURACY_80', 'FAST_LEARNER'],
+      WrongQuestionIds: ['QUIZ_20261015_01_5', 'QUIZ_OOP_CPP_01_7'], // ID các câu từng chọn sai để ôn lại
+      BookmarkedQuestionIds: ['QUIZ_20261015_01_3', 'QUIZ_OOP_CPP_01_2'] // Câu đánh dấu lưu lại
+    },
+    {
+      MSSV: '2251120002',
+      StreakDays: 12,
+      LastActiveDate: '19/10/2026',
+      TotalQuestionsAnswered: 85,
+      TotalCorrect: 82,
+      Badges: ['STREAK_7', 'STREAK_3', 'PERFECT_SCORE', 'ACCURACY_80'],
+      WrongQuestionIds: [],
+      BookmarkedQuestionIds: ['QUIZ_OOP_CPP_01_8']
+    },
+    {
+      MSSV: '2451120033',
+      StreakDays: 2,
+      LastActiveDate: '18/10/2026',
+      TotalQuestionsAnswered: 16,
+      TotalCorrect: 12,
+      Badges: ['FIRST_QUIZ'],
+      WrongQuestionIds: ['QUIZ_20261015_01_2'],
+      BookmarkedQuestionIds: ['QUIZ_OOP_CPP_01_1']
+    }
   ]
 };
 
@@ -454,10 +748,28 @@ export function getLocalMockState() {
       if (hasChanges) {
         localStorage.setItem('bht_mock_store', JSON.stringify(parsed));
       }
+      // Tự động bổ sung ngân hàng đề thi và kết quả nếu phiên bản cũ chưa có
+      if (!parsed.quizzes || !parsed.quizzes.some(q => q.QuizID === 'QUIZ_OOP_CPP_01')) {
+        parsed.quizzes = JSON.parse(JSON.stringify(INITIAL_MOCK_DATA.quizzes));
+        hasChanges = true;
+      }
+      if (!parsed.quizResults || !parsed.quizResults.some(r => r.ResultID && r.ResultID.includes('2351120015'))) {
+        parsed.quizResults = JSON.parse(JSON.stringify(INITIAL_MOCK_DATA.quizResults));
+        hasChanges = true;
+      }
+      if (!parsed.memberQuizProfiles || !parsed.memberQuizProfiles.some(p => p.MSSV === '2351120015')) {
+        parsed.memberQuizProfiles = JSON.parse(JSON.stringify(INITIAL_MOCK_DATA.memberQuizProfiles));
+        hasChanges = true;
+      }
+      if (hasChanges) {
+        localStorage.setItem('bht_mock_store', JSON.stringify(parsed));
+      }
       // Nếu store cũ chưa có bộ học liệu mới hoặc chưa có submissions đầy đủ, tự động làm mới
       if (parsed.documents && parsed.documents.some(d => d.DocID === 'DOC_MOS_001') && 
           parsed.attendance && parsed.attendance.some(s => s.PhongHoc) &&
-          parsed.submissions && parsed.submissions.length >= 8) {
+          parsed.submissions && parsed.submissions.length >= 8 &&
+          parsed.quizzes && parsed.quizzes.some(q => q.QuizID === 'QUIZ_OOP_CPP_01') &&
+          parsed.memberQuizProfiles) {
         return parsed;
       }
     } catch (e) {
@@ -823,6 +1135,14 @@ export async function handleMockAction(action, payload) {
         if (data.deadline !== undefined) t.Deadline = String(data.deadline).trim();
         if (data.trangThai !== undefined) t.TrangThai = String(data.trangThai).trim();
         if (data.sessionId !== undefined) t.SessionID = String(data.sessionId).trim();
+        if (data.folderId !== undefined) {
+          let folderId = String(data.folderId || '').trim();
+          if (folderId) {
+            const m = folderId.match(/[-\w]{25,}/);
+            if (m) folderId = m[0];
+          }
+          t.FolderID = folderId;
+        }
 
         // Cập nhật lại session.BaiTap nếu có
         state.attendance.forEach(s => {
@@ -832,7 +1152,7 @@ export async function handleMockAction(action, payload) {
         });
 
         saveLocalMockState(state);
-        return { success: true, message: `Đã cập nhật bài tập "${t.TieuDe}" thành công!` };
+        return { success: true, message: `Đã cập nhật bài tập "${t.TieuDe}" thành công!`, folderId: t.FolderID };
       }
       return { success: false, message: 'Không tìm thấy bài tập!' };
     }
@@ -877,13 +1197,24 @@ export async function handleMockAction(action, payload) {
     }
 
     case 'submitTaskAssignment': {
+      const existingSubs = state.submissions.filter(s => s.TaskID === data.taskId && s.MSSV === data.mssv);
+      if (existingSubs.length >= 3) {
+        return {
+          success: false,
+          errorCode: 'SUBMISSION_LIMIT_EXCEEDED',
+          message: 'Bạn đã đạt giới hạn nộp bài tối đa (3 lần) cho nhiệm vụ này!'
+        };
+      }
+      const currentTurn = existingSubs.length + 1;
+      const cleanFileName = `[${data.mssv}]_[${data.hoTen || 'ThanhVien'}]_Lan${currentTurn}_${data.fileName || 'BaiNop.zip'}`;
+
       const newSub = {
-        SubID: 'SUB_' + Date.now(),
+        SubID: 'SUB_' + data.mssv + '_' + data.taskId + '_' + Date.now(),
         TaskID: data.taskId,
         MSSV: data.mssv,
         HoTen: data.hoTen,
         Email: data.email,
-        TenFile: data.fileName,
+        TenFile: cleanFileName,
         DriveLink: 'https://drive.google.com/mock-upload-' + Date.now(),
         ThoiGianNop: new Date().toLocaleString('vi-VN'),
         TrangThaiDuyet: 'Pending',
@@ -893,10 +1224,11 @@ export async function handleMockAction(action, payload) {
       saveLocalMockState(state);
       return { 
         success: true, 
-        message: 'Nộp bài thành công (Mock Mode)!', 
+        message: `Nộp bài thành công (Lần ${currentTurn}/3)!`, 
         subId: newSub.SubID,
         fileUrl: newSub.DriveLink,
-        submitTime: newSub.ThoiGianNop
+        submitTime: newSub.ThoiGianNop,
+        turn: currentTurn
       };
     }
 
@@ -956,6 +1288,525 @@ export async function handleMockAction(action, payload) {
         return { success: true, message: `Đã xóa tài liệu "${deleted.TenTaiLieu}"!` };
       }
       return { success: false, message: 'Không tìm thấy tài liệu để xóa!' };
+    }
+
+    // 6. QUIZ & PRACTICE MODULE ACTIONS
+    case 'getQuizBySession': {
+      const sessionId = String(data.sessionId || data.SessionID || '').trim();
+      let currentMssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+      if (!currentMssv && typeof localStorage !== 'undefined') {
+        currentMssv = String(localStorage.getItem('bht_mssv') || '').trim().toUpperCase();
+      }
+      const isAdmin = data.isAdmin === true || data.role === 'ADMIN';
+
+      const quiz = (state.quizzes || []).find(q => String(q.SessionID).trim() === sessionId);
+      if (!quiz) {
+        return {
+          success: true,
+          data: {
+            quiz: null,
+            userResult: null,
+            leaderboard: []
+          }
+        };
+      }
+
+      // Tìm kết quả làm bài của sinh viên này nếu có
+      const userResult = (state.quizResults || []).find(
+        r => String(r.QuizID) === String(quiz.QuizID) && String(r.MSSV).toUpperCase() === currentMssv
+      ) || null;
+
+      // Danh sách xếp hạng của bài thi này
+      const sessionResults = (state.quizResults || [])
+        .filter(r => String(r.QuizID) === String(quiz.QuizID))
+        .sort((a, b) => (b.DiemSo - a.DiemSo) || (a.ThoiGianLamGiay - b.ThoiGianLamGiay));
+
+      // Bảo mật: Nếu chưa nộp bài và không phải Admin: Nhánh 1 chỉ lấy SoCauThi câu đầu và giấu đáp án
+      let returnedQuiz = quiz;
+      if (!isAdmin && !userResult) {
+        const examLimit = Number(quiz.SoCauThi) || (quiz.DanhSachCauHoi || []).length;
+        const safeQuestions = (quiz.DanhSachCauHoi || []).slice(0, examLimit).map(q => ({
+          id: q.id,
+          cauHoi: q.cauHoi,
+          luaChon: q.luaChon
+        }));
+        returnedQuiz = {
+          ...quiz,
+          DanhSachCauHoi: safeQuestions
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          quiz: returnedQuiz,
+          userResult,
+          leaderboard: sessionResults
+        }
+      };
+    }
+
+    case 'saveQuiz': {
+      const qid = String(data.quizId || data.QuizID || '').trim();
+      const sessionId = String(data.sessionId || data.SessionID || '').trim();
+      if (!sessionId) {
+        return { success: false, message: 'Thiếu SessionID của buổi học!' };
+      }
+
+      let existing = (state.quizzes || []).find(q => q.QuizID === qid || q.SessionID === sessionId);
+      if (existing) {
+        if (data.tieuDe !== undefined) existing.TieuDe = String(data.tieuDe).trim();
+        if (data.moTa !== undefined) existing.MoTa = String(data.moTa).trim();
+        if (data.thoiGianPhut !== undefined) existing.ThoiGianPhut = Number(data.thoiGianPhut) || 10;
+        if (data.soCauThi !== undefined) existing.SoCauThi = Number(data.soCauThi) || 10;
+        if (data.trangThai !== undefined) existing.TrangThai = String(data.trangThai).trim();
+        if (data.danhSachCauHoi !== undefined) existing.DanhSachCauHoi = data.danhSachCauHoi;
+        saveLocalMockState(state);
+        return {
+          success: true,
+          message: `Đã cập nhật bộ đề trắc nghiệm "${existing.TieuDe}"!`,
+          quizId: existing.QuizID,
+          data: existing
+        };
+      } else {
+        const newQuiz = {
+          QuizID: qid || ('QUIZ_' + Date.now()),
+          SessionID: sessionId,
+          TieuDe: data.tieuDe || 'Trắc nghiệm kiểm tra nhanh kiến thức',
+          MoTa: data.moTa || '',
+          ThoiGianPhut: Number(data.thoiGianPhut) || 10,
+          SoCauThi: Number(data.soCauThi) || 10,
+          TrangThai: data.trangThai || 'Draft',
+          NgayTao: new Date().toLocaleString('vi-VN'),
+          DanhSachCauHoi: data.danhSachCauHoi || []
+        };
+        if (!state.quizzes) state.quizzes = [];
+        state.quizzes.unshift(newQuiz);
+        saveLocalMockState(state);
+        return {
+          success: true,
+          message: `Đã tạo mới bộ đề trắc nghiệm "${newQuiz.TieuDe}"!`,
+          quizId: newQuiz.QuizID,
+          data: newQuiz
+        };
+      }
+    }
+
+    case 'toggleQuizStatus': {
+      const qid = String(data.quizId || data.QuizID || '').trim();
+      const sessionId = String(data.sessionId || data.SessionID || '').trim();
+      const targetStatus = String(data.trangThai || data.TrangThai || 'Open').trim();
+
+      const quiz = (state.quizzes || []).find(q => q.QuizID === qid || (sessionId && q.SessionID === sessionId));
+      if (!quiz) {
+        return { success: false, message: 'Không tìm thấy bộ đề trắc nghiệm!' };
+      }
+
+      quiz.TrangThai = targetStatus;
+      saveLocalMockState(state);
+      return {
+        success: true,
+        message: `Đã ${targetStatus === 'Open' ? 'mở' : 'đóng'} đề trắc nghiệm cho buổi học!`,
+        trangThai: quiz.TrangThai
+      };
+    }
+
+    case 'submitQuiz': {
+      const qid = String(data.quizId || data.QuizID || '').trim();
+      const sessionId = String(data.sessionId || data.SessionID || '').trim();
+      let mssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+      let hoTen = String(data.hoTen || data.HoTen || '').trim();
+
+      if (!mssv && typeof localStorage !== 'undefined') {
+        mssv = String(localStorage.getItem('bht_mssv') || '').trim().toUpperCase();
+      }
+      if (!hoTen && mssv) {
+        const mem = (state.members || []).find(m => String(m.MSSV).toUpperCase() === mssv);
+        if (mem) hoTen = mem.HoTen;
+      }
+      if (!hoTen) hoTen = mssv || 'Thành Viên';
+
+      const userAnswers = data.chiTietTraLoi || data.answers || {};
+      const timeSpentSec = Number(data.thoiGianLamGiay || data.durationSeconds) || 0;
+
+      const quiz = (state.quizzes || []).find(q => q.QuizID === qid || (sessionId && q.SessionID === sessionId));
+      if (!quiz) {
+        return { success: false, message: 'Bộ đề thi không tồn tại!' };
+      }
+
+      const isPractice = data.isPractice === true;
+
+      if (!isPractice && quiz.TrangThai !== 'Open') {
+        return { success: false, message: 'Đề thi hiện đang đóng, không nhận bài làm chính thức!' };
+      }
+
+      // Chấm điểm: Nhánh 1 (Thi chính thức) lấy đúng SoCauThi câu đầu, Nhánh 2 (Ôn luyện) lấy toàn bộ
+      const allQuestions = quiz.DanhSachCauHoi || [];
+      const gradedQuestions = !isPractice
+        ? allQuestions.slice(0, Number(quiz.SoCauThi) || allQuestions.length)
+        : allQuestions;
+
+      let correctCount = 0;
+      gradedQuestions.forEach(q => {
+        if (Number(userAnswers[q.id]) === Number(q.dapAnDung)) {
+          correctCount++;
+        }
+      });
+
+      const totalCount = gradedQuestions.length || 1;
+      const score = Math.round((correctCount / totalCount) * 100);
+
+      if (!state.quizResults) state.quizResults = [];
+
+      let resultRecord = state.quizResults.find(
+        r => r.QuizID === quiz.QuizID && String(r.MSSV).toUpperCase() === mssv
+      );
+
+      // Nếu là nộp bài thi chính thức (không phải ôn luyện) mà đã có kết quả trước đó -> Chặn ghi đè!
+      if (!isPractice && resultRecord) {
+        return {
+          success: false,
+          errorCode: 'ALREADY_SUBMITTED',
+          message: 'Bạn đã hoàn thành bài thi chính thức của buổi sinh hoạt này rồi! Điểm số đã được chốt trên bảng xếp hạng.',
+          data: {
+            result: resultRecord,
+            quiz
+          }
+        };
+      }
+
+      // Nếu là thi chính thức lần đầu tiên -> Lưu vào danh sách xếp hạng
+      if (!isPractice) {
+        resultRecord = {
+          ResultID: 'RES_' + mssv + '_' + quiz.QuizID + '_' + Date.now(),
+          QuizID: quiz.QuizID,
+          SessionID: quiz.SessionID,
+          MSSV: mssv,
+          HoTen: hoTen || mssv,
+          DiemSo: score,
+          SoCauDung: correctCount,
+          TongSoCau: totalCount,
+          ChiTietTraLoi: userAnswers,
+          ThoiGianNop: new Date().toLocaleString('vi-VN'),
+          ThoiGianLamGiay: timeSpentSec,
+          IsOfficial: true
+        };
+        state.quizResults.unshift(resultRecord);
+        saveLocalMockState(state);
+      } else {
+        // Chế độ ôn luyện -> Tạo kết quả tạm thời không ảnh hưởng bảng xếp hạng
+        resultRecord = {
+          ResultID: 'PRACTICE_' + Date.now(),
+          QuizID: quiz.QuizID,
+          SessionID: quiz.SessionID,
+          MSSV: mssv,
+          HoTen: hoTen || mssv,
+          DiemSo: score,
+          SoCauDung: correctCount,
+          TongSoCau: totalCount,
+          ChiTietTraLoi: userAnswers,
+          ThoiGianNop: new Date().toLocaleString('vi-VN'),
+          ThoiGianLamGiay: timeSpentSec,
+          IsOfficial: false
+        };
+      }
+
+      return {
+        success: true,
+        message: `Nộp bài thành công! Bạn đạt ${score}/100 điểm (${correctCount}/${totalCount} câu đúng).`,
+        data: {
+          result: resultRecord,
+          quiz // Trả về đầy đủ quiz kèm dapAnDung và giaiThich để sinh viên xem lời giải củng cố kiến thức
+        }
+      };
+    }
+
+    case 'resetQuizSubmission': {
+      const qid = String(data.quizId || data.QuizID || '').trim();
+      const sessionId = String(data.sessionId || data.SessionID || '').trim();
+      const mssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+
+      if (!state.quizResults) state.quizResults = [];
+      state.quizResults = state.quizResults.filter(
+        r => !(String(r.QuizID) === qid && String(r.MSSV).toUpperCase() === mssv)
+      );
+      saveLocalMockState(state);
+      return {
+        success: true,
+        message: `Đã reset kết quả thi của sinh viên ${mssv}. Sinh viên có thể vào thi lại bài 10 phút!`
+      };
+    }
+
+    case 'resetAllQuizSubmissions': {
+      const qid = String(data.quizId || data.QuizID || '').trim();
+      const sessionId = String(data.sessionId || data.SessionID || '').trim();
+
+      if (!state.quizResults) state.quizResults = [];
+      state.quizResults = state.quizResults.filter(r => String(r.QuizID) !== qid);
+
+      // Mở lại đề thi để sinh viên làm lại bài
+      const quiz = (state.quizzes || []).find(q => q.QuizID === qid || (sessionId && q.SessionID === sessionId));
+      if (quiz) quiz.TrangThai = 'Open';
+
+      saveLocalMockState(state);
+      return {
+        success: true,
+        message: 'Đã reset toàn bộ kết quả thi và mở lại đề. Tất cả sinh viên có thể làm lại bài thi 10 phút từ đầu!'
+      };
+    }
+
+    case 'getQuizResultsBySession': {
+      const sessionId = String(data.sessionId || data.SessionID || '').trim();
+      const quiz = (state.quizzes || []).find(q => q.SessionID === sessionId);
+      if (!quiz) {
+        return { success: true, data: { quiz: null, results: [], stats: null } };
+      }
+
+      const results = (state.quizResults || []).filter(r => r.QuizID === quiz.QuizID);
+      
+      const stats = {
+        totalSubmissions: results.length,
+        avgScore: results.length ? Math.round(results.reduce((s, r) => s + r.DiemSo, 0) / results.length) : 0,
+        questionStats: (quiz.DanhSachCauHoi || []).map(q => {
+          const correct = results.filter(r => r.ChiTietTraLoi && Number(r.ChiTietTraLoi[q.id]) === Number(q.dapAnDung)).length;
+          return {
+            id: q.id,
+            cauHoi: q.cauHoi,
+            correctCount: correct,
+            totalCount: results.length,
+            accuracyRate: results.length ? Math.round((correct / results.length) * 100) : 0
+          };
+        })
+      };
+
+      return {
+        success: true,
+        data: {
+          quiz,
+          results,
+          stats
+        }
+      };
+    }
+
+    case 'deleteQuiz': {
+      const did = String(data.quizId || data.QuizID || '').trim();
+      const idx = (state.quizzes || []).findIndex(q => q.QuizID === did);
+      if (idx !== -1) {
+        const deleted = state.quizzes.splice(idx, 1)[0];
+        saveLocalMockState(state);
+        return { success: true, message: `Đã xóa đề trắc nghiệm "${deleted.TieuDe}"!` };
+      }
+      return { success: false, message: 'Không tìm thấy bộ đề trắc nghiệm để xóa!' };
+    }
+
+    // 7. HỌC TẬP CÁ NHÂN HÓA, CHUỖI STREAK & KHO CÂU SAI (GAMIFICATION API)
+    case 'getMemberQuizProfile': {
+      const mssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+      if (!state.memberQuizProfiles) state.memberQuizProfiles = [];
+
+      let profile = state.memberQuizProfiles.find(p => String(p.MSSV).toUpperCase() === mssv);
+      if (!profile) {
+        profile = {
+          MSSV: mssv,
+          StreakDays: 1,
+          LastActiveDate: new Date().toLocaleDateString('vi-VN'),
+          TotalQuestionsAnswered: 0,
+          TotalCorrect: 0,
+          Badges: [],
+          WrongQuestionIds: [],
+          BookmarkedQuestionIds: []
+        };
+        state.memberQuizProfiles.push(profile);
+        saveLocalMockState(state);
+      }
+
+      return {
+        success: true,
+        data: profile
+      };
+    }
+
+    case 'recordQuizAnswer': {
+      const qid = String(data.quizId || data.QuizID || '').trim();
+      const questionId = Number(data.questionId !== undefined ? data.questionId : data.id);
+      const selectedIndex = Number(data.selectedIndex !== undefined ? data.selectedIndex : (data.selectedOption !== undefined ? data.selectedOption : data.selected));
+      const mssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+
+      let quiz = (state.quizzes || []).find(q => q.QuizID === qid);
+      if (!quiz) {
+        quiz = (state.quizzes || []).find(q => (q.DanhSachCauHoi || []).some(item => Number(item.id) === questionId));
+      }
+      if (!quiz) {
+        return { success: false, message: 'Không tìm thấy bộ đề thi!' };
+      }
+
+      const question = (quiz.DanhSachCauHoi || []).find(q => Number(q.id) === questionId);
+      if (!question) {
+        return { success: false, message: 'Không tìm thấy câu hỏi!' };
+      }
+
+      const isCorrect = Number(selectedIndex) === Number(question.dapAnDung);
+
+      if (!state.memberQuizProfiles) state.memberQuizProfiles = [];
+      let profile = state.memberQuizProfiles.find(p => String(p.MSSV).toUpperCase() === mssv);
+      if (!profile) {
+        profile = {
+          MSSV: mssv,
+          StreakDays: 1,
+          LastActiveDate: new Date().toLocaleDateString('vi-VN'),
+          TotalQuestionsAnswered: 0,
+          TotalCorrect: 0,
+          Badges: [],
+          WrongQuestionIds: [],
+          BookmarkedQuestionIds: []
+        };
+        state.memberQuizProfiles.push(profile);
+      }
+
+      profile.TotalQuestionsAnswered = (profile.TotalQuestionsAnswered || 0) + 1;
+
+      // Cập nhật Streak học tập
+      const todayStr = new Date().toLocaleDateString('vi-VN');
+      if (profile.LastActiveDate !== todayStr) {
+        profile.StreakDays = (profile.StreakDays || 0) + 1;
+        profile.LastActiveDate = todayStr;
+      }
+
+      const qGlobalKey = `${quiz.QuizID}_${questionId}`;
+      if (isCorrect) {
+        profile.TotalCorrect = (profile.TotalCorrect || 0) + 1;
+        // Đã trả lời đúng: Nếu đang có trong kho câu sai, tự động gỡ ra
+        if (profile.WrongQuestionIds && profile.WrongQuestionIds.includes(qGlobalKey)) {
+          profile.WrongQuestionIds = profile.WrongQuestionIds.filter(id => id !== qGlobalKey);
+        }
+      } else {
+        // Trả lời sai: Tự động thêm vào kho câu sai nếu chưa có
+        if (!profile.WrongQuestionIds) profile.WrongQuestionIds = [];
+        if (!profile.WrongQuestionIds.includes(qGlobalKey)) {
+          profile.WrongQuestionIds.push(qGlobalKey);
+        }
+      }
+
+      // Tự động kiểm tra cấp huy hiệu
+      if (!profile.Badges) profile.Badges = [];
+      if (profile.StreakDays >= 3 && !profile.Badges.includes('STREAK_3')) profile.Badges.push('STREAK_3');
+      if (profile.StreakDays >= 7 && !profile.Badges.includes('STREAK_7')) profile.Badges.push('STREAK_7');
+      if (profile.TotalQuestionsAnswered >= 30 && !profile.Badges.includes('STUDY_WARRIOR')) profile.Badges.push('STUDY_WARRIOR');
+
+      saveLocalMockState(state);
+
+      return {
+        success: true,
+        data: {
+          isCorrect,
+          correctAnswer: question.dapAnDung,
+          correctAnswerText: question.luaChon[question.dapAnDung],
+          explanation: question.giaiThich || '',
+          profile: {
+            streakDays: profile.StreakDays,
+            wrongCount: (profile.WrongQuestionIds || []).length,
+            bookmarkCount: (profile.BookmarkedQuestionIds || []).length,
+            totalAnswered: profile.TotalQuestionsAnswered,
+            totalCorrect: profile.TotalCorrect
+          }
+        }
+      };
+    }
+
+    case 'toggleQuestionBookmark': {
+      const qid = String(data.quizId || data.QuizID || '').trim();
+      const questionId = Number(data.questionId !== undefined ? data.questionId : data.id);
+      const mssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+
+      if (!state.memberQuizProfiles) state.memberQuizProfiles = [];
+      let profile = state.memberQuizProfiles.find(p => String(p.MSSV).toUpperCase() === mssv);
+      if (!profile) {
+        profile = {
+          MSSV: mssv,
+          StreakDays: 1,
+          LastActiveDate: new Date().toLocaleDateString('vi-VN'),
+          TotalQuestionsAnswered: 0,
+          TotalCorrect: 0,
+          Badges: [],
+          WrongQuestionIds: [],
+          BookmarkedQuestionIds: []
+        };
+        state.memberQuizProfiles.push(profile);
+      }
+
+      const qGlobalKey = `${qid}_${questionId}`;
+      if (!profile.BookmarkedQuestionIds) profile.BookmarkedQuestionIds = [];
+      
+      const idx = profile.BookmarkedQuestionIds.indexOf(qGlobalKey);
+      let isBookmarked = false;
+      if (idx !== -1) {
+        profile.BookmarkedQuestionIds.splice(idx, 1);
+        isBookmarked = false;
+      } else {
+        profile.BookmarkedQuestionIds.push(qGlobalKey);
+        isBookmarked = true;
+      }
+
+      saveLocalMockState(state);
+
+      return {
+        success: true,
+        data: {
+          isBookmarked,
+          totalBookmarks: profile.BookmarkedQuestionIds.length
+        }
+      };
+    }
+
+    case 'getPersonalQuizPool': {
+      const mssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+      const poolType = String(data.poolType || 'wrong').trim().toLowerCase(); // 'wrong' | 'bookmark'
+
+      const profile = (state.memberQuizProfiles || []).find(p => String(p.MSSV).toUpperCase() === mssv);
+      const targetKeys = profile ? (poolType === 'wrong' ? (profile.WrongQuestionIds || []) : (profile.BookmarkedQuestionIds || [])) : [];
+
+      const questions = [];
+      targetKeys.forEach(k => {
+        const parts = k.split('_');
+        const qId = Number(parts.pop());
+        const quizId = parts.join('_');
+
+        const quiz = (state.quizzes || []).find(q => q.QuizID === quizId);
+        if (quiz) {
+          const q = (quiz.DanhSachCauHoi || []).find(x => Number(x.id) === qId);
+          if (q) {
+            questions.push({
+              ...q,
+              quizId: quiz.QuizID,
+              quizTitle: quiz.TieuDe,
+              sessionID: quiz.SessionID
+            });
+          }
+        }
+      });
+
+      return {
+        success: true,
+        data: {
+          poolType,
+          total: questions.length,
+          questions
+        }
+      };
+    }
+
+    case 'clearWrongHistory': {
+      const mssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+      const profile = (state.memberQuizProfiles || []).find(p => String(p.MSSV).toUpperCase() === mssv);
+      if (profile) {
+        profile.WrongQuestionIds = [];
+        saveLocalMockState(state);
+      }
+      return {
+        success: true,
+        message: 'Đã xóa toàn bộ lịch sử câu hỏi làm sai!'
+      };
     }
 
     default:
