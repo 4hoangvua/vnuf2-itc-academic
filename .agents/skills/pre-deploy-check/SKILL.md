@@ -103,6 +103,9 @@ Khi deploy lên GitHub Pages hoặc Web Server, trình duyệt của sinh viên 
   - **Deploy Backend:** Chạy `npx @google/clasp push` (hoặc `clasp push`) trực tiếp từ local lên Apps Script.
   - **Đồng bộ Backend:** Chạy `npx @google/clasp pull` khi có thay đổi trên Apps Script console.
   - **Push Frontend:** Kiểm tra `.gitignore` luôn chứa `.clasp.json` và `gas-backend/`. Chỉ push mã nguồn `frontend/`, tài liệu và config lên GitHub. Không xóa folder `gas-backend/` trên máy local.
+- [ ] **13. Tắt Jekyll Tránh Lỗi Markdown Trên GitHub Pages (`.nojekyll`):**
+  - Luôn duy trì file `.nojekyll` ở cả thư mục gốc `/` và thư mục `frontend/`.
+  - Giúp GitHub Pages tắt hoàn toàn trình biên dịch Jekyll, ngăn chặn việc Jekyll tự động xử lý các file `.md` thành trang web hoặc ẩn các file/thư mục assets.
 
 ---
 
