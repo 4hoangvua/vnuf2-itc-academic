@@ -284,6 +284,7 @@ Ban Học Thuật - CLB Tin Học VNUF2`;
               </span>
               <button 
                 type="button" 
+                id="btn-save-campaign-schedule"
                 data-action="save-campaign-schedule" 
                 data-campaign-id="${currentCamp.id}"
                 class="bht-btn bht-btn-primary text-xs py-2 px-4 shadow-sm shrink-0"

@@ -11,7 +11,7 @@
 
 import { callApi, broadcastDataSync, setActiveCampaign } from '../../services/api.js';
 import { appState } from '../store.js';
-import { showToast, showGlobalLoading, hideGlobalLoading } from '../ui.js';
+import { showToast, setButtonLoading } from '../ui.js';
 import { renderAdminCampaignTabContent } from '../templates/campaignTemplates.js';
 import { renderAdminCampaignSelector } from '../gift2010.js';
 import { renderCampaignTabSkeleton } from '../skeleton.js';
@@ -199,18 +199,20 @@ export function renderAdminCampaignsView() {
 /**
  * Xử lý khi Admin chọn chuyển đổi sự kiện (áp dụng khi click nút ở bộ chọn sự kiện)
  * @param {string} campaignId ID chiến dịch hoặc 'NONE'
+ * @param {HTMLElement} [triggerBtn] Nút bấm được click
  */
-export async function handleSwitchAdminCampaign(campaignId) {
+export async function handleSwitchAdminCampaign(campaignId, triggerBtn = null) {
   if (!campaignId) return;
 
   if (campaignId === 'NONE') {
-    return handleSelectAdminCampaign('NONE');
+    return handleSelectAdminCampaign('NONE', triggerBtn);
   }
 
-  showGlobalLoading(`Đang kích hoạt sự kiện ${campaignId}...`);
+  const btn = triggerBtn || document.querySelector(`[data-action="switch-admin-campaign"][data-campaign-id="${campaignId}"]`);
+  if (btn) setButtonLoading(btn, true);
+
   try {
     const res = await setActiveCampaign(campaignId);
-    hideGlobalLoading();
     if (res && res.success) {
       adminActiveCampaignId = campaignId;
       adminSelectedCampaignId = campaignId;
@@ -224,26 +226,29 @@ export async function handleSwitchAdminCampaign(campaignId) {
       showToast(res ? res.message : 'Không thể kích hoạt sự kiện!', 'error');
     }
   } catch (err) {
-    hideGlobalLoading();
     showToast('Lỗi khi cập nhật sự kiện: ' + (err.message || err.toString()), 'error');
+  } finally {
+    if (btn) setButtonLoading(btn, false);
   }
 }
 
 /**
  * Xử lý khi Admin chọn một Chiến dịch Sự kiện khác từ danh mục (preset card)
  * @param {string} campaignId ID chiến dịch hoặc 'NONE'
+ * @param {HTMLElement} [triggerBtn] Nút bấm được click
  */
-export async function handleSelectAdminCampaign(campaignId) {
+export async function handleSelectAdminCampaign(campaignId, triggerBtn = null) {
   if (!campaignId) return;
 
   if (campaignId === 'NONE') {
     const isConfirm = confirm('Bạn có chắc chắn muốn TẮT toàn bộ sự kiện để đưa Cổng học thuật về giao diện tiêu chuẩn?');
     if (!isConfirm) return;
 
-    showGlobalLoading('Đang tắt sự kiện...');
+    const btn = triggerBtn || document.querySelector('[data-action="select-admin-campaign"][data-campaign-id="NONE"]');
+    if (btn) setButtonLoading(btn, true);
+
     try {
       const res = await callApi('setActiveCampaign', { campaignId: 'NONE' });
-      hideGlobalLoading();
       if (res && res.success) {
         adminActiveCampaignId = 'NONE';
         if (typeof localStorage !== 'undefined') {
@@ -256,8 +261,9 @@ export async function handleSelectAdminCampaign(campaignId) {
         showToast(res.message || 'Lỗi khi tắt sự kiện!', 'error');
       }
     } catch (err) {
-      hideGlobalLoading();
       showToast('Lỗi: ' + (err.message || err.toString()), 'error');
+    } finally {
+      if (btn) setButtonLoading(btn, false);
     }
     return;
   }
@@ -270,8 +276,9 @@ export async function handleSelectAdminCampaign(campaignId) {
 /**
  * Lưu lịch trình hẹn giờ & nội dung thư cho chiến dịch
  * @param {string} campaignId
+ * @param {HTMLElement} [triggerBtn] Nút bấm được click
  */
-export async function handleSaveCampaignSchedule(campaignId) {
+export async function handleSaveCampaignSchedule(campaignId, triggerBtn = null) {
   const targetId = campaignId || adminSelectedCampaignId;
   const startInput = document.getElementById('admin-campaign-start-time');
   const endInput = document.getElementById('admin-campaign-end-time');
@@ -292,7 +299,9 @@ export async function handleSaveCampaignSchedule(campaignId) {
     return;
   }
 
-  showGlobalLoading('Đang lưu cấu hình sự kiện...');
+  const btn = triggerBtn || document.getElementById('btn-save-campaign-schedule') || document.querySelector('[data-action="save-campaign-schedule"]');
+  if (btn) setButtonLoading(btn, true);
+
   try {
     const res = await callApi('saveCampaignConfig', {
       campaignId: targetId,
@@ -307,7 +316,6 @@ export async function handleSaveCampaignSchedule(campaignId) {
       setActive: true
     });
 
-    hideGlobalLoading();
     if (res && res.success) {
       adminActiveCampaignId = targetId;
       if (typeof localStorage !== 'undefined') {
@@ -324,8 +332,9 @@ export async function handleSaveCampaignSchedule(campaignId) {
       showToast(res.message || 'Không thể lưu cấu hình sự kiện!', 'error');
     }
   } catch (err) {
-    hideGlobalLoading();
     showToast('Lỗi lưu cấu hình: ' + (err.message || err.toString()), 'error');
+  } finally {
+    if (btn) setButtonLoading(btn, false);
   }
 }
 
@@ -516,8 +525,9 @@ function updateCampaignRecipientSelectionUI() {
 /**
  * Xử lý phát gửi email hàng loạt tới các thành viên ĐƯỢC CHỌN
  * @param {string} campaignId
+ * @param {HTMLElement} [triggerBtn] Nút bấm được click
  */
-export async function handleDispatchCampaignBulkEmail(campaignId) {
+export async function handleDispatchCampaignBulkEmail(campaignId, triggerBtn = null) {
   const targetId = campaignId || adminSelectedCampaignId;
   const subjectInput = document.getElementById('admin-campaign-email-subject');
   const bodyInput = document.getElementById('admin-campaign-email-body');
@@ -540,7 +550,9 @@ export async function handleDispatchCampaignBulkEmail(campaignId) {
   const isConfirmed = confirm(`XÁC NHẬN PHÁT GỬI EMAIL HÀNG LOẠT:\n\n• Chiến dịch: ${targetId}\n• Số lượng người nhận: ${selectedMssvs.length} sinh viên đã chọn\n• Hệ thống sẽ gửi email mời các bạn vào mở hộp quà bí ẩn.\n\nBạn có chắc chắn muốn phát gửi ngay bây giờ?`);
   if (!isConfirmed) return;
 
-  showGlobalLoading(`Đang tiến hành gửi email tới ${selectedMssvs.length} thành viên...`);
+  const btn = triggerBtn || document.getElementById('btn-dispatch-campaign-bulk-email') || document.querySelector('[data-action="dispatch-campaign-bulk-email"]');
+  if (btn) setButtonLoading(btn, true);
+
   try {
     const res = await callApi('sendEventBulkEmail', {
       campaignId: targetId,
@@ -551,7 +563,6 @@ export async function handleDispatchCampaignBulkEmail(campaignId) {
       selectedMssvs
     });
 
-    hideGlobalLoading();
     if (res && res.success && res.data) {
       adminLastEmailDispatch = res.data;
       showToast(res.message || `Đã phát gửi thành công ${res.data.sentCount} email!`, 'success');
@@ -560,7 +571,8 @@ export async function handleDispatchCampaignBulkEmail(campaignId) {
       showToast(res.message || 'Lỗi khi phát gửi email hàng loạt!', 'error');
     }
   } catch (err) {
-    hideGlobalLoading();
     showToast('Lỗi gửi email: ' + (err.message || err.toString()), 'error');
+  } finally {
+    if (btn) setButtonLoading(btn, false);
   }
 }
