@@ -1226,7 +1226,9 @@ export async function handleMockAction(action, payload) {
         Ban: cleanBan,
         Role: (data.role || 'MEMBER').toUpperCase(),
         TrangThai: 'Active',
-        NgayThamGia: new Date().toLocaleDateString('vi-VN')
+        NgayThamGia: new Date().toLocaleDateString('vi-VN'),
+        Sex: String(data.sex || data.Sex || 'male').toLowerCase(),
+        sex: String(data.sex || data.Sex || 'male').toLowerCase()
       };
       state.members.unshift(newMem);
       saveLocalMockState(state);

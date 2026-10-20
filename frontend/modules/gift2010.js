@@ -371,6 +371,20 @@ export async function claimGiftForUser(user) {
     } catch (e) {}
   }
 
+  // Cập nhật viewingAs nếu đang ở chế độ xem trước một sinh viên cụ thể
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      const viewingAs = sessionStorage.getItem('bht_viewing_as_member');
+      if (viewingAs && viewingAs !== 'true') {
+        const parsed = JSON.parse(viewingAs);
+        if (parsed && String(parsed.mssv || '').toUpperCase() === mssv) {
+          parsed.gift2010 = giftData;
+          sessionStorage.setItem('bht_viewing_as_member', JSON.stringify(parsed));
+        }
+      }
+    }
+  } catch (e) {}
+
   // 3. Đồng bộ lên Backend Google Apps Script (hoặc Mock Data)
   try {
     await saveMemberGift(mssv, giftData);
@@ -1249,6 +1263,19 @@ export async function resetGiftForUser(user) {
     } catch (e) {}
   }
 
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      const viewingAs = sessionStorage.getItem('bht_viewing_as_member');
+      if (viewingAs && viewingAs !== 'true') {
+        const parsed = JSON.parse(viewingAs);
+        if (parsed && String(parsed.mssv || '').toUpperCase() === mssv) {
+          parsed.gift2010 = null;
+          sessionStorage.setItem('bht_viewing_as_member', JSON.stringify(parsed));
+        }
+      }
+    }
+  } catch (e) {}
+
   // 3. Xóa trong mock store nếu có
   try {
     if (typeof localStorage !== 'undefined') {
@@ -1309,6 +1336,19 @@ export async function switchGiftTypeForUser(user, targetGiftId) {
       }
     } catch (e) {}
   }
+
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      const viewingAs = sessionStorage.getItem('bht_viewing_as_member');
+      if (viewingAs && viewingAs !== 'true') {
+        const parsed = JSON.parse(viewingAs);
+        if (parsed && String(parsed.mssv || '').toUpperCase() === mssv) {
+          parsed.gift2010 = newGiftData;
+          sessionStorage.setItem('bht_viewing_as_member', JSON.stringify(parsed));
+        }
+      }
+    }
+  } catch (e) {}
 
   try {
     await saveMemberGift(mssv, newGiftData);

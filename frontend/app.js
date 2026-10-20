@@ -365,6 +365,7 @@ const CENTRAL_ACTION_MAP = {
     const isAdmin = (user && user.role === 'ADMIN');
     const targetMssv = isAdmin ? '2351120015' : '2251120001';
     localStorage.setItem('bht_mssv', targetMssv);
+    localStorage.removeItem('bht_sex');
     clearToken();
     sessionStorage.clear();
     showToast(`Đang chuyển tài khoản sang ${targetMssv}...`, 'info');

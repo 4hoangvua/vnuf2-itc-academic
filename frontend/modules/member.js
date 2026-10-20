@@ -106,13 +106,30 @@ export function getCurrentMemberUser() {
   if (!user) {
     user = appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null') || { 
       hoTen: localStorage.getItem('bht_hoten') || 'Thành Viên', 
-      mssv: localStorage.getItem('bht_mssv') || '' 
+      mssv: localStorage.getItem('bht_mssv') || '',
+      Sex: localStorage.getItem('bht_sex') || '',
+      sex: localStorage.getItem('bht_sex') || ''
     };
   }
 
   // Đảm bảo user luôn có trường HoTen / hoTen và Sex chính xác từ danh sách members (kể cả khi session cũ chưa kịp lưu hoặc lưu sai)
   if (user && user.mssv) {
-    const memList = (appState.members && appState.members.length > 0) ? appState.members : (INITIAL_MOCK_DATA ? INITIAL_MOCK_DATA.members : []);
+    let mockStoreMembers = [];
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const rawStore = localStorage.getItem('bht_mock_store');
+        if (rawStore) {
+          const parsedStore = JSON.parse(rawStore);
+          if (parsedStore && Array.isArray(parsedStore.members)) {
+            mockStoreMembers = parsedStore.members;
+          }
+        }
+      }
+    } catch (_) {}
+
+    const memList = (appState.members && appState.members.length > 0) 
+      ? appState.members 
+      : (mockStoreMembers.length > 0 ? mockStoreMembers : (INITIAL_MOCK_DATA ? INITIAL_MOCK_DATA.members : []));
     const cleanUserMssv = String(user.mssv).trim().toUpperCase();
     const mem = memList.find(m => String(m.MSSV).trim().toUpperCase() === cleanUserMssv);
     
@@ -144,11 +161,16 @@ export function getCurrentMemberUser() {
     }
   }
 
-  // Luôn đồng bộ cả hai trường hoTen và HoTen
+  // Luôn đồng bộ cả hai trường hoTen và HoTen, cùng Sex và sex
   if (user) {
     const validName = user.hoTen || user.HoTen || localStorage.getItem('bht_hoten') || '';
     user.hoTen = validName;
     user.HoTen = validName;
+    const resolvedSex = String(user.Sex || user.sex || localStorage.getItem('bht_sex') || '').trim().toLowerCase();
+    if (resolvedSex) {
+      user.Sex = resolvedSex;
+      user.sex = resolvedSex;
+    }
   }
 
   return user;

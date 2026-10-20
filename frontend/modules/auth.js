@@ -390,6 +390,7 @@ export async function handleLogout() {
     clearToken();
     localStorage.removeItem('bht_mssv');
     localStorage.removeItem('bht_role');
+    localStorage.removeItem('bht_sex');
     sessionStorage.clear();
     store.reset();
     
@@ -460,6 +461,13 @@ function handleAuthSuccess(user, token, isSessionVerification = false, bootstrap
     user.hoTen = validName;
     user.HoTen = validName;
     localStorage.setItem('bht_hoten', validName);
+  }
+
+  const validSex = String(user.sex || user.Sex || localStorage.getItem('bht_sex') || '').trim().toLowerCase();
+  if (validSex) {
+    user.sex = validSex;
+    user.Sex = validSex;
+    localStorage.setItem('bht_sex', validSex);
   }
 
   store.setState({ user: user, token: currentToken });

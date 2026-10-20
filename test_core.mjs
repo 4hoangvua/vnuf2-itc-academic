@@ -514,6 +514,11 @@ localStorage.setItem('bht_token', 'MOCK_TOKEN_2351120015');
 const authStatus = await mockCallApi('getAuthStatus', {});
 assert('getAuthStatus with MOCK_TOKEN returns AUTHENTICATED', authStatus.status === 'AUTHENTICATED' && authStatus.user.mssv === '2351120015');
 
+// Test getAuthStatus with female member -> preserves sex female
+localStorage.setItem('bht_token', 'MOCK_TOKEN_2351120028');
+const femaleAuthStatus = await mockCallApi('getAuthStatus', {});
+assert('getAuthStatus preserves sex female for female member', femaleAuthStatus.status === 'AUTHENTICATED' && femaleAuthStatus.user.sex === 'female' && femaleAuthStatus.user.Sex === 'female');
+
 // Test getAuthStatus with inactive user -> BLOCKED
 localStorage.setItem('bht_token', 'MOCK_TOKEN_2251120099');
 const blockedStatus = await mockCallApi('getAuthStatus', {});
@@ -1527,6 +1532,7 @@ assert('Router.js routes getAppInitData', routerGasContent.includes("case 'getAp
 assert('Router.js passes includeBootstrap to getAuthStatus', routerGasContent.includes("data.includeBootstrap === true || data.bootstrap === true"));
 assert('Service_Auth.js defines getAppInitData', serviceAuthContent.includes('function getAppInitData(currentUser)'));
 assert('Service_Auth.js supports includeBootstrap in getAuthStatus', serviceAuthContent.includes('function getAuthStatus(token, cachedMssv, includeBootstrap)'));
+assert('Service_Auth.js returns sex and gift2010 in getAuthStatus', serviceAuthContent.includes('sex: cleanSex') && serviceAuthContent.includes('gift2010: currentGift'));
 assert('api.js exports hydrateAppFromBootstrap', typeof apiJsModule.hydrateAppFromBootstrap === 'function');
 assert('api.js exports getAppInitData', typeof apiJsModule.getAppInitData === 'function');
 assert('API_CONFIG.CACHEABLE_ACTIONS includes getAppInitData', apiJsModule.API_CONFIG.CACHEABLE_ACTIONS.includes('getAppInitData'));
