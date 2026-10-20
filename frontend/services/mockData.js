@@ -2236,6 +2236,11 @@ export async function handleMockAction(action, payload) {
         targetMembers = members.filter(m => String(m.Sex || '').trim().toLowerCase() === 'female');
       }
 
+      if (Array.isArray(data.selectedMssvs) && data.selectedMssvs.length > 0) {
+        const selectedSet = new Set(data.selectedMssvs.map(s => String(s).trim().toUpperCase()));
+        targetMembers = targetMembers.filter(m => selectedSet.has(String(m.MSSV || '').trim().toUpperCase()));
+      }
+
       const logs = [];
       let sentCount = 0;
       let skippedNoEmailCount = 0;

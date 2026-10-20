@@ -19,7 +19,8 @@ export function renderAdminCampaignTabContent(data = {}) {
     activeCampaignId = 'OCT20',
     selectedCampaignId = activeCampaignId,
     members = [],
-    lastDispatch = null
+    lastDispatch = null,
+    selectedMssvs = null
   } = data;
 
   const currentCamp = campaigns.find(c => c.id === selectedCampaignId) || campaigns[0] || {
@@ -77,6 +78,15 @@ Ban Học Thuật - CLB Tin Học VNUF2`;
 
   const validEmailMembers = targetMembers.filter(m => m.Email && String(m.Email).includes('@'));
   const missingEmailMembers = targetMembers.filter(m => !m.Email || !String(m.Email).includes('@'));
+
+  // Quản lý tập hợp MSSV đã chọn gửi thư
+  const selectedMssvsSet = new Set(
+    selectedMssvs !== null
+      ? selectedMssvs
+      : validEmailMembers.map(m => m.MSSV)
+  );
+  const selectedCount = validEmailMembers.filter(m => selectedMssvsSet.has(m.MSSV)).length;
+  const isAllSelected = (validEmailMembers.length > 0 && selectedCount === validEmailMembers.length);
 
   // Mẫu xem trước email dựa trên thành viên đầu tiên
   const sampleMember = validEmailMembers[0] || targetMembers[0] || {
@@ -440,13 +450,14 @@ Ban Học Thuật - CLB Tin Học VNUF2`;
           <div class="flex items-center gap-2 shrink-0">
             <button 
               type="button" 
+              id="btn-dispatch-campaign-bulk-email"
               data-action="dispatch-campaign-bulk-email" 
               data-campaign-id="${currentCamp.id}"
-              class="bht-btn bht-btn-primary font-bold text-xs py-2 px-4 shadow-md bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white border-0"
-              ${validEmailMembers.length === 0 ? 'disabled' : ''}
+              class="bht-btn bht-btn-primary font-bold text-xs py-2 px-4 shadow-md bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              ${selectedCount === 0 ? 'disabled' : ''}
             >
               <i class="fa-solid fa-paper-plane mr-1.5 text-xs"></i>
-              <span>Gửi Email Tới ${validEmailMembers.length} Thành Viên</span>
+              <span id="btn-dispatch-campaign-label">Gửi Email Tới ${selectedCount} Người Đã Chọn</span>
             </button>
           </div>
         </div>
@@ -455,7 +466,7 @@ Ban Học Thuật - CLB Tin Học VNUF2`;
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="p-3.5 rounded-xl bg-subtle/50 border border-hairline flex items-center justify-between">
             <div>
-              <span class="text-[11px] text-ink-muted font-medium">Tổng đối tượng nhận:</span>
+              <span class="text-[11px] text-ink-muted font-medium">Tổng đối tượng sự kiện:</span>
               <div class="text-xl font-bold font-mono text-ink mt-0.5">${targetMembers.length}</div>
             </div>
             <div class="w-9 h-9 rounded-xl bg-accent-soft text-accent flex items-center justify-center text-sm font-bold">
@@ -465,11 +476,13 @@ Ban Học Thuật - CLB Tin Học VNUF2`;
 
           <div class="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center justify-between">
             <div>
-              <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Đã có Email (Sẵn sàng gửi):</span>
-              <div class="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">${validEmailMembers.length}</div>
+              <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Đã chọn gửi thư:</span>
+              <div id="stat-selected-recipients-count" class="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
+                ${selectedCount} <span class="text-xs font-normal text-ink-muted">/ ${validEmailMembers.length} có mail</span>
+              </div>
             </div>
             <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">
-              <i class="fa-solid fa-check"></i>
+              <i class="fa-solid fa-envelope-circle-check"></i>
             </div>
           </div>
 
@@ -484,12 +497,55 @@ Ban Học Thuật - CLB Tin Học VNUF2`;
           </div>
         </div>
 
+        <!-- THANH CÔNG CỤ CHỌN NGƯỜI NHẬN EMAIL (SELECTION TOOLBAR) -->
+        <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-subtle/50 rounded-xl border border-hairline text-xs">
+          <div class="flex items-center gap-3">
+            <span class="font-semibold text-ink flex items-center gap-1.5">
+              <i class="fa-solid fa-list-check text-accent"></i>
+              <span>Lựa chọn người nhận:</span>
+            </span>
+            <span id="campaign-selected-count-badge" class="font-mono font-bold text-accent px-2 py-0.5 rounded bg-accent-soft border border-accent/20">
+              Đã chọn: ${selectedCount} / ${validEmailMembers.length} người
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button 
+              type="button" 
+              data-action="campaign-select-all-recipients" 
+              class="bht-btn bht-btn-ghost text-xs py-1 px-2.5 border border-hairline hover:bg-surface font-medium"
+              title="Chọn tất cả thành viên có địa chỉ email hợp lệ"
+            >
+              <i class="fa-solid fa-check-double mr-1 text-accent"></i>
+              <span>Chọn tất cả</span>
+            </button>
+            <button 
+              type="button" 
+              data-action="campaign-deselect-all-recipients" 
+              class="bht-btn bht-btn-ghost text-xs py-1 px-2.5 border border-hairline hover:bg-surface font-medium text-ink-muted hover:text-rose-500"
+              title="Bỏ chọn tất cả"
+            >
+              <i class="fa-solid fa-xmark mr-1"></i>
+              <span>Bỏ chọn</span>
+            </button>
+          </div>
+        </div>
+
         <!-- BẢNG DANH SÁCH THÀNH VIÊN NHẬN THƯ -->
         <div class="overflow-x-auto rounded-xl border border-hairline">
           <table class="w-full text-left text-xs">
             <thead class="bg-subtle/60 text-ink-muted uppercase text-[11px] border-b border-hairline">
               <tr>
-                <th class="py-2.5 px-3.5 text-center w-12">STT</th>
+                <th class="py-2.5 px-3 text-center w-10">
+                  <input 
+                    type="checkbox" 
+                    id="campaign-select-all-checkbox" 
+                    data-action="toggle-campaign-select-all" 
+                    class="rounded border-hairline text-accent focus:ring-accent cursor-pointer"
+                    ${isAllSelected ? 'checked' : ''}
+                    title="Chọn / Bỏ chọn tất cả có email"
+                  >
+                </th>
+                <th class="py-2.5 px-3 text-center w-12">STT</th>
                 <th class="py-2.5 px-3.5">Họ và Tên</th>
                 <th class="py-2.5 px-3.5 hidden sm:table-cell">MSSV</th>
                 <th class="py-2.5 px-3.5">Email Nhận Thư</th>
@@ -500,15 +556,29 @@ Ban Học Thuật - CLB Tin Học VNUF2`;
             <tbody class="divide-y divide-hairline/60">
               ${targetMembers.map((m, idx) => {
                 const hasMail = m.Email && String(m.Email).includes('@');
+                const isChecked = selectedMssvsSet.has(m.MSSV);
                 const giftsCount = (currentCamp.gifts && currentCamp.gifts.length) ? currentCamp.gifts.length : 3;
                 return `
-                  <tr class="hover:bg-subtle/30 transition-colors">
-                    <td class="py-2.5 px-3.5 text-center font-mono text-ink-muted">${idx + 1}</td>
+                  <tr class="hover:bg-subtle/30 transition-colors ${isChecked ? 'bg-accent-soft/10' : ''}">
+                    <td class="py-2.5 px-3 text-center">
+                      ${hasMail ? `
+                        <input 
+                          type="checkbox" 
+                          data-action="toggle-campaign-recipient-checkbox" 
+                          data-mssv="${escapeHTML(m.MSSV)}" 
+                          class="js-campaign-recipient-cb rounded border-hairline text-accent focus:ring-accent cursor-pointer"
+                          ${isChecked ? 'checked' : ''}
+                        >
+                      ` : `
+                        <input type="checkbox" disabled class="opacity-20 cursor-not-allowed" title="Thành viên chưa có email">
+                      `}
+                    </td>
+                    <td class="py-2.5 px-3 text-center font-mono text-ink-muted">${idx + 1}</td>
                     <td class="py-2.5 px-3.5 font-semibold text-ink">${escapeHTML(m.HoTen)}</td>
                     <td class="py-2.5 px-3.5 font-mono text-ink-muted hidden sm:table-cell">${escapeHTML(m.MSSV)}</td>
                     <td class="py-2.5 px-3.5 font-mono text-xs">
                       ${hasMail 
-                        ? `<span class="text-ink">${escapeHTML(m.Email)}</span>` 
+                        ? `<span class="text-ink font-medium">${escapeHTML(m.Email)}</span>` 
                         : `<span class="text-amber-500 italic">(Chưa có email)</span>`}
                     </td>
                     <td class="py-2.5 px-3.5 hidden md:table-cell text-xs">

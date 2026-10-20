@@ -425,6 +425,5 @@ export async function returnToAdminView() {
   showToast('Đã quay lại Cổng Quản Trị Viên', 'success');
 }
 
-export { handleSwitchAdminCampaign } from './admin/adminMembers.js';
 export * from './admin/adminCampaigns.js';
 

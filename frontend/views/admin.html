@@ -678,12 +678,7 @@
         </div>
       </div>
 
-      <!-- Card Điều Khiển Bộ Chọn Sự Kiện (Campaign Manager Engine) -->
-      <div id="admin-campaign-selector-card" class="bht-card p-4 bg-surface border border-hairline shadow-xs">
-        <div id="admin-campaign-selector-container">
-          <!-- Rendered via JS -->
-        </div>
-      </div>
+
       <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-hairline">
         <div class="relative w-full max-w-xs">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-faint">
@@ -775,8 +770,15 @@
 
     <!-- ==================== TAB 5: QUẢN LÝ SỰ KIỆN & GỬI THƯ (CAMPAIGN & MAILER) ==================== -->
     <section id="admin-tab-campaigns" class="hidden space-y-6">
-      <div id="admin-campaign-selector-card" class="hidden"></div>
-      <!-- Rendered dynamically via renderAdminCampaignTabContent() -->
+      <!-- Khung Chọn Sự Kiện (Campaign Manager Engine) -->
+      <div id="admin-campaign-selector-card" class="bht-card p-4 sm:p-5 bg-surface border border-hairline shadow-xs rounded-2xl">
+        <div id="admin-campaign-selector-container">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+      <div id="admin-campaign-tab-content" class="space-y-6">
+        <!-- Rendered dynamically via renderAdminCampaignTabContent() -->
+      </div>
     </section>
 
   </main>

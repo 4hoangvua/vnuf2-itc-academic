@@ -1447,7 +1447,30 @@ assert('renderAdminCampaignTabContent renders Auto Scheduler inputs', campaignTa
 assert('renderAdminCampaignTabContent renders Configurable WebLink input', campaignTabHtml.includes('id="admin-campaign-web-link"'));
 assert('renderAdminCampaignTabContent renders Email Editor & Toolbar tags', campaignTabHtml.includes('id="admin-campaign-email-body"') && campaignTabHtml.includes('{LinkWeb}'));
 assert('renderAdminCampaignTabContent renders Email Live Mockup preview', campaignTabHtml.includes('id="email-preview-subject"') && campaignTabHtml.includes('id="email-preview-body"') && campaignTabHtml.includes('id="email-preview-cta-btn"'));
-assert('renderAdminCampaignTabContent renders Bulk Dispatch Queue with send button', campaignTabHtml.includes('data-action="dispatch-campaign-bulk-email"'));
+// 22.5.1 Test Filtering Email by selectedMssvs
+const filteredEmailRes = await mockCallApi('sendEventBulkEmail', {
+  campaignId: 'OCT20',
+  targetFilter: 'female',
+  selectedMssvs: ['2251120002'] // Chỉ gửi riêng cho 1 người
+});
+assert('sendEventBulkEmail filters by selectedMssvs', filteredEmailRes.success && filteredEmailRes.data.sentCount === 1);
+assert('sendEventBulkEmail records selected member MSSV', filteredEmailRes.data.logs[0].mssv === '2251120002');
+
+// 22.5.2 Test Campaign Recipient Selection UI & Actions
+assert('app.js registers toggle-campaign-recipient-checkbox action', appJsStr.includes("'toggle-campaign-recipient-checkbox':"));
+assert('app.js registers toggle-campaign-select-all action', appJsStr.includes("'toggle-campaign-select-all':"));
+assert('app.js registers campaign-select-all-recipients action', appJsStr.includes("'campaign-select-all-recipients':"));
+assert('app.js registers campaign-deselect-all-recipients action', appJsStr.includes("'campaign-deselect-all-recipients':"));
+
+assert('renderAdminCampaignTabContent renders recipient checkboxes', campaignTabHtml.includes('js-campaign-recipient-cb') && campaignTabHtml.includes('data-action="toggle-campaign-recipient-checkbox"'));
+assert('renderAdminCampaignTabContent renders selection toolbar', campaignTabHtml.includes('data-action="campaign-select-all-recipients"') && campaignTabHtml.includes('data-action="campaign-deselect-all-recipients"'));
+assert('renderAdminCampaignTabContent renders selected count badge', campaignTabHtml.includes('id="campaign-selected-count-badge"'));
+
+// 22.5.3 Test Correct Placement of Campaign Selector (Not in members tab, present in campaigns tab)
+const membersTabSection = adminHtmlStr.split('id="admin-tab-members"')[1]?.split('id="admin-tab-docs"')[0] || '';
+const campaignsTabSection = adminHtmlStr.split('id="admin-tab-campaigns"')[1]?.split('</main>')[0] || '';
+assert('admin-tab-members does NOT contain #admin-campaign-selector-card', !membersTabSection.includes('id="admin-campaign-selector-card"'));
+assert('admin-tab-campaigns contains #admin-campaign-selector-card', campaignsTabSection.includes('id="admin-campaign-selector-card"'));
 
 // 22.6 GAS Backend Service_Campaign.js & Event Privilege Integration
 const serviceCampaignContent = fs.readFileSync('./gas-backend/Service_Campaign.js', 'utf8');
@@ -1459,6 +1482,7 @@ assert('Service_Campaign.js defines getActiveCampaign', serviceCampaignContent.i
 assert('Service_Campaign.js defines setActiveCampaign', serviceCampaignContent.includes('function setActiveCampaign('));
 assert('Service_Campaign.js defines saveCampaignConfig', serviceCampaignContent.includes('function saveCampaignConfig('));
 assert('Service_Campaign.js defines sendEventBulkEmail', serviceCampaignContent.includes('function sendEventBulkEmail('));
+assert('Service_Campaign.js supports selectedMssvs in sendEventBulkEmail', serviceCampaignContent.includes('data.selectedMssvs'));
 assert('Service_Campaign.js defines redeemPrivilegeVoucher', serviceCampaignContent.includes('function redeemPrivilegeVoucher('));
 assert('Service_Campaign.js defines markMemberGiftUsedInSheet', serviceCampaignContent.includes('function markMemberGiftUsedInSheet('));
 assert('Service_Campaign.js keeps MailApp outside withScriptLock', !serviceCampaignContent.includes('withScriptLock(function() { MailApp'));

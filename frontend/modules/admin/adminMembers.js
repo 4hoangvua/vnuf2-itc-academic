@@ -18,7 +18,6 @@ import { renderMemberRow, uiEmptyState } from '../templates.js';
 import { paginate, renderPagination, resetPagination } from '../pagination.js';
 import { updateAdminStats } from '../admin.js';
 import { 
-  renderAdminCampaignSelector, 
   getActiveCampaign, 
   getActiveCampaignId 
 } from '../gift2010.js';
@@ -64,11 +63,6 @@ export function renderAdminMembersTable() {
     pagEl.innerHTML = renderPagination('admin-members');
   }
 
-  // Cập nhật bộ chọn sự kiện Admin (Campaign Selector)
-  const campaignContainer = document.getElementById('admin-campaign-selector-container');
-  if (campaignContainer) {
-    campaignContainer.innerHTML = renderAdminCampaignSelector();
-  }
 
   // Cập nhật thống kê Quà / Đặc quyền học thuật theo sự kiện đang chọn
   const activeCamp = getActiveCampaign();
@@ -106,27 +100,6 @@ export function renderAdminMembersTable() {
   }
 }
 
-/**
- * Xử lý khi Admin chọn chuyển đổi sự kiện đặc quyền
- * @param {string} campaignId Mã sự kiện
- */
-export async function handleSwitchAdminCampaign(campaignId) {
-  if (!campaignId) return;
-  try {
-    const res = await setActiveCampaign(campaignId);
-    if (res && res.success) {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('bht_active_campaign', campaignId);
-      }
-      showToast(res.message || 'Đã chuyển đổi sự kiện thành công!', 'success');
-      renderAdminMembersTable();
-    } else {
-      showToast(res ? res.message : 'Không thể chuyển đổi sự kiện!', 'error');
-    }
-  } catch (err) {
-    showToast('Lỗi khi cập nhật sự kiện: ' + err.message, 'error');
-  }
-}
 
 export function handleFilterMembers(query) {
   appState.memberSearchQuery = query || '';
