@@ -225,11 +225,13 @@ export async function refreshAdminData() {
     if (res && res.success && res.data) {
       hydrateAppFromBootstrap(res.data, 'ADMIN', '');
       loadAdminData(false, false);
+      import('./admin/adminCampaigns.js').then(m => m.loadAdminCampaigns(true)).catch(console.error);
       showToast('Đã làm mới dữ liệu Ban Điều Hành thành công!', 'success');
       return;
     }
   } catch (e) {}
   loadAdminData(false, true);
+  import('./admin/adminCampaigns.js').then(m => m.loadAdminCampaigns(true)).catch(console.error);
 }
 
 /**
@@ -285,9 +287,13 @@ export function switchAdminTab(tab, updateHash = true) {
   const activeBtn = document.getElementById('admin-tab-btn-' + targetTab);
   if (activeBtn) activeBtn.classList.add('active');
 
-  // Tải dữ liệu Tab Campaigns nếu được chọn
+  // Tải dữ liệu Tab Campaigns nếu được chọn (chỉ nạp lần đầu nếu chưa có dữ liệu)
   if (targetTab === 'campaigns') {
-    import('./admin/adminCampaigns.js').then(m => m.loadAdminCampaigns()).catch(console.error);
+    import('./admin/adminCampaigns.js').then(m => {
+      if (!m.adminCampaignsLoaded) {
+        m.loadAdminCampaigns();
+      }
+    }).catch(console.error);
   }
 
   // Đồng bộ URL Hash lên trình duyệt

@@ -89,19 +89,27 @@ export let adminCampaignsList = [...DEFAULT_FALLBACK_CAMPAIGNS];
 export let adminActiveCampaignId = 'OCT20';
 export let adminSelectedCampaignId = 'OCT20';
 export let adminLastEmailDispatch = null;
+export let adminCampaignsLoaded = false;
 
 // Bản đồ lưu trữ tập hợp MSSV được chọn gửi email theo từng chiến dịch: { [campaignId]: Set<mssv> }
 export const adminRecipientSelectionMap = {};
 
 /**
  * Tải và hiển thị Tab Sự Kiện & Gửi Thư trên Admin Portal
+ * @param {boolean} [force=false] Bắt buộc tải mới từ máy chủ (dùng khi bấm Làm mới)
  */
-export async function loadAdminCampaigns() {
+export async function loadAdminCampaigns(force = false) {
   const container = document.getElementById('admin-tab-campaigns');
   if (!container) return;
 
-  // Hiển thị Skeleton Loading cho vùng dữ liệu động (chống giật layout CLS = 0)
   const contentContainer = document.getElementById('admin-campaign-tab-content') || container;
+
+  // Nếu đã nạp dữ liệu trước đó và không ép buộc làm mới (force): Giữ nguyên DOM tức thì (0ms), không đè skeleton
+  if (adminCampaignsLoaded && !force && contentContainer.children.length > 0) {
+    return;
+  }
+
+  // Hiển thị Skeleton Loading cho vùng dữ liệu động (chống giật layout CLS = 0, chỉ hiện lần đầu)
   contentContainer.innerHTML = renderCampaignTabSkeleton();
 
   const sanitizeCampaigns = (list) => {
@@ -120,7 +128,7 @@ export async function loadAdminCampaigns() {
   };
 
   try {
-    const res = await callApi('getAllCampaigns', {});
+    const res = await callApi('getAllCampaigns', {}, { skipCache: force });
     if (res && res.success && res.data) {
       if (Array.isArray(res.data)) {
         adminCampaignsList = res.data.length > 0 ? sanitizeCampaigns(res.data) : DEFAULT_FALLBACK_CAMPAIGNS;
@@ -142,6 +150,7 @@ export async function loadAdminCampaigns() {
     adminCampaignsList = DEFAULT_FALLBACK_CAMPAIGNS;
   }
 
+  adminCampaignsLoaded = true;
   renderAdminCampaignsView();
 }
 

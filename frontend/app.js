@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isViewingAsMember = sessionStorage.getItem('bht_viewing_as_member');
 
     if (user.role === 'ADMIN' && !isViewingAsMember) {
-      const adminTabs = ['submissions', 'attendance', 'members'];
+      const adminTabs = ['submissions', 'attendance', 'members', 'docs', 'campaigns'];
       if (hash.startsWith('attendance/')) {
         const sid = hash.replace('attendance/', '').trim();
         if (sid) openAdminSessionDetail(sid, false);

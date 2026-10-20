@@ -47,7 +47,8 @@ export const API_CONFIG = {
     'getQuizBySession',
     'getMemberQuizProfile',
     'getPersonalQuizPool',
-    'getAppInitData'
+    'getAppInitData',
+    'getAllCampaigns'
   ]
 };
 
