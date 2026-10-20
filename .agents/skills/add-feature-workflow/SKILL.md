@@ -102,8 +102,30 @@ description: Quy trình chuẩn 6 bước khi triển khai một tính năng m�
      'ten-form-moi': (form, ev) => handleFormSubmitMoi(ev),
      ```
 3. **Kiểm thử nghiệm thu:**
-   - Chạy lệnh `node test_core.mjs` để đảm bảo 100% test suites vượt qua (226/226 tests).
+   - Chạy lệnh `node test_core.mjs` để đảm bảo 100% test suites vượt qua (0 failure).
    - Kiểm tra trên trình duyệt ở cả 2 vai trò Admin và Member.
+
+---
+
+### BƯỚC 7 (QUY TẮC SỐNG CÒN): BẢO TOÀN DỮ LIỆU ĐỊNH DANH VÀ PHIÊN XÁC THỰC KHI RELOAD TRANG (SYMMETRIC AUTH & SESSION HYDRATION RULE)
+
+Khi phát triển bất kỳ tính năng nào dựa vào thuộc tính người dùng (`sex`, `gift2010`, `role`, `ban`, `lop`...), **BẮT BUỘC** tuân thủ 4 nguyên tắc sau:
+
+1. **Nguyên tắc Đối xứng Xác thực (Symmetric Auth Payload Principle - "Đăng nhập sao, Reload vậy"):**
+   - Mọi thuộc tính định danh cá nhân hoá trả về trong `verifyLoginOtp` (`mssv`, `hoTen`, `email`, `role`, `sex`, `Sex`, `gift2010`, `lop`, `ban`...) **BẮT BUỘC** phải có mặt 100% trong `getAuthStatus` (ở cả Backend GAS `Service_Auth.js` lẫn `mockData.js`).
+   - Nếu `getAuthStatus` bỏ quên bất kỳ thuộc tính nào (ví dụ `sex` hay `gift2010`), khi người dùng bấm F5 / Reload trang, hàm `handleAuthSuccess` sẽ ghi đè đối tượng thiếu thuộc tính vào `sessionStorage ('bht_user')` và `appState.user`, khiến sinh viên bị mất hoàn toàn ngữ cảnh giao diện (như nữ bị biến thành nam, mất thẻ quà, mất huy hiệu).
+
+2. **Nguyên tắc Cô lập Quyền Thành viên (Member Role Isolation & No Implicit Dependency):**
+   - Vai trò `MEMBER` tuyệt đối không được cấp quyền `getAllMembers` (để bảo mật dữ liệu nhân sự), do đó `appState.members` của sinh viên luôn là mảng rỗng `[]`.
+   - **CẤM** phụ thuộc vào `appState.members` để "tìm lại" thông tin của sinh viên đang đăng nhập. Mọi thông tin cá nhân bắt buộc phải được Router / Service nạp thẳng vào `res.user` của `getAuthStatus`.
+
+3. **Nguyên tắc Lưu trữ Cục bộ 0ms (Client-Side Identity Persistence):**
+   - `localStorage` phải đồng bộ lưu các trường cốt lõi phục vụ dựng khung giao diện tức thì (Optimistic Shell): `bht_mssv`, `bht_hoten`, `bht_role`, `bht_sex`.
+   - Trong `getCurrentMemberUser()`, luôn có fallback khôi phục lại `Sex` / `sex` từ `bht_sex` và `bht_mock_store`.
+   - Khi `handleLogout` hoặc `quick-switch-role`, bắt buộc dọn dẹp sạch `bht_sex` cùng với `bht_mssv`.
+
+4. **Nguyên tắc Đồng bộ Chế độ Xem trước (Admin Preview Mode Persistence):**
+   - Khi Admin xem trước một sinh viên cụ thể qua `sessionStorage.getItem('bht_viewing_as_member')`, bất kỳ mutation cá nhân nào (nhận quà, dùng voucher, đổi thông tin) phải cập nhật đồng thời vào `bht_viewing_as_member` để khi F5 không bị mất dữ liệu.
 
 ---
 

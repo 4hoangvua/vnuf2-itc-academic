@@ -101,7 +101,8 @@ Trước khi triển khai action mới lên môi trường Google Apps Script th
 - [ ] 2. **Kiểm tra Schema Đồng Nhất:** Các key (như `SessionID`, `QuizID`, `DanhSachCauHoi`, `DapAnDung`, `ThoiGianLamBai`) khớp chính xác giữa Mock và Headers trên Google Sheet.
 - [ ] 3. **Kiểm tra Cache Invalidation:** Gọi mutation xong, các truy vấn query liên quan tự động xóa cache và nạp lại dữ liệu mới nhất.
 - [ ] 4. **Kiểm tra Guard Role & Identity Injection:** Router thật tự tiêm `currentUser.mssv` cho Member, và chặn 403 Forbidden đối với Admin actions.
-- [ ] 5. **Chạy Test Tự Động:** Chạy `node test_core.mjs` đảm bảo 100% test suites vượt qua (0 failure).
+- [ ] 5. **Kiểm tra Đối Xứng Payload Xác Thực (Symmetric Auth Payload):** Đối tượng `user` trả về từ `getAuthStatus` (cả Backend GAS lẫn `mockData.js`) phải chứa đầy đủ 100% các thuộc tính định danh cá nhân hoá (`sex`, `Sex`, `gift2010`, `lop`, `ban`...) giống như trong `verifyLoginOtp`. Ngăn ngừa tuyệt đối việc F5 / reload trang làm mất giới tính hay quà tặng của người dùng.
+- [ ] 6. **Chạy Test Tự Động:** Chạy `node test_core.mjs` đảm bảo 100% test suites vượt qua (0 failure).
 
 ---
 

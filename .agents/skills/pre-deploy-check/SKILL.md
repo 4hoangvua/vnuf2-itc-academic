@@ -18,8 +18,9 @@ description: Quy trình kiểm tra toàn diện trước khi deploy hệ thống
 | **Chịu tải GAS** | KHÔNG có `DriveApp`/`MailApp` trong `withScriptLock` | Grep `withScriptLock` trong `gas-backend/` |
 | **I/O Google Sheets** | 100% đọc/ghi theo lô (Batch I/O) qua `DbHelper` | Grep `getValue()` / `setValue()` trong code |
 | **Frontend Code** | 0 `window.*`, 0 `onclick` inline, 100% `data-action` | `git grep "onclick"` |
+| **Đối xứng Auth Payload** | 100% trường `user` trong `getAuthStatus` khớp `verifyLoginOtp` | So sánh schema giữa `getAuthStatus` & `verifyLoginOtp` |
 | **Cache Busting** | Đánh số phiên bản `?v=...` chống dính cache cũ | Kiểm tra thẻ `<script>` / `<link>` trong `index.html` |
-| **Automated Tests** | 121/121 core architecture & component unit tests PASSED | Chạy `node test_core.mjs` |
+| **Automated Tests** | 100% core architecture & component unit tests PASSED | Chạy `node test_core.mjs` |
 
 ---
 
@@ -43,6 +44,11 @@ description: Quy trình kiểm tra toàn diện trước khi deploy hệ thống
     - Tên bài nộp (`TenFile`)
     - Tiêu đề & mô tả buổi học (`TenBuoiHop`, `NoiDungChuyenDe`)
     - Nhận xét phản hồi (`Feedback`)
+- [ ] **4. Bảo Toàn Dữ Liệu Định Danh Khi Reload (Symmetric Auth Payload):**
+  - Mở `gas-backend/Service_Auth.js` và `frontend/services/mockData.js`:
+  - Xác nhận đối tượng `user` trả về từ `getAuthStatus` chứa đầy đủ 100% các thuộc tính định danh cá nhân hoá giống hệt `verifyLoginOtp`: `mssv`, `hoTen`, `email`, `role`, `trangThai`, `sex`, `Sex`, `gift2010`, `lop`, `ban`.
+  - Kiểm tra `frontend/modules/auth.js`: Xác nhận `handleAuthSuccess` có lưu `localStorage.setItem('bht_sex', ...)` và `handleLogout` có dọn dẹp sạch `bht_sex`.
+  - Ngăn ngừa hoàn toàn lỗi mất giới tính, mất thẻ quà hoặc rớt về mặc định khi người dùng F5 / reload lại trang.
 
 ---
 
