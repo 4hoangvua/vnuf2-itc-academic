@@ -18,7 +18,8 @@ gas-backend/
 ├── Service_Task.js             # Dịch vụ nhiệm vụ: Tạo bài tập, tự động cấp phát Folder trên Google Drive
 ├── Service_Submit.js           # Dịch vụ nộp bài: Lưu tệp Base64 vào Google Drive TRƯỚC khi khóa, duyệt bài
 ├── Service_Doc.js              # Dịch vụ kho tài liệu học thuật: Phân loại chuyên đề, lưu trữ link Drive
-└── Service_Quiz.js             # Dịch vụ trắc nghiệm & ôn luyện: Đề thi, bảng xếp hạng, Zen Focus Arena, hồ sơ luyện tập
+├── Service_Quiz.js             # Dịch vụ trắc nghiệm & ôn luyện: Đề thi, bảng xếp hạng, Zen Focus Arena, hồ sơ luyện tập
+└── Service_Campaign.js         # Dịch vụ sự kiện, hẹn giờ tự động, gửi email hàng loạt có chọn lọc và đổi voucher đặc quyền
 ```
 
 ---
@@ -105,6 +106,22 @@ Hệ thống lưu trữ trên Google Spreadsheet thông qua các sheet tiêu chu
 ### 4.5. Kho Học Liệu & Quản Lý Tài Liệu (`Service_Doc.js`)
 - `getAllDocuments()`: Đọc danh sách tài liệu từ sheet `TaiLieu`, hỗ trợ CacheService 3 phút.
 - `createDocument`, `updateDocument`, `deleteDocument`: Quản lý tài liệu theo danh mục chuẩn học thuật và danh mục tùy biến.
+
+### 4.6. Quản Lý Sự Kiện, Auto-Scheduler, Gửi Mail & Đổi Voucher Đặc Quyền (`Service_Campaign.js`)
+1. **Quản lý Chiến dịch & Hẹn giờ tự động (`getAllCampaigns`, `getActiveCampaign`, `setActiveCampaign`, `saveCampaignConfig`):**
+   - Hỗ trợ danh mục chiến dịch mẫu: `OCT20` (20/10), `TET` (Tết Khai Xuân), `MARCH8` (8/3), `ANNIVERSARY` (Sinh nhật CLB), và `NONE` (Tắt sự kiện về chế độ thường).
+   - Lưu trữ cấu hình chiến dịch, ngày bắt đầu (`startDate`), ngày kết thúc (`endDate`), đối tượng (`targetAudience`: `all` / `female`) và email template vào `ScriptProperties` (`BHT_CAMPAIGN_CONFIG`, `BHT_ACTIVE_CAMPAIGN_ID`).
+   - Chuẩn hóa Envelope dữ liệu: `{ success: true, data: { activeCampaignId, campaigns, lastEmailDispatch } }` bảo đảm đồng bộ "Zero Discrepancy" giữa GAS Production và Mock Dev.
+2. **Phát gửi Email hàng loạt có chọn lọc (`sendEventBulkEmail`):**
+   - **Gửi Email ngoài Lock:** Gọi `MailApp.sendEmail()` hoàn toàn bên ngoài `withScriptLock()` để không bao giờ gây nghẽn tiến trình của toàn hệ thống.
+   - **Hỗ trợ chọn lọc danh sách người nhận (`selectedMssvs`):** Cho phép Admin chỉ định mảng MSSV cần gửi thay vì gửi tràn lan. Nếu mảng `selectedMssvs` được cung cấp, hệ thống chỉ lọc gửi cho các MSSV này.
+   - Cá nhân hóa các biến động: `{hoTen}`, `{mssv}`, `{tenChienDich}`, `{linkWeb}`, `{loiChuc}`.
+   - Kiểm soát hạn ngạch `MailApp.getRemainingDailyQuota()` và tự động lưu nhật ký gửi gần nhất vào `ScriptProperties` (`BHT_LAST_EMAIL_DISPATCH`).
+3. **Đổi Voucher Đặc quyền Học thuật (`redeemPrivilegeVoucher`):**
+   - Áp dụng mã quà tặng sinh ngẫu nhiên từ sự kiện vào các tác vụ thực tế:
+     - **Gia hạn bài tập:** Tự động cộng thêm +24h / +48h vào hạn nộp của sinh viên.
+     - **Cộng điểm bài thi Trắc nghiệm:** Tự động cộng +10 điểm / +15 điểm trực tiếp vào kết quả bài thi trong sheet `KetQuaQuiz`.
+   - Đánh dấu trạng thái quà đã sử dụng trong cột `Gift2010` của sheet `ThanhVien` để chống tái sử dụng mã voucher (`markMemberGiftUsedInSheet`).
 
 ---
 

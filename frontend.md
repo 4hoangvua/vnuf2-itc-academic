@@ -22,7 +22,8 @@ frontend/
 │   ├── store.js                # Quản lý State phản ứng tập trung (Pub/Sub + ES6 Proxy), thông báo UI tự động
 │   ├── templates.js            # Barrel & Base Templates (Thẻ, Bảng, Huy hiệu, Taxonomy tags)
 │   ├── templates/              # Sub-templates chuyên biệt theo phân hệ
-│   │   └── quizTemplates.js    # Template trắc nghiệm (Zen Focus Arena, Bảng câu hỏi, Scorecard, Review)
+│   │   ├── quizTemplates.js    # Template trắc nghiệm (Zen Focus Arena, Bảng câu hỏi, Scorecard, Review)
+│   │   └── campaignTemplates.js# Template sự kiện & Email (Auto-Scheduler, Live Preview, Bulk Mailer với Checkbox)
 │   ├── ui.js                   # Điều phối giao diện, Theme Sáng/Tối, Toast, Loading overlay
 │   ├── auth.js                 # Xử lý xác thực OTP, đếm ngược 300s, Quản lý Token & Dọn sạch cache khi đăng xuất
 │   ├── member.js               # Barrel module Thành viên (Re-export các sub-modules bên dưới)
@@ -37,7 +38,9 @@ frontend/
 │   │   ├── adminSessions.js    # Master-Detail buổi học, tạo/sửa session, chiếu PIN, quản lý bài tập
 │   │   ├── adminQuiz.js        # Ngân hàng câu hỏi trắc nghiệm, tạo đề thi, reset lượt thi, thống kê
 │   │   ├── adminDocs.js        # Quản lý kho học liệu, phân loại tài liệu
-│   │   └── adminSubmissions.js # Duyệt bài nộp, nhập điểm, feedback nhận xét cho sinh viên
+│   │   ├── adminSubmissions.js # Duyệt bài nộp, nhập điểm, feedback nhận xét cho sinh viên
+│   │   └── adminCampaigns.js   # Điều hành sự kiện mẫu, hẹn giờ tự động, gửi email có chọn lọc người nhận
+│   ├── gift2010.js             # Bộ chọn sự kiện Admin, 3D Card Shuffle Unboxing Arena, Particle Confetti, âm thanh
 │   ├── skeleton.js             # Động cơ Skeleton Shimmer nạp mượt mà, chống giật layout (Anti-FOUC)
 │   ├── pagination.js           # Bộ quản lý phân trang độc lập đa thực thể (Multi-instance pagination)
 │   └── projector.js            # Chế độ máy chiếu PIN toàn màn hình (Chiếu hội trường)
@@ -188,5 +191,34 @@ Hệ thống hiện tại đã tiệm cận cấu trúc **MVC cải tiến (Stor
 2. **Mức 2 - Triển khai Bundler khi Deploy Production:**
    - Trong môi trường phát triển local, sử dụng native ESM giúp tải code tức thì không cần chờ compile.
    - Khi triển khai chính thức lên GitHub Pages hoặc nhúng vào Google Apps Script HTML Service, sử dụng Vite hoặc Rollup để đóng gói (bundle & minify) toàn bộ các sub-modules thành 1 file JS duy nhất để tối ưu tối đa số lượng HTTP request.
+
+---
+
+## 8. Phân Hệ Quản Lý Sự Kiện & Gửi Thư Tự Động (Campaigns & Mailer Studio)
+
+Phân hệ mở rộng phụ trách các chiến dịch lễ hội (`OCT20`, `TET`, `MARCH8`, `ANNIVERSARY`) và công cụ gửi email tự động tới thành viên:
+
+1. **Bộ Chọn Sự Kiện Độc Lập Tại Tab Sự Kiện (`#admin-campaign-selector-card`):**
+   - Đặt trang trọng tại đầu Tab 5 (`admin-tab-campaigns`), tách biệt hoàn toàn khỏi Tab Thành viên để giữ nguyên tính chuẩn mực nhân sự.
+   - Hiển thị trực quan 5 chế độ: 4 sự kiện mẫu kèm huy hiệu `ĐANG CHẠY` và nút `Tắt sự kiện` (đưa cổng về chế độ học thuật tiêu chuẩn).
+   - Cơ chế fallback an toàn: Tự động dùng danh mục preset tĩnh nếu đường truyền backend chưa hoàn tất, đảm bảo khung chọn không bao giờ bị biến mất trên môi trường Production.
+
+2. **Hàng Đợi Phát Thư Hàng Loạt Với Checkbox Từng Người (Bulk Dispatch Queue):**
+   - **Lựa chọn linh hoạt (Individual Recipient Picker):** Mỗi sinh viên có email hợp lệ được cấp một checkbox riêng (`.js-campaign-recipient-cb`), mặc định tự động chọn toàn bộ.
+   - **Thanh công cụ điều khiển nhanh:**
+     - Checkbox "Chọn tất cả" tại header bảng.
+     - Nút `[Chọn tất cả]` & `[Bỏ chọn]` thao tác 1-click.
+     - Huy hiệu đếm số lượng thời gian thực: `Đã chọn: X / Y người`.
+   - **Nút gửi thư thông minh:** Nhãn nút cập nhật tức thì `Gửi Email Tới [X] Người Đã Chọn`, tự động vô hiệu hóa nếu số lượng chọn bằng 0.
+   - **Bảo lưu trạng thái lựa chọn:** Danh sách người nhận đã chọn được lưu theo từng sự kiện thông qua `adminRecipientSelectionMap[campaignId]`, không bị mất trạng thái khi chuyển đổi qua lại giữa các chiến dịch.
+
+3. **Trải Nghiệm Mở Hộp Quà 3D (Card Shuffle Unboxing Arena) & Particle Confetti:**
+   - Đấu trường bốc thăm 3D với 3 thẻ quà chuyển động xáo trộn mượt mà (Decelerated CSS Animation 5.6s).
+   - Tích hợp 5 hiệu ứng tương tác cao cấp bằng Vanilla JS thuần:
+     - Pháo hoa hạt 360 độ nở bung từ tâm nút bấm (`triggerExplosionConfetti`).
+     - Hiệu ứng rơi đa chủ đề: Hoa đào, hoa mai, hoa sen, bướm bay lượn, cánh hoa hồng.
+     - Lời chúc may mắn ngẫu nhiên đa ngành (không gò bó CNTT).
+     - Âm thanh Web Audio API tổng hợp (không load file ngoài).
+     - Nút điều khiển tiện ích: `⏩ Xem ngay` (bỏ qua xáo thẻ) và `🎲 Xáo thẻ lại`.
 
 

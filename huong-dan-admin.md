@@ -20,17 +20,18 @@
 
 ---
 
-## 2. TỔNG QUAN 4 PHÂN HỆ QUẢN TRỊ CHÍNH
+## 2. TỔNG QUAN 5 PHÂN HỆ QUẢN TRỊ CHÍNH
 
-Thanh điều hướng bên trái (hoặc thanh menu dưới cùng trên điện thoại) gồm 4 khu vực nghiệp vụ:
+Thanh điều hướng bên trái (hoặc thanh menu dưới cùng trên điện thoại) gồm 5 khu vực nghiệp vụ:
 
 ```text
-┌────────────────────────────────────────────────────────┐
-│  1. Duyệt bài nộp      ──> Chấm bài tập, phản hồi SV  │
-│  2. Buổi học & Chuyên đề ──> Lịch sinh hoạt, PIN, Slide  │
-│  3. Nhân sự Thành viên ──> Danh sách SV, mở khóa, reset│
-│  4. Kho học liệu & Slide ──> Đăng giáo trình, tài liệu  │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│  1. Duyệt bài nộp        ──> Chấm bài tập, phản hồi SV     │
+│  2. Buổi học & Chuyên đề ──> Lịch sinh hoạt, PIN, Slide    │
+│  3. Nhân sự Thành viên   ──> Danh sách SV, mở khóa, reset  │
+│  4. Kho học liệu & Slide ──> Đăng giáo trình, tài liệu     │
+│  5. Sự Kiện & Gửi Thư    ──> Bật/tắt sự kiện, Mailer Studio│
+└────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -90,6 +91,34 @@ Thư viện số lưu trữ tài liệu học tập mở cho thành viên:
 - Bấm **`+ Đăng tài liệu mới`** để thêm giáo trình, slide bài giảng, đề thi mẫu, tài liệu MOS, Prompt AI.
 - Phân loại rõ ràng theo danh mục để sinh viên dễ dàng tìm kiếm.
 - Có thể chỉnh sửa hoặc xóa tài liệu bất cứ lúc nào.
+
+---
+
+### 3.5. Tab 5: Quản Lý Sự Kiện & Gửi Thư Tự Động (`Sự Kiện & Gửi Thư`)
+Trung tâm điều phối các lễ hội học thuật (20/10, Tết, 8/3, Sinh nhật CLB) và hệ thống Mailer Studio:
+
+1. **Bộ Chọn Kích Hoạt Sự Kiện:**
+   - Nằm ngay đầu Tab Sự Kiện với các thẻ sự kiện trực quan.
+   - Bấm vào thẻ để kích hoạt: Sự kiện được chọn sẽ hiển thị huy hiệu xanh **`ĐANG CHẠY`** và đồng bộ ngay lập tức tới mọi sinh viên đang truy cập web.
+   - Muốn đưa web về chế độ bình thường: Bấm nút **`Tắt Sự Kiện`** (đưa toàn bộ cổng về giao diện học thuật tiêu chuẩn).
+
+2. **Lập Lịch Trình Tự Động (Auto-Scheduler):**
+   - Chọn ngày giờ bắt đầu và ngày giờ kết thúc. Hệ thống tự động kích hoạt/kết thúc sự kiện đúng giờ mà không cần Admin phải trực web.
+   - Chọn đối tượng nhận đặc quyền: *Chỉ Nữ sinh* (20/10, 8/3) hoặc *Toàn bộ thành viên CLB* (Tết, Sinh nhật).
+   - Bấm **"Lưu & Kích Hoạt Lịch"** để lưu cấu hình.
+
+3. **Soạn Thảo Thư & Xem Trước Trực Quan (Email Live Preview):**
+   - Soạn tiêu đề email và nội dung thư chúc mừng.
+   - Sử dụng các thẻ biến nhanh: `+{HoTen}`, `+{MSSV}`, `+{TenSuKien}`, `+{LinkWeb}` để tự động cá nhân hóa từng bức thư.
+   - Khung bên phải mô phỏng trực tiếp hộp thư của sinh viên theo thời gian thực (Live Preview) giúp Admin kiểm tra kỹ trước khi bấm gửi.
+
+4. **Hàng Đợi Phát Thư Hàng Loạt Có Chọn Lọc (Bulk Dispatch Queue):**
+   - Bảng danh sách sinh viên hợp lệ nhận thư kèm địa chỉ email và trạng thái sẵn sàng.
+   - **Tính năng chọn lọc người nhận:**
+     - Tích chọn hoặc bỏ chọn từng cá nhân qua ô checkbox đầu mỗi dòng.
+     - Dùng nút **`Chọn tất cả`** hoặc **`Bỏ chọn`** trên thanh công cụ để thao tác nhanh.
+     - Huy hiệu đếm số lượng: `Đã chọn: X / Y người`.
+   - Nút **`Gửi Email Tới [X] Người Đã Chọn`**: Bấm xác nhận để hệ thống gửi thư chúc mừng kèm thẻ quà tặng trực tiếp tới hòm thư của các sinh viên được chọn.
 
 ---
 

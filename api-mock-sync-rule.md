@@ -46,9 +46,9 @@ Hệ thống phân chia 4 nhóm quyền truy cập chuẩn hóa:
 | Phân nhóm | Mục đích | Danh sách Actions chuẩn |
 | :--- | :--- | :--- |
 | **`PUBLIC_ACTIONS`** | Không cần Token, người dùng vãng lai | `ping`, `getAuthStatus`, `requestLoginOtp`, `verifyLoginOtp` |
-| **`MEMBER_ACTIONS`** | Cần Token, Router tự tiêm `currentUser.mssv` | `checkInAttendance`, `submitTaskAssignment`, `getMemberSubmissions`, `logoutUser`, `submitQuiz`, `recordQuizAnswer`, `toggleQuestionBookmark`, `clearWrongHistory` |
-| **`ADMIN_ACTIONS`** | Cần Token & `role === 'ADMIN'` | `getAllMembers`, `addMember`, `resetMemberEmail`, `toggleMemberStatus`, `createAttendanceSession`, `updateAttendanceSession`, `deleteAttendanceSession`, `updateAttendanceTopic`, `toggleAttendanceSession`, `createTask`, `updateTask`, `deleteTask`, `toggleTaskStatus`, `getAllSubmissions`, `reviewSubmission`, `addDocument`, `createDocument`, `updateDocument`, `deleteDocument`, `saveQuiz`, `toggleQuizStatus`, `deleteQuiz`, `resetQuizSubmission`, `resetAllQuizSubmissions`, `getQuizResultsBySession` |
-| **`QUERY_ACTIONS`** | Truy vấn đọc dữ liệu (đã xác thực) | `getAttendanceSessions`, `getAllTasks`, `getAllDocuments`, `getQuizBySession`, `getMemberQuizProfile`, `getPersonalQuizPool` |
+| **`MEMBER_ACTIONS`** | Cần Token, Router tự tiêm `currentUser.mssv` | `checkInAttendance`, `submitTaskAssignment`, `getMemberSubmissions`, `logoutUser`, `submitQuiz`, `recordQuizAnswer`, `toggleQuestionBookmark`, `clearWrongHistory`, `saveMemberGift`, `applyQuizBonusVoucher`, `redeemPrivilegeVoucher` |
+| **`ADMIN_ACTIONS`** | Cần Token & `role === 'ADMIN'` | `getAllMembers`, `addMember`, `resetMemberEmail`, `toggleMemberStatus`, `createAttendanceSession`, `updateAttendanceSession`, `deleteAttendanceSession`, `updateAttendanceTopic`, `toggleAttendanceSession`, `createTask`, `updateTask`, `deleteTask`, `toggleTaskStatus`, `getAllSubmissions`, `reviewSubmission`, `addDocument`, `createDocument`, `updateDocument`, `deleteDocument`, `saveQuiz`, `toggleQuizStatus`, `deleteQuiz`, `resetQuizSubmission`, `resetAllQuizSubmissions`, `getQuizResultsBySession`, `setActiveCampaign`, `saveCampaignConfig`, `sendEventBulkEmail` |
+| **`QUERY_ACTIONS`** | Truy vấn đọc dữ liệu (đã xác thực) | `getAttendanceSessions`, `getAllTasks`, `getAllDocuments`, `getQuizBySession`, `getMemberQuizProfile`, `getPersonalQuizPool`, `getAllCampaigns`, `getActiveCampaign` |
 
 ---
 
@@ -61,7 +61,7 @@ Mỗi khi định nghĩa thêm hoặc thay đổi bất kỳ Action nào, lập 
 
 ### Vị trí 2: Xử lý định tuyến tại `gas-backend/Router.js` & Dịch vụ nghiệp vụ `Service_*.js`
 - Tiếp nhận action trong switch-case của `Router.js`.
-- Ủy quyền xử lý cho Service tương ứng (`Service_Auth.js`, `Service_Member.js`, `Service_Task.js`, `Service_Submit.js`, `Service_Quiz.js`, `Service_Doc.js`).
+- Ủy quyền xử lý cho Service tương ứng (`Service_Auth.js`, `Service_Member.js`, `Service_Task.js`, `Service_Submit.js`, `Service_Quiz.js`, `Service_Doc.js`, `Service_Campaign.js`).
 - Trả về đúng mã lỗi chuẩn (`UNAUTHORIZED`, `FORBIDDEN`, `LOCK_TIMEOUT`, `BAD_REQUEST`).
 
 ### Vị trí 3: Cập nhật hàm giả lập trong `frontend/services/mockData.js`
@@ -81,9 +81,10 @@ Mỗi khi định nghĩa thêm hoặc thay đổi bất kỳ Action nào, lập 
 ### Vị trí 5: Gọi API từ Sub-Module chuyên trách (Frontend Sub-Modules)
 - **TUYỆT ĐỐI CẤM** viết thêm logic nghiệp vụ trực tiếp vào các file gốc `admin.js` hoặc `member.js`.
 - Mọi hàm gọi API và xử lý dữ liệu phải nằm trong các sub-modules chuyên biệt:
-  - Phía Admin: `frontend/modules/admin/admin<Domain>.js` (`adminMembers.js`, `adminSessions.js`, `adminQuiz.js`, `adminDocs.js`, `adminSubmissions.js`).
+  - Phía Admin: `frontend/modules/admin/admin<Domain>.js` (`adminMembers.js`, `adminSessions.js`, `adminQuiz.js`, `adminDocs.js`, `adminSubmissions.js`, `adminCampaigns.js`).
   - Phía Member: `frontend/modules/member/member<Domain>.js` (`memberSessions.js`, `memberQuiz.js`, `memberDocs.js`, `memberSubmissions.js`).
-  - Giao diện HTML Template: `frontend/modules/templates/` (tách theo domain như `quizTemplates.js`).
+  - Phân hệ Lễ hội & Quà tặng: `frontend/modules/gift2010.js` (3D Unboxing, Confetti, Universal Campaign Selector).
+  - Giao diện HTML Template: `frontend/modules/templates/` (tách theo domain như `quizTemplates.js`, `campaignTemplates.js`).
 - Tái xuất (re-export) hàm qua file Barrel gốc (`admin.js`, `member.js`, `templates.js`) để đảm bảo tương thích ngược 100%.
 
 ---
