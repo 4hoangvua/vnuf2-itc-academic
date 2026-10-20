@@ -178,3 +178,101 @@ export function renderAdminTableSkeleton(rows = 5, cols = 6) {
     </tr>
   `).join('');
 }
+
+/**
+ * 7. Skeleton Tab Quản Lý Sự Kiện & Gửi Thư Hàng Loạt (Campaign Studio Skeleton)
+ * Giữ nguyên chính xác cấu trúc layout của Tab Sự kiện, chỉ shimmer vùng dữ liệu động
+ */
+export function renderCampaignTabSkeleton() {
+  return `
+    <div class="space-y-6 animate-pulse max-w-7xl mx-auto">
+      <!-- 1. Dãy 4 Thẻ Chiến Dịch Sự Kiện (Preset Cards) -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="h-4 w-44 rounded bht-skeleton"></div>
+          <div class="h-3 w-56 rounded bht-skeleton hidden sm:block"></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          ${Array.from({ length: 4 }).map(() => `
+            <div class="bht-card p-4 rounded-xl border border-hairline bg-surface/80 space-y-3">
+              <div class="w-8 h-8 rounded-lg bht-skeleton"></div>
+              <div class="space-y-1.5">
+                <div class="h-4 w-3/4 rounded bht-skeleton"></div>
+                <div class="h-3 w-1/2 rounded bht-skeleton"></div>
+              </div>
+              <div class="pt-2 border-t border-hairline flex justify-between items-center">
+                <div class="h-3 w-12 rounded bht-skeleton"></div>
+                <div class="h-3 w-16 rounded bht-skeleton"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- 2. Khung Cấu Hình & Mô Phỏng Thư -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Cột Trái: Lập Lịch & Soạn Thư (7 Cols) -->
+        <div class="lg:col-span-7 space-y-5">
+          <!-- Card Lập lịch -->
+          <div class="bht-card p-5 bg-surface border border-hairline rounded-2xl space-y-4">
+            <div class="h-4 w-52 rounded bht-skeleton"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div class="h-9 w-full rounded-lg bht-skeleton"></div>
+              <div class="h-9 w-full rounded-lg bht-skeleton"></div>
+            </div>
+            <div class="h-9 w-full rounded-lg bht-skeleton"></div>
+            <div class="pt-2 flex justify-between items-center">
+              <div class="h-3 w-64 rounded bht-skeleton"></div>
+              <div class="h-8 w-36 rounded-lg bht-skeleton"></div>
+            </div>
+          </div>
+
+          <!-- Card Soạn thư -->
+          <div class="bht-card p-5 bg-surface border border-hairline rounded-2xl space-y-4">
+            <div class="h-4 w-56 rounded bht-skeleton"></div>
+            <div class="h-9 w-full rounded-lg bht-skeleton"></div>
+            <div class="h-9 w-full rounded-lg bht-skeleton"></div>
+            <div class="h-36 w-full rounded-xl bht-skeleton"></div>
+            <div class="flex justify-between items-center">
+              <div class="h-3 w-64 rounded bht-skeleton"></div>
+              <div class="h-8 w-36 rounded-lg bht-skeleton"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cột Phải: Mockup Email Live Preview (5 Cols) -->
+        <div class="lg:col-span-5 space-y-3">
+          <div class="flex justify-between items-center">
+            <div class="h-4 w-48 rounded bht-skeleton"></div>
+            <div class="h-3 w-20 rounded bht-skeleton"></div>
+          </div>
+          <div class="bht-card bg-surface border border-hairline rounded-2xl overflow-hidden p-4 space-y-3">
+            <div class="h-14 w-full rounded-xl bht-skeleton"></div>
+            <div class="h-12 w-full rounded-xl bht-skeleton"></div>
+            <div class="space-y-2 py-3">
+              <div class="h-3.5 w-full rounded bht-skeleton"></div>
+              <div class="h-3.5 w-5/6 rounded bht-skeleton"></div>
+              <div class="h-3.5 w-4/5 rounded bht-skeleton"></div>
+              <div class="h-3.5 w-2/3 rounded bht-skeleton"></div>
+            </div>
+            <div class="h-28 w-full rounded-xl bht-skeleton"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Bảng Danh Sách Sinh Viên Nhận Thư -->
+      <div class="bht-card bg-surface border border-hairline rounded-2xl p-5 space-y-4">
+        <div class="flex justify-between items-center">
+          <div class="h-4 w-60 rounded bht-skeleton"></div>
+          <div class="h-7 w-28 rounded-lg bht-skeleton"></div>
+        </div>
+        <div class="space-y-2">
+          ${Array.from({ length: 4 }).map(() => `
+            <div class="h-10 w-full rounded-lg bht-skeleton"></div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `.trim();
+}
+

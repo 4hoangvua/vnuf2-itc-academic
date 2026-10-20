@@ -14,6 +14,7 @@ import { appState } from '../store.js';
 import { showToast, showGlobalLoading, hideGlobalLoading } from '../ui.js';
 import { renderAdminCampaignTabContent } from '../templates/campaignTemplates.js';
 import { renderAdminCampaignSelector } from '../gift2010.js';
+import { renderCampaignTabSkeleton } from '../skeleton.js';
 
 // Danh sách chiến dịch mặc định (Fallback an toàn trên Production khi backend chưa trả về kịp)
 const DEFAULT_FALLBACK_CAMPAIGNS = [
@@ -98,6 +99,10 @@ export const adminRecipientSelectionMap = {};
 export async function loadAdminCampaigns() {
   const container = document.getElementById('admin-tab-campaigns');
   if (!container) return;
+
+  // Hiển thị Skeleton Loading cho vùng dữ liệu động (chống giật layout CLS = 0)
+  const contentContainer = document.getElementById('admin-campaign-tab-content') || container;
+  contentContainer.innerHTML = renderCampaignTabSkeleton();
 
   const sanitizeCampaigns = (list) => {
     return (list || []).map(c => {

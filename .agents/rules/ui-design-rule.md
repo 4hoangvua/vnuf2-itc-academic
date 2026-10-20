@@ -210,4 +210,19 @@ Nhằm mang lại trải nghiệm chuyên nghiệp và không gian thao tác r�
    - Danh sách xem lại bài làm (`renderMemberQuizView`): Từng lựa chọn đáp án chuyển đổi từ hàng ngang sang `flex-col sm:flex-row sm:items-center` để các huy hiệu `Đáp án đúng` / `Bạn đã chọn` không bị co dúm hoặc tràn viền card khi nội dung câu trả lời dài.
    - Các nút CTA chính (Bắt đầu thi, Vào phòng ôn luyện, Xem lời giải) sử dụng `w-full sm:w-auto` để ngón cái bấm chuẩn xác 100%.
 
+---
+
+## 8. QUY CHUẨN SKELETON SHIMMER LOADING KHI NẠP DỮ LIỆU API (CLS = 0 RULE)
+
+Để giao diện luôn mượt mà, chuyên nghiệp và loại bỏ hoàn toàn cảm giác giật cục hay chớp tắt khi giao tiếp mạng:
+
+1. **Bắt Buộc Sử Dụng Skeleton Shimmer Loading:**
+   - Khi tải dữ liệu từ API (lúc mới vào trang, chuyển đổi giữa các tab như Sự kiện, Nhân sự, Điểm danh, Bài tập, hoặc khi nạp lại dữ liệu), toàn bộ các vùng nội dung động **bắt buộc** phải hiển thị khung Skeleton Shimmer Loading (`.bht-skeleton` định nghĩa trong `frontend/modules/skeleton.js`).
+   - Tuyệt đối không để màn hình trắng trơn, không dùng overlay spinner xoay tròn che khuất cả trang đối với các tác vụ nạp tab thông thường.
+
+2. **Nguyên Tắc Cô Lập Vùng Động (Dynamic-Only Shimmer):**
+   - **Chỉ áp dụng Skeleton cho vùng dữ liệu cần nạp**: Ví dụ danh sách Preset Cards, các ô input của lịch trình và nội dung thư, khung xem trước Live Preview, các hàng trong bảng dữ liệu sinh viên.
+   - **Bảo toàn 100% khung tĩnh (Static Shell Preservation)**: Thanh Header, tiêu đề trang, mô tả hướng dẫn, các nút thao tác chung (như nút "Tắt Sự Kiện", bộ lọc, thanh tìm kiếm) phải hiển thị ổn định ngay từ mili-giây đầu tiên, tuyệt đối không được xóa hoặc làm biến mất layout tĩnh.
+   - Tỷ lệ kích thước, chiều cao và bo góc (`rounded-xl`, `rounded-2xl`) của các khối Skeleton phải khớp chính xác với component dữ liệu thật để triệt tiêu hiện tượng giật layout (Cumulative Layout Shift - CLS = 0).
+
 

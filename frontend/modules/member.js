@@ -104,25 +104,51 @@ export function getCurrentMemberUser() {
     } catch (e) {}
   }
   if (!user) {
-    user = appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null') || { hoTen: 'Thành Viên', mssv: localStorage.getItem('bht_mssv') || '' };
+    user = appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null') || { 
+      hoTen: localStorage.getItem('bht_hoten') || 'Thành Viên', 
+      mssv: localStorage.getItem('bht_mssv') || '' 
+    };
   }
 
-  // Đảm bảo user luôn có trường Sex chính xác từ danh sách members (kể cả khi session cũ chưa kịp lưu hoặc lưu sai)
+  // Đảm bảo user luôn có trường HoTen / hoTen và Sex chính xác từ danh sách members (kể cả khi session cũ chưa kịp lưu hoặc lưu sai)
   if (user && user.mssv) {
     const memList = (appState.members && appState.members.length > 0) ? appState.members : (INITIAL_MOCK_DATA ? INITIAL_MOCK_DATA.members : []);
-    const mem = memList.find(m => String(m.MSSV).trim().toUpperCase() === String(user.mssv).trim().toUpperCase());
-    if (mem && mem.Sex) {
-      user.Sex = mem.Sex;
-      user.sex = mem.Sex;
+    const cleanUserMssv = String(user.mssv).trim().toUpperCase();
+    const mem = memList.find(m => String(m.MSSV).trim().toUpperCase() === cleanUserMssv);
+    
+    if (mem) {
+      if (mem.HoTen && (!user.hoTen || user.hoTen === 'Thành Viên' || user.hoTen === user.mssv)) {
+        user.hoTen = mem.HoTen;
+        user.HoTen = mem.HoTen;
+        if (typeof localStorage !== 'undefined') localStorage.setItem('bht_hoten', mem.HoTen);
+      }
+      if (mem.Sex) {
+        user.Sex = mem.Sex;
+        user.sex = mem.Sex;
+      }
       if (!user.gift2010 && mem.gift2010) user.gift2010 = mem.gift2010;
     } else {
-      const initM = INITIAL_MOCK_DATA.members.find(x => String(x.MSSV).trim().toUpperCase() === String(user.mssv).trim().toUpperCase());
-      if (initM && initM.Sex) {
-        user.Sex = initM.Sex;
-        user.sex = initM.Sex;
+      const initM = INITIAL_MOCK_DATA.members.find(x => String(x.MSSV).trim().toUpperCase() === cleanUserMssv);
+      if (initM) {
+        if (initM.HoTen && (!user.hoTen || user.hoTen === 'Thành Viên' || user.hoTen === user.mssv)) {
+          user.hoTen = initM.HoTen;
+          user.HoTen = initM.HoTen;
+          if (typeof localStorage !== 'undefined') localStorage.setItem('bht_hoten', initM.HoTen);
+        }
+        if (initM.Sex) {
+          user.Sex = initM.Sex;
+          user.sex = initM.Sex;
+        }
         if (!user.gift2010 && initM.gift2010) user.gift2010 = initM.gift2010;
       }
     }
+  }
+
+  // Luôn đồng bộ cả hai trường hoTen và HoTen
+  if (user) {
+    const validName = user.hoTen || user.HoTen || localStorage.getItem('bht_hoten') || '';
+    user.hoTen = validName;
+    user.HoTen = validName;
   }
 
   return user;

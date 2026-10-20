@@ -23,7 +23,8 @@ export {
   renderCardSkeleton,
   renderStatSkeleton,
   renderAdminTableSkeleton,
-  renderAdminTableSkeleton as renderTableSkeleton
+  renderAdminTableSkeleton as renderTableSkeleton,
+  renderCampaignTabSkeleton
 } from './skeleton.js';
 
 
@@ -1375,38 +1376,49 @@ export function renderMemberRow(member = {}, options = {}) {
         ${uiStatusBadge(isActive ? 'Active' : 'Inactive')}
       </td>
       <td class="py-3 px-4 text-center">
-        <div class="flex items-center justify-center gap-1.5">
-          <button 
-            data-action="view-as-member"
-            data-id="${mssv}"
-            title="Xem giao diện của thành viên ${hoTen}"
-            class="bht-btn bht-btn-ghost bht-btn-xs text-accent hover:bg-accent-soft"
-          >
-            <i class="fa-solid fa-eye text-[10px] mr-1"></i>
-            <span>Xem</span>
-          </button>
-          ${m.Email ? `
+        <div class="inline-flex items-center justify-center gap-1.5 min-w-[245px]">
+          <!-- Cột 1: Xem (Độ rộng cố định 64px) -->
+          <div class="w-16 flex justify-center shrink-0">
             <button 
-              data-action="reset-member-email"
+              data-action="view-as-member"
               data-id="${mssv}"
-              ${isResetBusy ? 'disabled' : ''}
-              title="Xóa liên kết Gmail"
-              class="bht-btn bht-btn-ghost bht-btn-xs text-ink-muted hover:text-ink ${isResetBusy ? 'opacity-60 pointer-events-none' : ''}"
+              title="Xem giao diện của thành viên ${hoTen}"
+              class="bht-btn bht-btn-ghost bht-btn-xs text-accent hover:bg-accent-soft w-full justify-center"
             >
-              <i class="fa-solid ${isResetBusy ? 'fa-circle-notch fa-spin' : 'fa-rotate-left'} text-[10px] mr-1"></i>
-              <span>Reset Email</span>
+              <i class="fa-solid fa-eye text-[10px] mr-1"></i>
+              <span>Xem</span>
             </button>
-          ` : ''}
-          <button 
-            data-action="toggle-member-status"
-            data-id="${mssv}"
-            data-status="${isActive ? 'Inactive' : 'Active'}"
-            ${isStatusBusy ? 'disabled' : ''}
-            class="bht-btn bht-btn-ghost bht-btn-xs ${isActive ? 'text-err hover:bg-err-soft' : 'text-ok hover:bg-ok-soft'} ${isStatusBusy ? 'opacity-60 pointer-events-none' : ''}"
-          >
-            <i class="fa-solid ${isStatusBusy ? 'fa-circle-notch fa-spin' : (isActive ? 'fa-lock' : 'fa-lock-open')} text-[10px] mr-1"></i>
-            <span>${isActive ? 'Khóa' : 'Mở khóa'}</span>
-          </button>
+          </div>
+
+          <!-- Cột 2: Reset Email (Độ rộng cố định 104px, giữ nguyên trục kể cả khi chưa có email) -->
+          <div class="w-[104px] flex justify-center shrink-0">
+            ${m.Email ? `
+              <button 
+                data-action="reset-member-email"
+                data-id="${mssv}"
+                ${isResetBusy ? 'disabled' : ''}
+                title="Xóa liên kết Gmail"
+                class="bht-btn bht-btn-ghost bht-btn-xs text-ink-muted hover:text-ink w-full justify-center ${isResetBusy ? 'opacity-60 pointer-events-none' : ''}"
+              >
+                <i class="fa-solid ${isResetBusy ? 'fa-circle-notch fa-spin' : 'fa-rotate-left'} text-[10px] mr-1"></i>
+                <span class="truncate">Reset Email</span>
+              </button>
+            ` : `<span class="inline-block w-full" aria-hidden="true"></span>`}
+          </div>
+
+          <!-- Cột 3: Khóa / Mở Khóa (Độ rộng cố định 72px) -->
+          <div class="w-[76px] flex justify-center shrink-0">
+            <button 
+              data-action="toggle-member-status"
+              data-id="${mssv}"
+              data-status="${isActive ? 'Inactive' : 'Active'}"
+              ${isStatusBusy ? 'disabled' : ''}
+              class="bht-btn bht-btn-ghost bht-btn-xs w-full justify-center ${isActive ? 'text-err hover:bg-err-soft' : 'text-ok hover:bg-ok-soft'} ${isStatusBusy ? 'opacity-60 pointer-events-none' : ''}"
+            >
+              <i class="fa-solid ${isStatusBusy ? 'fa-circle-notch fa-spin' : (isActive ? 'fa-lock' : 'fa-lock-open')} text-[10px] mr-1"></i>
+              <span>${isActive ? 'Khóa' : 'Mở khóa'}</span>
+            </button>
+          </div>
         </div>
       </td>
     </tr>

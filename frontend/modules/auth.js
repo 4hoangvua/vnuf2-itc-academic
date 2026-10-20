@@ -400,13 +400,61 @@ export async function handleLogout() {
 }
 
 /**
+ * Cập nhật tên hiển thị người dùng tức thì lên toàn bộ các phần tử giao diện
+ * @param {Object} user 
+ */
+export function updateUserHeaderDisplay(user) {
+  if (!user) return;
+  const validName = String(user.hoTen || user.HoTen || '').trim();
+  const validMssv = String(user.mssv || user.MSSV || '').trim();
+  const validEmail = String(user.email || user.Email || '').trim();
+
+  // 1. Cập nhật Admin Header
+  const adminNameEl = document.getElementById('admin-display-name');
+  const adminEmailEl = document.getElementById('admin-display-email');
+  if (adminNameEl && validName) adminNameEl.textContent = validName;
+  if (adminEmailEl && (validEmail || validMssv)) adminEmailEl.textContent = validEmail || validMssv;
+
+  // 2. Cập nhật Member Header & Greeting
+  const memNameEl = document.getElementById('member-display-name');
+  const memMssvEl = document.getElementById('member-display-mssv');
+  const welcomeEl = document.getElementById('member-welcome-name');
+  const welcomeMssvEl = document.getElementById('member-welcome-mssv');
+
+  if (memNameEl && validName) memNameEl.textContent = validName;
+  if (memMssvEl && validMssv) memMssvEl.textContent = validMssv;
+
+  if (welcomeEl && validName) {
+    const hour = new Date().getHours();
+    const timeGreeting = hour < 12 ? 'Chào buổi sáng' : (hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối');
+    welcomeEl.textContent = `${validName} (${timeGreeting})`;
+  }
+  if (welcomeMssvEl && validMssv) welcomeMssvEl.textContent = validMssv;
+
+  // 3. Cập nhật Banner Xem trước Admin (nếu có)
+  const bannerTitle = document.getElementById('admin-preview-banner-title');
+  const viewingAs = sessionStorage.getItem('bht_viewing_as_member');
+  if (bannerTitle && viewingAs && viewingAs !== 'true' && validName) {
+    bannerTitle.textContent = `Xem trước: Sinh viên ${validName} (${validMssv})`;
+  }
+}
+
+/**
  * Xử lý sau khi người dùng đăng nhập thành công
  */
 function handleAuthSuccess(user, token, isSessionVerification = false) {
   const currentToken = token || getToken();
   const cleanRole = String(user.role || 'MEMBER').trim().toUpperCase();
   const cachedRole = String(localStorage.getItem('bht_role') || '').trim().toUpperCase();
+  const validName = String(user.hoTen || user.HoTen || '').trim();
+
   user.role = cleanRole;
+  if (validName) {
+    user.hoTen = validName;
+    user.HoTen = validName;
+    localStorage.setItem('bht_hoten', validName);
+  }
+
   store.setState({ user: user, token: currentToken });
   localStorage.setItem('bht_mssv', user.mssv);
   localStorage.setItem('bht_role', cleanRole);
@@ -425,18 +473,10 @@ function handleAuthSuccess(user, token, isSessionVerification = false) {
     } else {
       initMemberView(true);
     }
-  } else {
-    // Cập nhật tên hiển thị lên header giao diện nếu có
-    const adminNameEl = document.getElementById('admin-display-name');
-    const adminEmailEl = document.getElementById('admin-display-email');
-    if (adminNameEl && user.hoTen) adminNameEl.textContent = user.hoTen;
-    if (adminEmailEl && user.email) adminEmailEl.textContent = user.email;
-
-    const memNameEl = document.getElementById('member-display-name');
-    const memEmailEl = document.getElementById('member-display-email');
-    if (memNameEl && user.hoTen) memNameEl.textContent = user.hoTen;
-    if (memEmailEl && user.email) memEmailEl.textContent = user.email || user.mssv;
   }
+
+  // Luôn cập nhật tên hiển thị lên toàn bộ các vị trí trên giao diện
+  updateUserHeaderDisplay(user);
 
   // Cập nhật lại thanh Dev Helper hiển thị đúng nút chuyển vai trò
   if (window.renderDevHelperBanner) {
