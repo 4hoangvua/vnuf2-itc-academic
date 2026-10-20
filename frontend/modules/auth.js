@@ -2,10 +2,10 @@
 // MODULE XÁC THỰC & ĐĂNG NHẬP (ZERO-PASSWORD OTP AUTH MODULE)
 // ====================================================================
 
-import { callApi, isMockMode, setToken, clearToken, getToken } from '../services/api.js';
+import { callApi, isMockMode, setToken, clearToken, getToken, hydrateAppFromBootstrap } from '../services/api.js';
 import { appState, store, showToast, showView, showGlobalLoading, hideGlobalLoading, setButtonLoading, showFormError, clearFormError, registerViewCleanup, runViewCleanup } from './ui.js';
-import { initMemberView } from './member.js';
-import { initAdminView } from './admin.js';
+import { initMemberView, loadMemberData } from './member.js';
+import { initAdminView, loadAdminData } from './admin.js';
 
 /**
  * Khởi tạo kiểm tra phiên đăng nhập hiện tại
@@ -15,15 +15,15 @@ export async function checkAuthSession() {
   const cachedRole = String(localStorage.getItem('bht_role') || '').trim().toUpperCase();
   const currentToken = getToken();
 
-  // 1. Optimistic Shell: Hiển thị ngay khung giao diện tĩnh 0ms trước khi fetch API
+  // 1. Optimistic Shell: Hiển thị ngay khung giao diện tĩnh 0ms trước khi fetch API (fetchApi = false để tránh gọi 5-7 request rời rạc)
   if (cachedRole === 'ADMIN') {
     if (sessionStorage.getItem('bht_viewing_as_member')) {
-      initMemberView(true);
+      initMemberView(true, false);
     } else {
-      initAdminView(true);
+      initAdminView(true, false);
     }
   } else if (cachedRole === 'MEMBER') {
-    initMemberView(true);
+    initMemberView(true, false);
   } else {
     showGlobalLoading('Đang kiểm tra quyền truy cập...');
   }
@@ -42,7 +42,11 @@ export async function checkAuthSession() {
   }
 
   try {
-    const res = await callApi('getAuthStatus', { token: currentToken, cachedMssv: cachedMssv });
+    const res = await callApi('getAuthStatus', {
+      token: currentToken,
+      cachedMssv: cachedMssv,
+      includeBootstrap: true
+    });
     hideGlobalLoading();
 
     if (!res) {
@@ -81,7 +85,10 @@ export async function checkAuthSession() {
     }
 
     if (res.status === 'AUTHENTICATED' && res.user) {
-      handleAuthSuccess(res.user, null, true);
+      if (res.bootstrapData) {
+        hydrateAppFromBootstrap(res.bootstrapData, res.user.role, res.user.mssv);
+      }
+      handleAuthSuccess(res.user, null, true, res.bootstrapData);
       return;
     }
 
@@ -442,7 +449,7 @@ export function updateUserHeaderDisplay(user) {
 /**
  * Xử lý sau khi người dùng đăng nhập thành công
  */
-function handleAuthSuccess(user, token, isSessionVerification = false) {
+function handleAuthSuccess(user, token, isSessionVerification = false, bootstrapData = null) {
   const currentToken = token || getToken();
   const cleanRole = String(user.role || 'MEMBER').trim().toUpperCase();
   const cachedRole = String(localStorage.getItem('bht_role') || '').trim().toUpperCase();
@@ -466,12 +473,24 @@ function handleAuthSuccess(user, token, isSessionVerification = false) {
   if (!isAlreadyRendered) {
     if (cleanRole === 'ADMIN') {
       if (sessionStorage.getItem('bht_viewing_as_member')) {
-        initMemberView(true);
+        initMemberView(true, true);
       } else {
-        initAdminView(true);
+        initAdminView(true, true);
       }
     } else {
-      initMemberView(true);
+      initMemberView(true, true);
+    }
+  } else {
+    // Nếu khung tĩnh đã được dựng trước (Optimistic Shell), kích hoạt nạp dữ liệu vào view
+    // (Lúc này cache đã được hydrate 0ms từ bootstrapData nên loadMemberData / loadAdminData không gọi mạng)
+    if (cleanRole === 'ADMIN') {
+      if (sessionStorage.getItem('bht_viewing_as_member')) {
+        loadMemberData(true, false);
+      } else {
+        loadAdminData(true, false);
+      }
+    } else {
+      loadMemberData(true, false);
     }
   }
 

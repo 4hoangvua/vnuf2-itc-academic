@@ -5,7 +5,7 @@
 // Thao tác ở đâu chỉ cập nhật lại đúng bảng/khối đó, không chớp giật màn hình.
 // ====================================================================
 
-import { callApi } from '../services/api.js';
+import { callApi, hydrateAppFromBootstrap } from '../services/api.js';
 import { appState, uiActionLocks, showToast, showView, showGlobalLoading, hideGlobalLoading, escapeHtml, setFormControlsDisabled, setButtonLoading, showFormError, clearFormError, diffRenderList } from './ui.js';
 import { 
   renderTableSkeleton, 
@@ -61,8 +61,9 @@ export function renderAdminSkeletons() {
 /**
  * Khởi tạo giao diện Quản Trị Viên (chỉ chạy 1 lần khi đăng nhập hoặc F5)
  * @param {boolean} silent Nếu true thì tải ngầm không hiện overlay loading toàn màn hình
+ * @param {boolean} fetchApi Nếu true thì tự động gọi API nạp dữ liệu, nếu false chỉ dựng khung tĩnh & skeletons
  */
-export function initAdminView(silent = true) {
+export function initAdminView(silent = true, fetchApi = true) {
   showView('view-admin');
   const user = appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null') || { hoTen: 'Ban Điều Hành', mssv: localStorage.getItem('bht_mssv') || 'Admin' };
 
@@ -151,7 +152,9 @@ export function initAdminView(silent = true) {
 
   // Hiển thị khung Skeleton trước khi dữ liệu từ máy chủ về
   renderAdminSkeletons();
-  loadAdminData(silent);
+  if (fetchApi) {
+    loadAdminData(silent);
+  }
 }
 
 /**
@@ -213,9 +216,19 @@ export async function loadAdminData(silent = true, skipCache = false) {
 }
 
 /**
- * Nút làm mới dữ liệu thủ công (bỏ qua cache để luôn lấy dữ liệu mới nhất từ máy chủ)
+ * Nút làm mới dữ liệu thủ công (ưu tiên nạp 1 request duy nhất qua getAppInitData)
  */
-export function refreshAdminData() {
+export async function refreshAdminData() {
+  renderAdminSkeletons();
+  try {
+    const res = await callApi('getAppInitData', {}, { skipCache: true });
+    if (res && res.success && res.data) {
+      hydrateAppFromBootstrap(res.data, 'ADMIN', '');
+      loadAdminData(false, false);
+      showToast('Đã làm mới dữ liệu Ban Điều Hành thành công!', 'success');
+      return;
+    }
+  } catch (e) {}
   loadAdminData(false, true);
 }
 

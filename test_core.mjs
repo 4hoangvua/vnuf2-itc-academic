@@ -1510,6 +1510,51 @@ assert('app.js registers copy-zalo-link action', appJsContent2.includes("'copy-z
 assert('app.js registers dismiss-zalo-banner action', appJsContent2.includes("'dismiss-zalo-banner':"));
 assert('app.js calls initZaloInAppNotice', appJsContent2.includes('initZaloInAppNotice();'));
 
+// --------------------------------------------------------------------
+// 24. Testing Single-Request Bootstrap & API Bundling Optimization
+// --------------------------------------------------------------------
+console.log('\n--- 24. Testing Single-Request Bootstrap & API Bundling Optimization ---');
+const serviceAuthContent = fs.readFileSync('./gas-backend/Service_Auth.js', 'utf8');
+const configGasContent = fs.readFileSync('./gas-backend/Config.js', 'utf8');
+const routerGasContent = fs.readFileSync('./gas-backend/Router.js', 'utf8');
+const apiJsModule = await import('./frontend/services/api.js');
+const mockDataModule = await import('./frontend/services/mockData.js');
+const memberModule = await import('./frontend/modules/member.js');
+const adminModule = await import('./frontend/modules/admin.js');
+
+assert('Config.js registers getAppInitData in QUERY_ACTIONS', configGasContent.includes("'getAppInitData'"));
+assert('Router.js routes getAppInitData', routerGasContent.includes("case 'getAppInitData':"));
+assert('Router.js passes includeBootstrap to getAuthStatus', routerGasContent.includes("data.includeBootstrap === true || data.bootstrap === true"));
+assert('Service_Auth.js defines getAppInitData', serviceAuthContent.includes('function getAppInitData(currentUser)'));
+assert('Service_Auth.js supports includeBootstrap in getAuthStatus', serviceAuthContent.includes('function getAuthStatus(token, cachedMssv, includeBootstrap)'));
+assert('api.js exports hydrateAppFromBootstrap', typeof apiJsModule.hydrateAppFromBootstrap === 'function');
+assert('api.js exports getAppInitData', typeof apiJsModule.getAppInitData === 'function');
+assert('API_CONFIG.CACHEABLE_ACTIONS includes getAppInitData', apiJsModule.API_CONFIG.CACHEABLE_ACTIONS.includes('getAppInitData'));
+
+const mockAuthRes = await mockDataModule.handleMockAction('getAuthStatus', {
+  token: 'MOCK_TOKEN_2351120015',
+  includeBootstrap: true
+});
+assert('mock getAuthStatus with includeBootstrap returns bootstrapData', mockAuthRes && mockAuthRes.status === 'AUTHENTICATED' && mockAuthRes.bootstrapData !== null && Array.isArray(mockAuthRes.bootstrapData.tasks));
+
+const mockInitRes = await mockDataModule.handleMockAction('getAppInitData', {
+  mssv: '2351120015',
+  role: 'MEMBER'
+});
+assert('mock getAppInitData returns success and bundle structure', mockInitRes && mockInitRes.success === true && Array.isArray(mockInitRes.data.attendance) && Array.isArray(mockInitRes.data.docs));
+
+const hydrated = apiJsModule.hydrateAppFromBootstrap(mockInitRes.data, 'MEMBER', '2351120015');
+assert('hydrateAppFromBootstrap executes successfully', hydrated === true);
+
+const taskCacheRaw = localStorage.getItem('bht_cache_getAllTasks_{}');
+assert('hydrateAppFromBootstrap populates getAllTasks cache', taskCacheRaw && taskCacheRaw.includes('TASK_'));
+
+const attCacheRaw = localStorage.getItem('bht_cache_getAttendanceSessions_{}');
+assert('hydrateAppFromBootstrap populates getAttendanceSessions cache', attCacheRaw && attCacheRaw.includes('MEET_'));
+
+assert('member.js initMemberView accepts fetchApi parameter', memberModule.initMemberView.toString().includes('fetchApi'));
+assert('admin.js initAdminView accepts fetchApi parameter', adminModule.initAdminView.toString().includes('fetchApi'));
+
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
   process.exit(1);

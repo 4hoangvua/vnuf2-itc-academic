@@ -1062,7 +1062,7 @@ export async function handleMockAction(action, payload) {
 
     // 1. AUTH
     case 'getAuthStatus': {
-      const token = localStorage.getItem('bht_token') || '';
+      const token = String(data.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_token') : '') || '').trim();
       
       // 1. Nếu có Session Token Mock hợp lệ
       if (token && token.startsWith('MOCK_TOKEN_')) {
@@ -1071,6 +1071,18 @@ export async function handleMockAction(action, payload) {
         if (member) {
           if (member.TrangThai === 'Inactive') {
             return { status: 'BLOCKED', message: 'Tài khoản của bạn đang ở trạng thái Tạm khóa (Inactive)!' };
+          }
+          let bootstrapData = null;
+          if (data.includeBootstrap === true || data.bootstrap === true) {
+            const isAdmin = member.Role === 'ADMIN';
+            bootstrapData = {
+              tasks: state.tasks || [],
+              attendance: state.attendance || [],
+              docs: state.documents || [],
+              submissions: isAdmin ? (state.submissions || []) : (state.submissions || []).filter(s => s.MSSV === member.MSSV),
+              members: isAdmin ? (state.members || []) : [],
+              activeCampaign: (state.campaigns || []).find(c => c.id === state.activeCampaignId) || null
+            };
           }
           return {
             status: 'AUTHENTICATED',
@@ -1086,7 +1098,8 @@ export async function handleMockAction(action, payload) {
               sex: member.Sex || 'male',
               Sex: member.Sex || 'male',
               gift2010: member.gift2010 || null
-            }
+            },
+            bootstrapData: bootstrapData
           };
         }
       }
@@ -1110,6 +1123,27 @@ export async function handleMockAction(action, payload) {
       return {
         status: 'PROMPT_MSSV',
         message: 'Chào mừng bạn đến với Cổng Ban Học Thuật. Vui lòng nhập Mã số sinh viên (MSSV) để đăng nhập!'
+      };
+    }
+
+    case 'getAppInitData': {
+      let currentMssv = String(data.mssv || '').trim().toUpperCase();
+      let currentRole = String(data.role || '').trim().toUpperCase();
+      if (!currentMssv && typeof localStorage !== 'undefined') {
+        currentMssv = String(localStorage.getItem('bht_mssv') || '').trim().toUpperCase();
+        currentRole = String(localStorage.getItem('bht_role') || '').trim().toUpperCase();
+      }
+      const isAdmin = currentRole === 'ADMIN';
+      return {
+        success: true,
+        data: {
+          tasks: state.tasks || [],
+          attendance: state.attendance || [],
+          docs: state.documents || [],
+          submissions: isAdmin ? (state.submissions || []) : (state.submissions || []).filter(s => s.MSSV === currentMssv),
+          members: isAdmin ? (state.members || []) : [],
+          activeCampaign: (state.campaigns || []).find(c => c.id === state.activeCampaignId) || null
+        }
       };
     }
 

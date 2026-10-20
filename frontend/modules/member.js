@@ -2,7 +2,7 @@
 // MODULE CỔNG THÀNH VIÊN (MEMBER PORTAL CONTROLLER)
 // ====================================================================
 
-import { callApi } from '../services/api.js';
+import { callApi, hydrateAppFromBootstrap } from '../services/api.js';
 import { appState, showToast, showView, showGlobalLoading, hideGlobalLoading, escapeHtml, setFormControlsDisabled, setButtonLoading, showFormError, clearFormError } from './ui.js';
 import { 
   renderMemberDrlWidget,
@@ -157,8 +157,9 @@ export function getCurrentMemberUser() {
 /**
  * Khởi tạo giao diện Cổng Thành Viên (chỉ chạy 1 lần khi đăng nhập hoặc F5)
  * @param {boolean} silent Nếu true thì tải ngầm không hiện overlay loading toàn màn hình
+ * @param {boolean} fetchApi Nếu true thì tự động gọi API nạp dữ liệu, nếu false chỉ dựng khung tĩnh & skeletons
  */
-export function initMemberView(silent = true) {
+export function initMemberView(silent = true, fetchApi = true) {
   showView('view-member');
   const user = getCurrentMemberUser();
   const viewingAs = sessionStorage.getItem('bht_viewing_as_member');
@@ -234,7 +235,9 @@ export function initMemberView(silent = true) {
 
   // Hiển thị khung Skeleton trước khi dữ liệu từ máy chủ về
   renderMemberSkeletons();
-  loadMemberData(silent, false);
+  if (fetchApi) {
+    loadMemberData(silent, false);
+  }
 
   // ĐỒNG BỘ REALTIME & CROSS-TAB TỰ ĐỘNG (Khi Admin tạo Chuyên đề / Giao task / Mở khóa điểm danh)
   if (!window._memberStorageListenerAttached) {
@@ -328,9 +331,19 @@ export async function loadMemberData(silent = true, skipCache = false) {
   }
 }
 
-export function refreshMemberData() {
+export async function refreshMemberData() {
   renderMemberSkeletons(true);
-  loadMemberData(false, true); // Bỏ qua cache để luôn lấy dữ liệu mới nhất
+  try {
+    const res = await callApi('getAppInitData', {}, { skipCache: true });
+    if (res && res.success && res.data) {
+      const user = getCurrentMemberUser();
+      hydrateAppFromBootstrap(res.data, 'MEMBER', user ? user.mssv : '');
+      loadMemberData(false, false);
+      showToast('Đã làm mới dữ liệu thành công!', 'success');
+      return;
+    }
+  } catch (e) {}
+  loadMemberData(false, true); // Bỏ qua cache để luôn lấy dữ liệu mới nhất (fallback)
 }
 
 /**

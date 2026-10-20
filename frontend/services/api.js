@@ -46,7 +46,8 @@ export const API_CONFIG = {
     'getMemberSubmissions',
     'getQuizBySession',
     'getMemberQuizProfile',
-    'getPersonalQuizPool'
+    'getPersonalQuizPool',
+    'getAppInitData'
   ]
 };
 
@@ -590,5 +591,64 @@ export async function setActiveCampaign(campaignId) {
  */
 export async function redeemPrivilegeVoucher(payload) {
   return await callApi('redeemPrivilegeVoucher', payload);
+}
+
+/**
+ * Lấy toàn bộ gói dữ liệu khởi động ứng dụng trong 1 request duy nhất (API Bundling)
+ * @param {Object} options Tùy chọn { skipCache: boolean }
+ * @returns {Promise<ApiResponse>}
+ */
+export async function getAppInitData(options = {}) {
+  return await callApi('getAppInitData', {}, options);
+}
+
+/**
+ * Nạp gói dữ liệu khởi động (Bootstrap Data) vào Cache Stale-While-Revalidate
+ * Giúp triệt tiêu toàn bộ 6-7 request riêng lẻ lúc khởi động
+ * @param {Object} bootstrapData Gói dữ liệu từ getAuthStatus hoặc getAppInitData
+ * @param {string} role Vai trò 'ADMIN' hoặc 'MEMBER'
+ * @param {string} mssv Mã số sinh viên
+ */
+export function hydrateAppFromBootstrap(bootstrapData, role, mssv) {
+  if (!bootstrapData || typeof bootstrapData !== 'object') return false;
+
+  const cleanRole = String(role || '').trim().toUpperCase();
+  const cleanMssv = String(mssv || '').trim().toUpperCase();
+
+  const setCache = (action, payloadObj, data) => {
+    try {
+      const payloadStr = JSON.stringify(payloadObj);
+      const cacheKey = `bht_cache_${action}_${payloadStr}`;
+      setLocalCache(cacheKey, { success: true, data: data });
+    } catch (e) {}
+  };
+
+  if (Array.isArray(bootstrapData.tasks)) {
+    setCache('getAllTasks', {}, bootstrapData.tasks);
+  }
+  if (Array.isArray(bootstrapData.attendance)) {
+    setCache('getAttendanceSessions', {}, bootstrapData.attendance);
+  }
+  if (Array.isArray(bootstrapData.docs)) {
+    setCache('getAllDocuments', {}, bootstrapData.docs);
+  }
+  if (bootstrapData.activeCampaign !== undefined && bootstrapData.activeCampaign !== null) {
+    setCache('getActiveCampaign', {}, bootstrapData.activeCampaign);
+  }
+
+  if (cleanRole === 'ADMIN') {
+    if (Array.isArray(bootstrapData.members)) {
+      setCache('getAllMembers', {}, bootstrapData.members);
+    }
+    if (Array.isArray(bootstrapData.submissions)) {
+      setCache('getAllSubmissions', {}, bootstrapData.submissions);
+    }
+  } else if (cleanMssv) {
+    if (Array.isArray(bootstrapData.submissions)) {
+      setCache('getMemberSubmissions', { mssv: cleanMssv }, bootstrapData.submissions);
+    }
+  }
+
+  return true;
 }
 
