@@ -99,15 +99,30 @@ export async function loadAdminCampaigns() {
   const container = document.getElementById('admin-tab-campaigns');
   if (!container) return;
 
+  const sanitizeCampaigns = (list) => {
+    return (list || []).map(c => {
+      let tpl = c.emailTemplate;
+      if (tpl && typeof tpl === 'string' && (tpl.includes('<div style=') || tpl.includes('<h2 style=') || tpl.includes('<blockquote'))) {
+        const fb = DEFAULT_FALLBACK_CAMPAIGNS.find(f => f.id === c.id);
+        tpl = fb ? fb.emailTemplate : '';
+      }
+      return {
+        ...c,
+        emailSubject: c.emailSubject || c.subject || '',
+        emailTemplate: tpl
+      };
+    });
+  };
+
   try {
     const res = await callApi('getAllCampaigns', {});
     if (res && res.success && res.data) {
       if (Array.isArray(res.data)) {
-        adminCampaignsList = res.data.length > 0 ? res.data : DEFAULT_FALLBACK_CAMPAIGNS;
+        adminCampaignsList = res.data.length > 0 ? sanitizeCampaigns(res.data) : DEFAULT_FALLBACK_CAMPAIGNS;
         adminActiveCampaignId = res.activeCampaignId || 'OCT20';
       } else {
         adminCampaignsList = (Array.isArray(res.data.campaigns) && res.data.campaigns.length > 0)
-          ? res.data.campaigns
+          ? sanitizeCampaigns(res.data.campaigns)
           : DEFAULT_FALLBACK_CAMPAIGNS;
         adminActiveCampaignId = res.data.activeCampaignId || res.activeCampaignId || 'OCT20';
         adminLastEmailDispatch = res.data.lastEmailDispatch || null;
@@ -278,8 +293,10 @@ export async function handleSaveCampaignSchedule(campaignId) {
       campaignId: targetId,
       startDate,
       endDate,
+      scheduleDate: startDate,
       targetAudience,
       emailSubject,
+      subject: emailSubject,
       emailTemplate,
       webLink,
       setActive: true
@@ -288,8 +305,11 @@ export async function handleSaveCampaignSchedule(campaignId) {
     hideGlobalLoading();
     if (res && res.success) {
       adminActiveCampaignId = targetId;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('bht_active_campaign', targetId);
+      }
       adminCampaignsList = adminCampaignsList.map(c => 
-        c.id === targetId ? { ...c, startDate, endDate, targetAudience, emailSubject, emailTemplate, webLink } : c
+        c.id === targetId ? { ...c, startDate, endDate, scheduleDate: startDate, targetAudience, emailSubject, subject: emailSubject, emailTemplate, webLink } : c
       );
 
       broadcastDataSync('activeCampaign');

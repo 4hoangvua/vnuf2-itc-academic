@@ -65,7 +65,17 @@ Nhân dịp {TenSuKien}, Ban Học Thuật - CLB Tin học VNUF2 thân chúc b�
 Thân ái,
 Ban Học Thuật - CLB Tin Học VNUF2`;
 
-  const emailTemplateToUse = currentCamp.emailTemplate || defaultEmailTemplate;
+  // Hàm tự động làm sạch: loại bỏ mã HTML thô lọt vào ô soạn thảo
+  const cleanEmailTemplate = (tpl) => {
+    if (!tpl || typeof tpl !== 'string') return defaultEmailTemplate;
+    const trimmed = tpl.trim();
+    if (!trimmed || trimmed.includes('<div style=') || trimmed.includes('<h2 style=') || trimmed.includes('<blockquote')) {
+      return defaultEmailTemplate;
+    }
+    return trimmed;
+  };
+
+  const emailTemplateToUse = cleanEmailTemplate(currentCamp.emailTemplate);
 
   // Lọc danh sách thành viên theo targetAudience của chiến dịch đang chọn
   const isFemaleTarget = (currentCamp.targetAudience === 'female');
@@ -100,16 +110,19 @@ Ban Học Thuật - CLB Tin Học VNUF2`;
     : 'https://vnuf2-itc.edu.vn/app';
   const webLink = currentCamp.webLink || currentWebOrigin;
 
-  const previewSubject = (currentCamp.emailSubject || `[VNUF2-ITC] Thân chúc bạn ngày ${currentCamp.title} & Món quà học thuật đặc biệt 🌸`)
-    .replace(/\{HoTen\}/g, sampleMember.HoTen)
-    .replace(/\{MSSV\}/g, sampleMember.MSSV)
-    .replace(/\{TenSuKien\}/g, currentCamp.title);
+  const previewSubject = (currentCamp.emailSubject || currentCamp.subject || `[VNUF2-ITC] Thân chúc bạn ngày ${currentCamp.title} & Món quà học thuật đặc biệt 🌸`)
+    .replace(/\{HoTen\}|\{hoTen\}/gi, sampleMember.HoTen)
+    .replace(/\{MSSV\}|\{mssv\}/gi, sampleMember.MSSV)
+    .replace(/\{TenSuKien\}|\{tenChienDich\}/gi, currentCamp.title);
 
-  const previewBodyFormatted = emailTemplateToUse
-    .replace(/\{HoTen\}/g, `<strong>${escapeHTML(sampleMember.HoTen)}</strong>`)
-    .replace(/\{MSSV\}/g, `<code class="font-mono text-accent font-semibold">${escapeHTML(sampleMember.MSSV)}</code>`)
-    .replace(/\{TenSuKien\}/g, `<strong>${escapeHTML(currentCamp.title)}</strong>`)
-    .replace(/\{LinkWeb\}/g, `<a href="${escapeHTML(webLink)}" target="_blank" rel="noopener noreferrer" class="text-accent underline font-mono break-all">${escapeHTML(webLink)}</a>`)
+  // An toàn chống XSS: escape trước rồi mới định dạng các biến hệ thống
+  const escapedBody = escapeHTML(emailTemplateToUse);
+  const previewBodyFormatted = escapedBody
+    .replace(/\{HoTen\}|\{hoTen\}/gi, `<strong>${escapeHTML(sampleMember.HoTen)}</strong>`)
+    .replace(/\{MSSV\}|\{mssv\}/gi, `<code class="font-mono text-accent font-semibold">${escapeHTML(sampleMember.MSSV)}</code>`)
+    .replace(/\{TenSuKien\}|\{tenChienDich\}/gi, `<strong>${escapeHTML(currentCamp.title)}</strong>`)
+    .replace(/\{LinkWeb\}|\{linkWeb\}/gi, `<a href="${escapeHTML(webLink)}" target="_blank" rel="noopener noreferrer" class="text-accent underline font-mono break-all">${escapeHTML(webLink)}</a>`)
+    .replace(/\{loiChuc\}/gi, `<em>${escapeHTML(currentCamp.greeting || '')}</em>`)
     .replace(/\n/g, '<br>');
 
   return `
