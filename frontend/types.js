@@ -24,6 +24,15 @@
  */
 
 /**
+ * @typedef {Object} Gift2010
+ * @property {string} giftId - Mã phần quà (vd: DEADLINE_24H, BONUS_10PT, VIP_DEBUG, COFFEE_MENTOR)
+ * @property {string} giftTitle - Tên quà tặng
+ * @property {string} claimCode - Mã nhận quà duy nhất (vd: ITC2010-83921-204)
+ * @property {string} claimedAt - Thời gian mở quà (ISO 8601)
+ * @property {boolean} [used] - Trạng thái đã sử dụng quà
+ */
+
+/**
  * @typedef {Object} Member
  * @property {string} MSSV - Mã số sinh viên (10 chữ số)
  * @property {string} HoTen - Họ và tên đầy đủ của sinh viên
@@ -31,6 +40,8 @@
  * @property {UserRole} Role - Vai trò trong hệ thống (ADMIN hoặc MEMBER)
  * @property {MemberStatus} TrangThai - Trạng thái hoạt động
  * @property {string} [NgayThamGia] - Ngày gia nhập ban học thuật (ISO hoặc dd/MM/yyyy)
+ * @property {'male' | 'female'} [Sex] - Giới tính thành viên (male | female)
+ * @property {Gift2010|string|null} [gift2010] - Quà tặng 20/10 đồng bộ đa thiết bị
  */
 
 /**
@@ -90,6 +101,8 @@
  * @property {string} email - Email người dùng
  * @property {UserRole} role - Vai trò ('ADMIN' | 'MEMBER')
  * @property {MemberStatus} [trangThai] - Trạng thái hoạt động
+ * @property {'male' | 'female'} [sex] - Giới tính thành viên
+ * @property {Gift2010|string|null} [gift2010] - Quà 20/10 đã nhận
  */
 
 /**

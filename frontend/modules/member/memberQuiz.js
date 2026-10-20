@@ -27,6 +27,7 @@ import {
   getCurrentMemberDetailSessionId, 
   setCurrentMemberDetailSessionId 
 } from '../member.js';
+import { getClaimedGift } from '../gift2010.js';
 
 // State Quản lý Trắc nghiệm Ôn tập cho Member (Single-Question Focus & Gamification)
 export let currentMemberQuiz = null;
@@ -275,13 +276,18 @@ export async function loadMemberQuiz(sessionId) {
         if (zenModal) zenModal.classList.add('hidden');
       }
 
+      const claimedGift = getClaimedGift(currentUser);
       container.innerHTML = renderMemberQuizView(currentMemberQuiz, currentMemberQuizResult, {
         sessionId,
         memberProfile: memberQuizProfile,
-        leaderboard: currentQuizLeaderboard
+        leaderboard: currentQuizLeaderboard,
+        claimedGift: claimedGift,
+        currentUser: currentUser,
+        currentMssv: currentMssv
       });
     } else {
-      container.innerHTML = renderMemberQuizView(null, null, { sessionId, memberProfile: memberQuizProfile });
+      const claimedGift = getClaimedGift(currentUser);
+      container.innerHTML = renderMemberQuizView(null, null, { sessionId, memberProfile: memberQuizProfile, claimedGift, currentUser, currentMssv });
     }
   } catch (err) {
     console.error('Lỗi khi tải đề trắc nghiệm:', err);
@@ -732,3 +738,40 @@ export async function handleSubmitMemberQuiz(sessionId, quizId) {
 export function handleRetakeMemberQuiz(sessionId, quizId) {
   handleStartPracticeQuiz(sessionId, quizId, 'session');
 }
+
+/**
+ * Xử lý khi sinh viên bấm áp dụng Voucher 20/10 (+10 điểm) vào kết quả bài thi trắc nghiệm
+ * @param {string} sessionId Mã buổi học
+ * @param {string} giftCode Mã voucher 20/10
+ */
+export async function handleApplyQuizBonusVoucher(sessionId, giftCode) {
+  if (!sessionId) return;
+  const user = getCurrentMemberUser();
+  if (!user || !user.mssv) return;
+
+  if (!confirm('Bạn có chắc chắn muốn áp dụng Voucher 20/10 (+10 điểm) vào kết quả bài thi trắc nghiệm này? Thao tác này sẽ cộng trực tiếp 10 điểm vào bảng xếp hạng của bạn.')) {
+    return;
+  }
+
+  showToast('Đang áp dụng voucher 20/10...', 'info');
+
+  try {
+    const res = await callApi('applyQuizBonusVoucher', {
+      sessionId: sessionId,
+      mssv: user.mssv,
+      giftCode: giftCode
+    });
+
+    if (res && res.success) {
+      showToast(res.message || 'Đã áp dụng Voucher +10 điểm thành công!', 'success');
+      // Tải lại giao diện quiz để cập nhật điểm mới và bảng xếp hạng
+      await loadMemberQuiz(sessionId);
+    } else {
+      showToast((res && res.message) ? res.message : 'Không thể áp dụng voucher lúc này!', 'error');
+    }
+  } catch (err) {
+    console.error('Lỗi khi áp dụng voucher quiz:', err);
+    showToast('Lỗi áp dụng voucher: ' + (err.message || err.toString()), 'error');
+  }
+}
+

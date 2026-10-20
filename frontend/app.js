@@ -70,8 +70,19 @@ import {
   handleExitTakingQuiz,
   handleStartOfficialQuiz,
   handleStartPracticeQuiz,
-  handleOpenQuizReviewDrawer
-} from './modules/member.js?v=20261020_2';
+  handleOpenQuizReviewDrawer,
+  handleOpenGiftModal,
+  handleCloseGiftModal,
+  handleCopyGiftCode,
+  handleResetGift,
+  handlePreviewGift,
+  handleApplyQuizBonusVoucher,
+  handleRandomMaleWish,
+  handleShuffle2010Wish,
+  triggerClickBlossom,
+  handleReplayGiftUnboxing,
+  handleSkipGiftShuffle
+} from './modules/member.js?v=20261020_4';
 
 import {
   initAdminView,
@@ -91,6 +102,7 @@ import {
   handleAddMember,
   handleResetMemberEmail,
   handleToggleMemberStatus,
+  handleSwitchAdminCampaign,
   generateRandomPin,
   openCreateAttendanceModal,
   closeCreateAttendanceModal,
@@ -138,8 +150,13 @@ import {
   handleSubmitEditQuizForm,
   handleDeleteAdminQuiz,
   handleResetMemberQuizSubmission,
-  handleResetAllQuizSubmissions
-} from './modules/admin.js?v=20261020_1';
+  handleResetAllQuizSubmissions,
+  handleSelectAdminCampaign,
+  handleSaveCampaignSchedule,
+  handleInsertCampaignEmailTag,
+  handleUpdateCampaignEmailPreview,
+  handleDispatchCampaignBulkEmail
+} from './modules/admin.js?v=20261020_2';
 
 import {
   openProjectorMode,
@@ -212,10 +229,41 @@ const CENTRAL_ACTION_MAP = {
   'open-quiz-grid-modal': () => handleOpenQuizGridModal(),
   'close-quiz-grid-modal': () => handleCloseQuizGridModal(),
   'exit-taking-quiz': () => handleExitTakingQuiz(),
+  'open-gift-modal': (el, ev) => {
+    triggerClickBlossom(el, ev);
+    handleOpenGiftModal();
+  },
+  'close-gift-modal': () => handleCloseGiftModal(),
+  'copy-gift-code': (el, ev, ds) => {
+    triggerClickBlossom(el, ev);
+    handleCopyGiftCode(ds.code, ds.fullShare);
+  },
+  'random-male-wish': (el, ev) => {
+    triggerClickBlossom(el, ev);
+    handleRandomMaleWish();
+  },
+  'shuffle-2010-wish': (el, ev) => {
+    triggerClickBlossom(el, ev);
+    handleShuffle2010Wish();
+  },
+  'reset-gift-2010': () => handleResetGift(),
+  'preview-gift-2010': (el, ev, ds) => handlePreviewGift(ds.giftId),
+  'apply-quiz-bonus-voucher': (el, ev, ds) => handleApplyQuizBonusVoucher(ds.sessionId, ds.giftCode),
+  'replay-gift-unboxing': (el, ev) => {
+    triggerClickBlossom(el, ev);
+    handleReplayGiftUnboxing();
+  },
+  'skip-gift-shuffle': () => handleSkipGiftShuffle(),
 
   // --- QUẢN TRỊ VIÊN (ADMIN ACTIONS) ---
   'refresh-admin-data': () => refreshAdminData(),
   'switch-admin-tab': (el, ev, ds) => switchAdminTab(ds.tab || ds.id),
+  'switch-admin-campaign': (el, ev, ds) => handleSwitchAdminCampaign(ds.campaignId),
+  'select-admin-campaign': (el, ev, ds) => handleSelectAdminCampaign(ds.campaignId),
+  'save-campaign-schedule': (el, ev, ds) => handleSaveCampaignSchedule(ds.campaignId),
+  'insert-campaign-email-tag': (el, ev, ds) => handleInsertCampaignEmailTag(ds.tag),
+  'update-campaign-email-preview': () => handleUpdateCampaignEmailPreview(),
+  'dispatch-campaign-bulk-email': (el, ev, ds) => handleDispatchCampaignBulkEmail(ds.campaignId),
   'filter-submission-status': (el, ev, ds) => setSubmissionStatusFilter(ds.status || ds.id),
   'review-submission': (el, ev, ds) => handleReviewSubmission(ds.id, ds.status),
   'open-review-drawer': (el, ev, ds) => openReviewDrawer(ds.id),
@@ -547,6 +595,12 @@ export function renderDevHelperBanner() {
       </div>
       ${roleSwitchBtnHtml}
       ${syncClipboardBtnHtml}
+      ${!isAdmin ? `
+        <span class="text-hairline">|</span>
+        <button data-action="reset-gift-2010" class="text-rose-600 dark:text-rose-400 hover:underline font-semibold text-[10px] flex items-center gap-1 cursor-pointer" title="Đặt lại hộp quà 20/10 để thử mở quà lại từ đầu">
+          <span>🎁 Reset Quà</span>
+        </button>
+      ` : ''}
       <span class="text-hairline">|</span>
       <button data-action="toggle-dev-banner-collapse" class="text-ink-muted hover:text-ink text-[10px] p-0.5" title="Thu nhỏ thanh công cụ">
         <i class="fa-solid fa-minus text-[9px]"></i>
@@ -556,3 +610,10 @@ export function renderDevHelperBanner() {
 
   document.body.appendChild(banner);
 }
+
+// Phơi bày hàm reset trên console để lập trình viên test nhanh
+if (typeof window !== 'undefined') {
+  window.resetGift2010 = handleResetGift;
+  window.previewGift2010 = handlePreviewGift;
+}
+

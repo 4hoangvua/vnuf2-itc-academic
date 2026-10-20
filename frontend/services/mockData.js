@@ -17,7 +17,9 @@ export const INITIAL_MOCK_DATA = {
       Ban: 'Ban học thuật',
       Role: 'ADMIN',
       TrangThai: 'Active',
-      NgayThamGia: '18/10/2026'
+      NgayThamGia: '18/10/2026',
+      Sex: 'male',
+      gift2010: null
     },
     {
       MSSV: '2251120001',
@@ -28,7 +30,9 @@ export const INITIAL_MOCK_DATA = {
       Ban: 'Ban học thuật',
       Role: 'ADMIN',
       TrangThai: 'Active',
-      NgayThamGia: '10/09/2024'
+      NgayThamGia: '10/09/2024',
+      Sex: 'male',
+      gift2010: null
     },
     {
       MSSV: '2251120002',
@@ -37,9 +41,17 @@ export const INITIAL_MOCK_DATA = {
       Lop: 'K67-CNTT',
       'Lớp': 'K67-CNTT',
       Ban: 'Ban học thuật',
-      Role: 'ADMIN',
+      Role: 'MEMBER',
       TrangThai: 'Active',
-      NgayThamGia: '15/09/2024'
+      NgayThamGia: '15/09/2024',
+      Sex: 'female',
+      gift2010: {
+        giftId: 'BONUS_10PT',
+        giftTitle: 'Voucher Cộng +10 Điểm Học Thuật',
+        claimCode: 'ITC2010-7B1C2-888',
+        claimedAt: '2026-10-20T08:00:00.000Z',
+        used: false
+      }
     },
     {
       MSSV: '2351120015',
@@ -50,7 +62,9 @@ export const INITIAL_MOCK_DATA = {
       Ban: 'Ban học thuật',
       Role: 'MEMBER',
       TrangThai: 'Active',
-      NgayThamGia: '01/10/2025'
+      NgayThamGia: '01/10/2025',
+      Sex: 'male',
+      gift2010: null
     },
     {
       MSSV: '2351120028',
@@ -61,7 +75,15 @@ export const INITIAL_MOCK_DATA = {
       Ban: 'Ban học thuật',
       Role: 'MEMBER',
       TrangThai: 'Active',
-      NgayThamGia: '05/10/2025'
+      NgayThamGia: '05/10/2025',
+      Sex: 'female',
+      gift2010: {
+        giftId: 'DEADLINE_24H',
+        giftTitle: 'Thẻ Gia Hạn Deadline +24H',
+        claimCode: 'ITC2010-F3E8A-901',
+        claimedAt: '2026-10-20T08:30:00.000Z',
+        used: false
+      }
     },
     {
       MSSV: '2451120033',
@@ -72,7 +94,9 @@ export const INITIAL_MOCK_DATA = {
       Ban: 'Ban học thuật',
       Role: 'MEMBER',
       TrangThai: 'Active',
-      NgayThamGia: '10/10/2026'
+      NgayThamGia: '10/10/2026',
+      Sex: 'male',
+      gift2010: null
     },
     {
       MSSV: '2251120099',
@@ -83,7 +107,9 @@ export const INITIAL_MOCK_DATA = {
       Ban: 'Ban học thuật',
       Role: 'MEMBER',
       TrangThai: 'Inactive',
-      NgayThamGia: '01/09/2023'
+      NgayThamGia: '01/09/2023',
+      Sex: 'male',
+      gift2010: null
     }
   ],
 
@@ -311,11 +337,12 @@ export const INITIAL_MOCK_DATA = {
       MSSV: '2251120002',
       HoTen: 'Trần Thị Thu Trang',
       Email: 'thutrang.cntt@gmail.com',
-      TenFile: '[2251120002]_[Tran_Thi_Thu_Trang]_refactor.zip',
+      TenFile: '[2251120002]_[Tran_Thi_Thu_Trang]_refactor_2010_GIFT.zip',
       DriveLink: 'https://drive.google.com/mock-file-05',
       ThoiGianNop: '16/10/2026 10:00:00',
       TrangThaiDuyet: 'Approved',
-      Feedback: 'Cấu trúc module rõ ràng, phân trang chuẩn chỉ.'
+      Feedback: 'Cấu trúc module rõ ràng, phân trang chuẩn chỉ. [QUÀ 20/10] Áp dụng Voucher +10 điểm học thuật.',
+      giftCode: 'ITC2010-7B1C2-888'
     },
     {
       SubID: 'SUB_20261016_110000',
@@ -335,11 +362,12 @@ export const INITIAL_MOCK_DATA = {
       MSSV: '2351120028',
       HoTen: 'Phạm Phương Anh',
       Email: 'phuonganh.cntt@gmail.com',
-      TenFile: '[2351120028]_[Pham_Phuong_Anh]_es6_refactor.zip',
+      TenFile: '[2351120028]_[Pham_Phuong_Anh]_es6_refactor_2010_GIFT.zip',
       DriveLink: 'https://drive.google.com/mock-file-07',
       ThoiGianNop: '16/10/2026 12:15:00',
       TrangThaiDuyet: 'Pending',
-      Feedback: ''
+      Feedback: '',
+      giftCode: 'ITC2010-F3E8A-901'
     },
     {
       SubID: 'SUB_20261016_130000',
@@ -717,6 +745,195 @@ export const INITIAL_MOCK_DATA = {
       WrongQuestionIds: ['QUIZ_20261015_01_2'],
       BookmarkedQuestionIds: ['QUIZ_OOP_CPP_01_1']
     }
+  ],
+
+  // 9. Cấu hình các chiến dịch sự kiện & đặc quyền học thuật (Universal Privilege Campaigns)
+  activeCampaignId: 'OCT20',
+  campaigns: [
+    {
+      id: 'OCT20',
+      title: 'Hộp Quà 20/10 · Tôn Vinh Nữ Sinh VNUF2',
+      subtitle: 'Dành riêng cho bóng hồng công nghệ VNUF2',
+      targetAudience: 'female',
+      icon: '🌸',
+      themeColor: 'rose',
+      greeting: 'Thân chúc bạn ngày 20/10 ngập tràn niềm vui, rực rỡ và luôn đam mê công nghệ!',
+      bannerDesc: 'Ban gửi tặng bạn một hộp quà học thuật đặc biệt nhân ngày hôm nay!',
+      maleReminder: 'Hôm nay là Ngày Phụ nữ Việt Nam 20/10. Hãy gửi lời chúc chân thành tới các cô giáo và bạn nữ nhé! 💐',
+      gifts: [
+        {
+          giftId: 'DEADLINE_24H',
+          effectType: 'EXTEND_DEADLINE',
+          effectValue: 24,
+          title: 'Thẻ Gia Hạn Deadline (+24h nộp bài tập)',
+          shortTitle: 'Gia Hạn Deadline (+24h)',
+          icon: 'fa-regular fa-clock',
+          iconColor: 'text-rose-500',
+          badgeClass: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+          description: 'Bảo lưu tính đúng hạn khi nộp bài muộn tối đa 24 giờ.'
+        },
+        {
+          giftId: 'BONUS_10PT',
+          effectType: 'SCORE_BONUS',
+          effectValue: 10,
+          title: 'Voucher Cộng +10 Điểm Học Thuật',
+          shortTitle: 'Cộng +10 Điểm',
+          icon: 'fa-solid fa-award',
+          iconColor: 'text-amber-500',
+          badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+          description: 'Cộng trực tiếp +10 điểm vào bài thi trắc nghiệm hoặc bài tập thực hành.'
+        },
+        {
+          giftId: 'VIP_DEBUG',
+          effectType: 'VIP_DEBUG',
+          effectValue: 1,
+          title: 'Vé Debug Code 1-1 Với Mentor',
+          shortTitle: 'Debug 1-1 Với Mentor',
+          icon: 'fa-solid fa-wand-magic-sparkles',
+          iconColor: 'text-purple-500',
+          badgeClass: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+          description: 'Quyền đăng ký 1 buổi hướng dẫn gỡ lỗi trực tiếp cùng Mentor Ban Học Thuật.'
+        }
+      ]
+    },
+    {
+      id: 'TET',
+      title: 'Lì Xì Học Thuật Khai Xuân VNUF2',
+      subtitle: 'Khai xuân như ý · Lộc mã vinh quy',
+      targetAudience: 'all',
+      icon: '🧧',
+      themeColor: 'amber',
+      greeting: 'Khai xuân như ý, code mượt không bug, GPA xuất sắc và gặt hái nhiều thành công rực rỡ!',
+      bannerDesc: 'Ban Học Thuật gửi tặng bạn bao lì xì học thuật đầu xuân lấy may!',
+      maleReminder: '',
+      gifts: [
+        {
+          giftId: 'BONUS_15PT',
+          effectType: 'SCORE_BONUS',
+          effectValue: 15,
+          title: 'Lì Xì May Mắn +15 Điểm Học Thuật',
+          shortTitle: 'Lì Xì +15 Điểm',
+          icon: 'fa-solid fa-coins',
+          iconColor: 'text-amber-500',
+          badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+          description: 'Cộng trực tiếp +15 điểm vào bài thi trắc nghiệm hoặc bài tập đầu xuân.'
+        },
+        {
+          giftId: 'DEADLINE_48H',
+          effectType: 'EXTEND_DEADLINE',
+          effectValue: 48,
+          title: 'Thẻ Du Xuân Gia Hạn Deadline (+48h)',
+          shortTitle: 'Gia Hạn Du Xuân (+48h)',
+          icon: 'fa-regular fa-calendar-plus',
+          iconColor: 'text-emerald-500',
+          badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+          description: 'Thoải mái du xuân! Tự động bảo lưu tính đúng hạn khi nộp bài muộn đến 48 giờ.'
+        },
+        {
+          giftId: 'VIP_DEBUG_TET',
+          effectType: 'VIP_DEBUG',
+          effectValue: 1,
+          title: 'Vé Khai Xuân Debug 1-1 Cùng Trưởng Ban',
+          shortTitle: 'Khai Xuân Debug 1-1',
+          icon: 'fa-solid fa-laptop-code',
+          iconColor: 'text-red-500',
+          badgeClass: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+          description: '1 suất hỗ trợ review kiến trúc đồ án và debug chuyên sâu đầu năm.'
+        }
+      ]
+    },
+    {
+      id: 'MARCH8',
+      title: 'Hộp Quà 8/3 · Ngày Quốc Tế Phụ Nữ',
+      subtitle: 'Tôn vinh bóng hồng công nghệ Ban Học Thuật',
+      targetAudience: 'female',
+      icon: '🌷',
+      themeColor: 'purple',
+      greeting: 'Chúc bạn ngày 8/3 luôn xinh đẹp, tự tin, rạng rỡ và chinh phục mọi đỉnh cao học thuật!',
+      bannerDesc: 'Hộp quà 8/3 với các đặc quyền học thuật ngọt ngào gửi tặng riêng bạn!',
+      maleReminder: 'Hôm nay là Ngày Quốc tế Phụ Nữ 8/3. Đừng quên gửi lời chúc tới những người phụ nữ tuyệt vời nhé! 💐',
+      gifts: [
+        {
+          giftId: 'DEADLINE_24H_M8',
+          effectType: 'EXTEND_DEADLINE',
+          effectValue: 24,
+          title: 'Thẻ Gia Hạn Deadline (+24h)',
+          shortTitle: 'Gia Hạn Deadline (+24h)',
+          icon: 'fa-regular fa-clock',
+          iconColor: 'text-purple-500',
+          badgeClass: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+          description: 'Bảo lưu tính đúng hạn khi nộp bài muộn tối đa 24 giờ.'
+        },
+        {
+          giftId: 'BONUS_10PT_M8',
+          effectType: 'SCORE_BONUS',
+          effectValue: 10,
+          title: 'Voucher Hoa Hồng +10 Điểm Học Thuật',
+          shortTitle: 'Voucher +10 Điểm',
+          icon: 'fa-solid fa-award',
+          iconColor: 'text-pink-500',
+          badgeClass: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20',
+          description: 'Cộng trực tiếp +10 điểm vào bài thi trắc nghiệm hoặc bài tập thực hành.'
+        },
+        {
+          giftId: 'VIP_DEBUG_M8',
+          effectType: 'VIP_DEBUG',
+          effectValue: 1,
+          title: 'Vé Debug Code 1-1 Với Mentor',
+          shortTitle: 'Debug 1-1 Với Mentor',
+          icon: 'fa-solid fa-wand-magic-sparkles',
+          iconColor: 'text-violet-500',
+          badgeClass: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
+          description: 'Quyền đăng ký 1 buổi hướng dẫn gỡ lỗi trực tiếp cùng Mentor Ban Học Thuật.'
+        }
+      ]
+    },
+    {
+      id: 'ANNIVERSARY',
+      title: 'Quà Tri Ân Sinh Nhật CLB Tin Học VNUF2',
+      subtitle: 'Tự hào truyền thống học thuật & sáng tạo',
+      targetAudience: 'all',
+      icon: '🎂',
+      themeColor: 'teal',
+      greeting: 'Mừng sinh nhật CLB Tin Học VNUF2! Chúc toàn thể thành viên luôn giữ vững ngọn lửa đam mê công nghệ!',
+      bannerDesc: 'Ban gửi tặng toàn bộ thành viên hộp quà tri ân nhân ngày sinh nhật CLB!',
+      maleReminder: '',
+      gifts: [
+        {
+          giftId: 'BONUS_10PT_ANNI',
+          effectType: 'SCORE_BONUS',
+          effectValue: 10,
+          title: 'Voucher Sinh Nhật +10 Điểm Học Thuật',
+          shortTitle: 'Voucher +10 Điểm',
+          icon: 'fa-solid fa-award',
+          iconColor: 'text-teal-500',
+          badgeClass: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
+          description: 'Cộng trực tiếp +10 điểm vào kết quả trắc nghiệm hoặc bài tập.'
+        },
+        {
+          giftId: 'DEADLINE_24H_ANNI',
+          effectType: 'EXTEND_DEADLINE',
+          effectValue: 24,
+          title: 'Thẻ Sinh Nhật Gia Hạn Deadline (+24h)',
+          shortTitle: 'Gia Hạn Deadline (+24h)',
+          icon: 'fa-regular fa-clock',
+          iconColor: 'text-emerald-500',
+          badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+          description: 'Bảo lưu tính đúng hạn khi nộp bài muộn tối đa 24 giờ.'
+        },
+        {
+          giftId: 'STREAK_SHIELD_3D',
+          effectType: 'STREAK_SHIELD',
+          effectValue: 3,
+          title: 'Khiên Bảo Toàn Chuỗi Học Tập (3 Ngày)',
+          shortTitle: 'Khiên Streak 3 Ngày',
+          icon: 'fa-solid fa-shield-heart',
+          iconColor: 'text-indigo-500',
+          badgeClass: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+          description: 'Tự động bảo vệ chuỗi ngày làm bài trắc nghiệm liên tục (Streak) nếu bạn lỡ quên 1-3 ngày.'
+        }
+      ]
+    }
   ]
 };
 
@@ -759,6 +976,46 @@ export function getLocalMockState() {
       }
       if (!parsed.memberQuizProfiles || !parsed.memberQuizProfiles.some(p => p.MSSV === '2351120015')) {
         parsed.memberQuizProfiles = JSON.parse(JSON.stringify(INITIAL_MOCK_DATA.memberQuizProfiles));
+        hasChanges = true;
+      }
+      // Tự động đồng bộ trường Sex và gift2010 cho members nếu store cũ bị thiếu hoặc chưa chuẩn
+      if (parsed.members && Array.isArray(parsed.members)) {
+        parsed.members.forEach(m => {
+          const initM = INITIAL_MOCK_DATA.members.find(x => x.MSSV === m.MSSV);
+          if (initM) {
+            if (initM.Sex && m.Sex !== initM.Sex) {
+              m.Sex = initM.Sex;
+              hasChanges = true;
+            }
+            if (!m.gift2010 && initM.gift2010) {
+              m.gift2010 = JSON.parse(JSON.stringify(initM.gift2010));
+              hasChanges = true;
+            } else if (!('gift2010' in m)) {
+              m.gift2010 = initM.gift2010 || null;
+              hasChanges = true;
+            }
+          }
+        });
+      }
+      // Tự động đồng bộ giftCode cho submissions mẫu nếu store cũ chưa có
+      if (parsed.submissions && Array.isArray(parsed.submissions)) {
+        parsed.submissions.forEach(sub => {
+          const initSub = INITIAL_MOCK_DATA.submissions.find(s => s.SubID === sub.SubID);
+          if (initSub && initSub.giftCode && !sub.giftCode) {
+            sub.giftCode = initSub.giftCode;
+            if (initSub.TenFile) sub.TenFile = initSub.TenFile;
+            if (initSub.Feedback) sub.Feedback = initSub.Feedback;
+            hasChanges = true;
+          }
+        });
+      }
+      // Tự động đồng bộ campaigns và activeCampaignId nếu store cũ chưa có
+      if (!parsed.campaigns || !Array.isArray(parsed.campaigns) || parsed.campaigns.length === 0) {
+        parsed.campaigns = JSON.parse(JSON.stringify(INITIAL_MOCK_DATA.campaigns));
+        hasChanges = true;
+      }
+      if (!parsed.activeCampaignId) {
+        parsed.activeCampaignId = INITIAL_MOCK_DATA.activeCampaignId || 'OCT20';
         hasChanges = true;
       }
       if (hasChanges) {
@@ -825,7 +1082,10 @@ export async function handleMockAction(action, payload) {
               ban: member.Ban || '',
               role: member.Role,
               trangThai: member.TrangThai,
-              ngayThamGia: member.NgayThamGia
+              ngayThamGia: member.NgayThamGia,
+              sex: member.Sex || 'male',
+              Sex: member.Sex || 'male',
+              gift2010: member.gift2010 || null
             }
           };
         }
@@ -900,7 +1160,10 @@ export async function handleMockAction(action, payload) {
           email: member.Email || 'sinhvien@gmail.com',
           role: member.Role,
           trangThai: member.TrangThai,
-          ngayThamGia: member.NgayThamGia
+          ngayThamGia: member.NgayThamGia,
+          sex: member.Sex || 'male',
+          Sex: member.Sex || 'male',
+          gift2010: member.gift2010 || null
         }
       };
     }
@@ -1206,7 +1469,8 @@ export async function handleMockAction(action, payload) {
         };
       }
       const currentTurn = existingSubs.length + 1;
-      const cleanFileName = `[${data.mssv}]_[${data.hoTen || 'ThanhVien'}]_Lan${currentTurn}_${data.fileName || 'BaiNop.zip'}`;
+      const giftTag = data.giftCode ? ` [🎁 Quà 20/10: ${data.giftCode}]` : '';
+      const cleanFileName = `[${data.mssv}]_[${data.hoTen || 'ThanhVien'}]_Lan${currentTurn}_${data.fileName || 'BaiNop.zip'}${giftTag}`;
 
       const newSub = {
         SubID: 'SUB_' + data.mssv + '_' + data.taskId + '_' + Date.now(),
@@ -1218,7 +1482,8 @@ export async function handleMockAction(action, payload) {
         DriveLink: 'https://drive.google.com/mock-upload-' + Date.now(),
         ThoiGianNop: new Date().toLocaleString('vi-VN'),
         TrangThaiDuyet: 'Pending',
-        Feedback: ''
+        Feedback: data.giftCode ? `[🎁 Quà 20/10: ${data.giftCode}]` : (data.feedback || ''),
+        giftCode: data.giftCode || ''
       };
       state.submissions.unshift(newSub);
       saveLocalMockState(state);
@@ -1555,6 +1820,51 @@ export async function handleMockAction(action, payload) {
       };
     }
 
+    case 'applyQuizBonusVoucher': {
+      const sessionId = String(data.sessionId || data.SessionID || '').trim();
+      const mssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+      const giftCode = String(data.giftCode || '').trim();
+
+      const quiz = (state.quizzes || []).find(q => q.SessionID === sessionId);
+      if (!quiz) {
+        return { success: false, message: 'Không tìm thấy bộ đề trắc nghiệm của buổi học!' };
+      }
+
+      const result = (state.quizResults || []).find(
+        r => r.QuizID === quiz.QuizID && String(r.MSSV).toUpperCase() === mssv
+      );
+      if (!result) {
+        return { success: false, message: 'Bạn chưa có bài thi chính thức để áp dụng voucher!' };
+      }
+
+      if (result.appliedGift2010) {
+        return { success: false, message: 'Bạn đã áp dụng Voucher 20/10 (+10 điểm) cho bài thi này rồi!' };
+      }
+
+      const oldScore = Number(result.DiemSo) || 0;
+      const newScore = Math.min(100, oldScore + 10);
+      result.DiemSo = newScore;
+      result.appliedGift2010 = true;
+      result.giftCode = giftCode;
+
+      // Đánh dấu quà đã dùng trong member
+      const member = (state.members || []).find(m => String(m.MSSV).toUpperCase() === mssv);
+      if (member && member.gift2010) {
+        if (typeof member.gift2010 === 'object') member.gift2010.used = true;
+      }
+
+      saveLocalMockState(state);
+      return {
+        success: true,
+        message: `Đã áp dụng Voucher 20/10 (+10 điểm)! Điểm thi của bạn tăng từ ${oldScore} lên ${newScore}/100.`,
+        data: {
+          newScore: newScore,
+          appliedGift2010: true,
+          result: result
+        }
+      };
+    }
+
     case 'getQuizResultsBySession': {
       const sessionId = String(data.sessionId || data.SessionID || '').trim();
       const quiz = (state.quizzes || []).find(q => q.SessionID === sessionId);
@@ -1807,6 +2117,255 @@ export async function handleMockAction(action, payload) {
         success: true,
         message: 'Đã xóa toàn bộ lịch sử câu hỏi làm sai!'
       };
+    }
+
+    case 'saveMemberGift': {
+      const targetMssv = String(data.userId || data.mssv || data.MSSV || '').trim().toUpperCase();
+      const giftData = data.giftData !== undefined ? data.giftData : data;
+      const mem = (state.members || []).find(m => String(m.MSSV || '').trim().toUpperCase() === targetMssv);
+      if (mem) {
+        mem.gift2010 = giftData;
+        saveLocalMockState(state);
+      }
+      return {
+        success: true,
+        data: giftData,
+        message: 'Đã lưu thông tin quà tặng thành công!'
+      };
+    }
+
+    // ====================================================================
+    // PHÂN HỆ SỰ KIỆN & ĐẶC QUYỀN HỌC THUẬT TỔNG QUÁT (CAMPAIGN & PRIVILEGES)
+    // ====================================================================
+    case 'getAllCampaigns': {
+      const defaultCampaigns = (state.campaigns || INITIAL_MOCK_DATA.campaigns || []).map(c => ({
+        ...c,
+        startDate: c.startDate || '2026-10-20T00:00',
+        endDate: c.endDate || '2026-10-21T23:59',
+        webLink: c.webLink || 'https://vnuf2-itc.edu.vn/app',
+        emailSubject: c.emailSubject || `[VNUF2-ITC] Thân chúc bạn ngày ${c.title} & Món quà học thuật đặc biệt 🌸`,
+        emailTemplate: c.emailTemplate || `Thân gửi {HoTen} (MSSV: {MSSV}),\n\nNhân dịp {TenSuKien}, Ban Học Thuật - CLB Tin học VNUF2 thân chúc bạn luôn tràn đầy niềm vui, sức khỏe và đạt nhiều kết quả học tập xuất sắc!\n\n🎁 Ban gửi tặng riêng bạn một Hộp Quà May Mắn Bí Ẩn trên Cổng Học Thuật. Bên trong chứa những đặc quyền học thuật và phần quà bất ngờ dành riêng cho bạn đang chờ tự tay khám phá!\n\n👉 Hãy truy cập ngay Cổng Quản Lý Học Thuật theo đường link dưới đây để tự tay bấm mở hộp quà nhé:\n{LinkWeb}\n\nThân ái,\nBan Học Thuật - CLB Tin Học VNUF2`
+      }));
+
+      return {
+        success: true,
+        data: {
+          activeCampaignId: state.activeCampaignId || 'OCT20',
+          campaigns: defaultCampaigns,
+          lastEmailDispatch: state.lastEmailDispatch || null
+        }
+      };
+    }
+
+    case 'getActiveCampaign': {
+      const activeId = state.activeCampaignId || 'OCT20';
+      if (activeId === 'NONE') {
+        return { success: true, data: null, activeCampaignId: 'NONE' };
+      }
+      const campaigns = state.campaigns || INITIAL_MOCK_DATA.campaigns;
+      const campaign = campaigns.find(c => c.id === activeId) || campaigns[0];
+      return {
+        success: true,
+        data: campaign,
+        activeCampaignId: activeId
+      };
+    }
+
+    case 'setActiveCampaign': {
+      const targetId = String(data.campaignId || data.id || 'OCT20').trim().toUpperCase();
+      state.activeCampaignId = targetId;
+      if (data.startDate) {
+        state.campaigns = (state.campaigns || INITIAL_MOCK_DATA.campaigns).map(c => 
+          c.id === targetId ? { ...c, startDate: data.startDate, endDate: data.endDate || c.endDate } : c
+        );
+      }
+      saveLocalMockState(state);
+      const campaigns = state.campaigns || INITIAL_MOCK_DATA.campaigns;
+      const matched = campaigns.find(c => c.id === targetId);
+      const title = matched ? matched.title : (targetId === 'NONE' ? 'Đã tắt sự kiện' : targetId);
+      return {
+        success: true,
+        activeCampaignId: targetId,
+        message: `Đã kích hoạt sự kiện: "${title}"!`
+      };
+    }
+
+    case 'saveCampaignConfig': {
+      const targetId = String(data.campaignId || data.id || 'OCT20').trim().toUpperCase();
+      const campaigns = state.campaigns || INITIAL_MOCK_DATA.campaigns;
+      let updatedCamp = null;
+      state.campaigns = campaigns.map(c => {
+        if (c.id === targetId) {
+          updatedCamp = {
+            ...c,
+            ...(data.startDate ? { startDate: data.startDate } : {}),
+            ...(data.endDate ? { endDate: data.endDate } : {}),
+            ...(data.emailSubject ? { emailSubject: data.emailSubject } : {}),
+            ...(data.emailTemplate ? { emailTemplate: data.emailTemplate } : {}),
+            ...(data.targetAudience ? { targetAudience: data.targetAudience } : {}),
+            ...(data.webLink ? { webLink: data.webLink } : {})
+          };
+          return updatedCamp;
+        }
+        return c;
+      });
+
+      if (data.setActive) {
+        state.activeCampaignId = targetId;
+      }
+      saveLocalMockState(state);
+
+      return {
+        success: true,
+        message: 'Đã lưu cấu hình lịch trình & nội dung thư sự kiện thành công!',
+        data: updatedCamp || { id: targetId }
+      };
+    }
+
+    case 'sendEventBulkEmail': {
+      const campaignId = String(data.campaignId || state.activeCampaignId || 'OCT20').trim().toUpperCase();
+      const campaigns = state.campaigns || INITIAL_MOCK_DATA.campaigns;
+      const campaign = campaigns.find(c => c.id === campaignId) || campaigns[0] || {};
+      const targetFilter = String(data.targetFilter || campaign.targetAudience || 'all').toLowerCase();
+      const subject = data.subject || campaign.emailSubject || `[VNUF2-ITC] Thân chúc mừng sự kiện ${campaign.title}`;
+      const template = data.template || campaign.emailTemplate || '';
+
+      const members = state.members || [];
+      let targetMembers = members;
+      if (targetFilter === 'female') {
+        targetMembers = members.filter(m => String(m.Sex || '').trim().toLowerCase() === 'female');
+      }
+
+      const logs = [];
+      let sentCount = 0;
+      let skippedNoEmailCount = 0;
+
+      for (const m of targetMembers) {
+        const email = String(m.Email || '').trim();
+        const hasValidEmail = email && email.includes('@');
+        const mssv = String(m.MSSV || '').trim();
+        const voucherCode = `ITC-${campaignId}-${mssv.slice(-5) || '99999'}`;
+        const giftTitle = (campaign.gifts && campaign.gifts[0]) ? campaign.gifts[0].title : 'Quà Đặc Quyền Học Thuật';
+
+        if (hasValidEmail) {
+          sentCount++;
+          logs.push({
+            mssv: m.MSSV,
+            hoTen: m.HoTen,
+            email: email,
+            status: 'SENT',
+            deliveryType: 'Tự mở trên Web',
+            giftTitle: giftTitle,
+            claimCode: '(Chờ mở trên web)',
+            sentAt: new Date().toLocaleTimeString('vi-VN')
+          });
+        } else {
+          skippedNoEmailCount++;
+          logs.push({
+            mssv: m.MSSV,
+            hoTen: m.HoTen,
+            email: '(Chưa cập nhật)',
+            status: 'SKIPPED_NO_EMAIL',
+            deliveryType: 'Tự mở trên Web',
+            giftTitle: giftTitle,
+            claimCode: '(Chờ mở trên web)',
+            sentAt: null
+          });
+        }
+      }
+
+      state.lastEmailDispatch = {
+        campaignId,
+        subject,
+        targetFilter,
+        dispatchedAt: new Date().toISOString(),
+        totalTarget: targetMembers.length,
+        sentCount,
+        skippedNoEmailCount,
+        logs
+      };
+      saveLocalMockState(state);
+
+      return {
+        success: true,
+        message: `Đã gửi thành công ${sentCount} email tới các thành viên! (${skippedNoEmailCount} bạn thiếu email)`,
+        data: state.lastEmailDispatch
+      };
+    }
+
+    case 'redeemPrivilegeVoucher': {
+      const voucherCode = String(data.voucherCode || data.giftCode || '').trim();
+      const targetType = String(data.targetType || 'QUIZ').trim().toUpperCase(); // 'QUIZ' | 'SUBMISSION'
+      const targetId = String(data.targetId || data.sessionId || data.taskId || '').trim();
+      const mssv = String(data.mssv || data.MSSV || '').trim().toUpperCase();
+      const effectType = String(data.effectType || 'SCORE_BONUS').trim().toUpperCase();
+      const effectValue = Number(data.effectValue) || 10;
+
+      if (!voucherCode) {
+        return { success: false, message: 'Thiếu mã voucher đặc quyền!' };
+      }
+
+      if (targetType === 'QUIZ') {
+        const quiz = (state.quizzes || []).find(q => q.SessionID === targetId || q.QuizID === targetId);
+        if (!quiz) {
+          return { success: false, message: 'Không tìm thấy bộ đề trắc nghiệm của buổi học!' };
+        }
+        const result = (state.quizResults || []).find(
+          r => r.QuizID === quiz.QuizID && String(r.MSSV).toUpperCase() === mssv
+        );
+        if (!result) {
+          return { success: false, message: 'Bạn chưa có bài thi chính thức để áp dụng voucher!' };
+        }
+        if (result.appliedGift2010 || result.appliedVoucherCode) {
+          return { success: false, message: 'Bài thi này đã được áp dụng voucher trước đó!' };
+        }
+
+        const oldScore = Number(result.DiemSo) || 0;
+        const newScore = Math.min(100, oldScore + effectValue);
+        result.DiemSo = newScore;
+        result.appliedGift2010 = true;
+        result.appliedVoucherCode = voucherCode;
+        result.giftCode = voucherCode;
+
+        // Đánh dấu quà đã dùng
+        const member = (state.members || []).find(m => String(m.MSSV).toUpperCase() === mssv);
+        if (member && member.gift2010) {
+          if (typeof member.gift2010 === 'object') member.gift2010.used = true;
+        }
+
+        saveLocalMockState(state);
+        return {
+          success: true,
+          message: `Đã áp dụng Voucher đặc quyền (+${effectValue} điểm)! Điểm thi tăng từ ${oldScore} lên ${newScore}/100.`,
+          data: {
+            newScore,
+            appliedGift2010: true,
+            appliedVoucherCode: voucherCode
+          }
+        };
+      } else if (targetType === 'SUBMISSION') {
+        const sub = (state.submissions || []).find(s => (s.SubID === targetId || s.TaskID === targetId) && String(s.MSSV).toUpperCase() === mssv);
+        if (sub) {
+          sub.giftCode = voucherCode;
+          sub.appliedVoucherCode = voucherCode;
+          if (effectType === 'EXTEND_DEADLINE') {
+            sub.Feedback = (sub.Feedback ? sub.Feedback + ' - ' : '') + `[ĐÃ DUYỆT GIA HẠN +${effectValue}H] Áp dụng Voucher ${voucherCode} (On-time).`;
+          } else if (effectType === 'SCORE_BONUS') {
+            sub.Feedback = (sub.Feedback ? sub.Feedback + ' - ' : '') + `[+${effectValue} ĐIỂM VOUCHER] Áp dụng đặc quyền ${voucherCode}.`;
+          } else {
+            sub.Feedback = (sub.Feedback ? sub.Feedback + ' - ' : '') + `[XÁC NHẬN ĐẶC QUYỀN] Áp dụng Voucher ${voucherCode}.`;
+          }
+          saveLocalMockState(state);
+          return {
+            success: true,
+            message: `Đã áp dụng voucher đặc quyền vào bài nộp thành công!`,
+            data: sub
+          };
+        }
+        return { success: false, message: 'Không tìm thấy bài nộp tương ứng!' };
+      }
+
+      return { success: false, message: 'Loại mục tiêu không được hỗ trợ!' };
     }
 
     default:

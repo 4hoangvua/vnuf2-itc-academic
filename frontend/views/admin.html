@@ -6,9 +6,10 @@
     <!-- Brand Header -->
     <div class="h-16 px-4 border-b border-hairline flex items-center justify-between gap-2 overflow-hidden sidebar-header shrink-0">
       <div class="flex items-center gap-3 min-w-0 sidebar-brand-box">
-        <div class="w-9 h-9 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm sidebar-logo">
+        <div class="relative w-9 h-9 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center shrink-0 shadow-sm sidebar-logo">
           <img src="./assets/images/logo-clb.png" alt="Admin Portal - CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
           <i class="fa-solid fa-crown text-accent text-sm hidden"></i>
+          <span class="bht-oct20-corner-flower" title="Chào mừng Ngày Phụ Nữ Việt Nam 20/10! 🌸">🌸</span>
         </div>
         <div class="overflow-hidden sidebar-text">
           <div class="flex items-center gap-1.5">
@@ -82,9 +83,22 @@
           <span class="truncate sidebar-text">Kho học liệu &amp; Slide</span>
         </div>
       </button>
+
+      <button 
+        data-action="switch-admin-tab"
+        data-tab="campaigns"
+        id="admin-tab-btn-campaigns" 
+        class="bht-nav-item justify-between"
+        title="Sự kiện & Gửi Email"
+      >
+        <div class="flex items-center gap-2.5 truncate sidebar-nav-content">
+          <i class="fa-solid fa-wand-magic-sparkles w-4 text-center text-ink-muted shrink-0"></i>
+          <span class="truncate sidebar-text">Sự kiện &amp; Email</span>
+        </div>
+      </button>
     </nav>
 
-    <!-- Nút Chuyển sang Giao diện Thành viên (Chế độ Xem thử nghiệm cho Admin) -->
+    <!-- Nút Chuyển sang Giao diện Thành viên cho Admin -->
     <div class="px-3 py-2 border-t border-hairline sidebar-switch-role-box">
       <button 
         data-action="switch-to-member-view"
@@ -143,9 +157,10 @@
   <!-- ==================== MOBILE TOPBAR (< 768px) ==================== -->
   <header class="md:hidden sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-hairline px-4 h-14 flex items-center justify-between">
     <div class="flex items-center gap-2">
-      <div class="w-8 h-8 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+      <div class="relative w-8 h-8 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center shrink-0 shadow-sm">
         <img src="./assets/images/logo-clb.png" alt="Admin Portal - CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
         <i class="fa-solid fa-crown text-accent text-xs hidden"></i>
+        <span class="bht-oct20-corner-flower" title="Chào mừng 20/10! 🌸">🌸</span>
       </div>
       <div>
         <h1 class="bht-heading-serif text-sm font-semibold text-ink leading-tight">Admin Portal</h1>
@@ -206,6 +221,15 @@
     >
       <i class="fa-solid fa-book-bookmark text-base"></i>
       <span class="text-[11px]">Học liệu</span>
+    </button>
+    <button 
+      data-action="switch-admin-tab"
+      data-tab="campaigns"
+      class="flex flex-col items-center justify-center gap-1 py-1 text-xs text-ink-muted hover:text-ink font-medium transition-colors"
+      data-mobile-admin-tab="campaigns"
+    >
+      <i class="fa-solid fa-wand-magic-sparkles text-base"></i>
+      <span class="text-[11px]">Sự kiện</span>
     </button>
   </nav>
 
@@ -629,6 +653,37 @@
 
     <!-- ==================== TAB 3: QUẢN LÝ THÀNH VIÊN ==================== -->
     <section id="admin-tab-members" class="hidden space-y-4">
+      <!-- Banner Thống Kê & Đặc Quyền Quà 20/10 Dành Cho Nữ -->
+      <div id="admin-gift-2010-stat-card" class="bht-card p-4 bg-gradient-to-r from-rose-500/10 via-pink-500/5 to-teal-500/10 border border-rose-400/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-pink-500/15 text-pink-600 dark:text-pink-400 flex items-center justify-center text-xl shrink-0 border border-pink-500/25">
+            🌸
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h4 class="font-bold text-xs sm:text-sm text-ink flex items-center gap-1.5">
+                <span>Easter Egg 20/10 · Đặc Quyền Thành Viên Nữ</span>
+              </h4>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30">
+                Ban Học Thuật VNUF2
+              </span>
+            </div>
+            <p class="text-[11px] text-ink-muted mt-0.5">
+              Theo dõi tình trạng nhận hộp quà, mã thẻ voucher và quyền gia hạn / cộng điểm của các bạn nữ trong CLB.
+            </p>
+          </div>
+        </div>
+        <div id="admin-gift-2010-stat-badge" class="shrink-0 flex items-center gap-2">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Card Điều Khiển Bộ Chọn Sự Kiện (Campaign Manager Engine) -->
+      <div id="admin-campaign-selector-card" class="bht-card p-4 bg-surface border border-hairline shadow-xs">
+        <div id="admin-campaign-selector-container">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
       <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-hairline">
         <div class="relative w-full max-w-xs">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-faint">
@@ -716,6 +771,12 @@
         <!-- Rendered via renderAdminDocsGrid() -->
       </div>
       <div id="admin-docs-pagination"></div>
+    </section>
+
+    <!-- ==================== TAB 5: QUẢN LÝ SỰ KIỆN & GỬI THƯ (CAMPAIGN & MAILER) ==================== -->
+    <section id="admin-tab-campaigns" class="hidden space-y-6">
+      <div id="admin-campaign-selector-card" class="hidden"></div>
+      <!-- Rendered dynamically via renderAdminCampaignTabContent() -->
     </section>
 
   </main>
@@ -1106,6 +1167,35 @@
       <div class="pt-2 border-t border-hairline/60 flex items-center justify-between text-ink-muted">
         <span>Mã nhiệm vụ:</span>
         <span id="drawer-task-id" class="font-mono font-bold text-accent">TASK_ID</span>
+      </div>
+    </div>
+
+    <!-- Card Huy hiệu & Đặc quyền 20/10 (Tự động hiển thị nếu bài nộp có áp dụng quà) -->
+    <div id="drawer-gift-2010-container" class="hidden bht-card p-4 bg-gradient-to-r from-rose-500/10 via-pink-500/5 to-teal-500/10 border border-rose-400/40 space-y-2.5 animate-fade-in shadow-xs">
+      <div class="flex items-center justify-between">
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30">
+          <span>🌸</span>
+          <span>ĐẶC QUYỀN QUÀ 20/10</span>
+        </span>
+        <span id="drawer-gift-code" class="font-mono font-bold text-rose-600 dark:text-rose-400 text-xs">ITC2010-XXXXX</span>
+      </div>
+      <div>
+        <h4 id="drawer-gift-title" class="text-xs font-bold text-ink flex items-center gap-1.5">
+          <i class="fa-solid fa-gift text-rose-500"></i>
+          <span>Voucher Quà Tặng</span>
+        </h4>
+        <p id="drawer-gift-desc" class="text-[11px] text-ink-muted mt-1 leading-relaxed"></p>
+      </div>
+      <div id="drawer-gift-quick-actions" class="pt-1.5 border-t border-rose-300/30 dark:border-rose-800/30 flex items-center gap-2">
+        <button 
+          type="button" 
+          id="btn-apply-bonus-feedback"
+          data-action="apply-bonus-10pt-feedback" 
+          class="bht-btn bht-btn-xs bg-rose-600 hover:bg-rose-500 text-white font-semibold shadow-xs"
+          title="Tự động thêm ghi chú cộng +10 điểm vào ô nhận xét"
+        >
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Áp dụng +10 điểm vào nhận xét
+        </button>
       </div>
     </div>
 
@@ -1541,6 +1631,18 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Modal Hộp Quà 20/10 Dành Cho Nữ (Dành cho Admin xem / test trực tiếp) -->
+<div id="modal-gift-2010" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-2.5 sm:p-4 md:p-6">
+  <div class="bht-card bg-elevated max-w-2xl sm:max-w-3xl lg:max-w-4xl w-full p-3.5 sm:p-6 md:p-8 lg:p-10 shadow-[var(--shadow-float)] border border-rose-400/30 relative animate-fade-in overflow-hidden max-h-[92vh] overflow-y-auto">
+    <button type="button" data-action="close-gift-modal" class="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-20 bht-btn bht-btn-ghost bht-btn-icon text-ink-muted hover:text-ink" title="Đóng">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+    <div id="gift-2010-modal-body">
+      <!-- Nội dung render động từ gift2010.js -->
+    </div>
   </div>
 </div>
 

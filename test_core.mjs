@@ -40,7 +40,7 @@ import {
 } from './frontend/modules/templates.js';
 import { calculateDrlProgress, getMemberSubmissionsForTask } from './frontend/modules/member.js';
 import { getLatestSubmissionsPerMember } from './frontend/modules/admin.js';
-import { mockCallApi, getLocalMockState } from './frontend/services/mockData.js';
+import { mockCallApi, getLocalMockState, INITIAL_MOCK_DATA } from './frontend/services/mockData.js';
 
 let failed = 0;
 let passed = 0;
@@ -1122,6 +1122,348 @@ assert('admin.html has #edit-quiz-exam-questions-count input', adminHtmlContentL
 assert('adminQuiz.js passes soCauThi in saveQuiz', adminQuizJsContentLocal.includes('soCauThi'));
 assert('Service_Quiz.js limits unsubmitted exam pool to SoCauThi', gasQuizServiceContent.includes('Number(quizObj.SoCauThi)'));
 assert('memberQuiz.js implements Local-First instant evaluation in practice mode', memberQuizJsContentLocal.includes('Chấm điểm tại chỗ tức thì (Local-First: 0ms latency'));
+
+// --- 19. Testing 20/10 Academic Easter Egg & Deterministic Gift Module ---
+console.log('\n--- 19. Testing 20/10 Academic Easter Egg & Deterministic Gift Module ---');
+
+const { 
+  ACADEMIC_GIFTS_2010, 
+  hashString, 
+  isFemaleMember, 
+  getDeterministicGiftForUser, 
+  getClaimedGift, 
+  renderGift2010Banner, 
+  renderGift2010ModalContent,
+  renderGift2010UnboxingStage,
+  startGiftCardShuffleAnimation,
+  stopGiftCardShuffleAnimation
+} = await import('./frontend/modules/gift2010.js');
+
+const { renderMemberRow } = await import('./frontend/modules/templates.js');
+
+// 19.1 Mutation Map & Types
+assert('MUTATION_INVALIDATION_MAP contains saveMemberGift', Array.isArray(MUTATION_INVALIDATION_MAP.saveMemberGift) && MUTATION_INVALIDATION_MAP.saveMemberGift.includes('getAllMembers'));
+
+const mockMembers = INITIAL_MOCK_DATA.members;
+const thuTrang = mockMembers.find(m => m.MSSV === '2251120002');
+const phuongAnh = mockMembers.find(m => m.MSSV === '2351120028');
+const dinhHoang = mockMembers.find(m => m.MSSV === '257480104007');
+
+assert('INITIAL_MOCK_DATA defines Sex: female for Thu Trang', thuTrang && thuTrang.Sex === 'female');
+assert('INITIAL_MOCK_DATA defines Sex: female for Phuong Anh', phuongAnh && phuongAnh.Sex === 'female');
+assert('INITIAL_MOCK_DATA defines Sex: male for Dinh Hoang', dinhHoang && dinhHoang.Sex === 'male');
+assert('INITIAL_MOCK_DATA members have gift2010 field initialized', mockMembers.every(m => 'gift2010' in m));
+
+// 19.2 Gender Identification Logic (isFemaleMember)
+assert('isFemaleMember returns true for female members', isFemaleMember(thuTrang) === true && isFemaleMember(phuongAnh) === true);
+assert('isFemaleMember returns false for male members', isFemaleMember(dinhHoang) === false);
+assert('isFemaleMember returns true only when Sex is female', isFemaleMember({ Sex: 'female' }) === true && isFemaleMember({ Sex: 'male' }) === false);
+
+// 19.3 Deterministic Gift Algorithm
+assert('ACADEMIC_GIFTS_2010 defines 3 academic gift types', ACADEMIC_GIFTS_2010.length === 3);
+const giftTypes = ['DEADLINE_24H', 'BONUS_10PT', 'VIP_DEBUG'];
+assert('ACADEMIC_GIFTS_2010 includes all specified gift IDs', giftTypes.every(id => ACADEMIC_GIFTS_2010.some(g => g.id === id)));
+
+const giftCall1 = getDeterministicGiftForUser(phuongAnh);
+const giftCall2 = getDeterministicGiftForUser(phuongAnh);
+assert('getDeterministicGiftForUser is deterministic across multiple calls', giftCall1.giftId === giftCall2.giftId && giftCall1.claimCode === giftCall2.claimCode);
+assert('Deterministic claimCode format matches ITC2010-XXXXX-YYY', /^ITC2010-\d{5}-\d{3}$/.test(giftCall1.claimCode));
+
+// 19.4 Mock Action saveMemberGift & Persistence
+const testGiftData = {
+  giftId: giftCall1.giftId,
+  giftTitle: giftCall1.giftTitle,
+  claimCode: giftCall1.claimCode,
+  claimedAt: new Date().toISOString(),
+  used: false
+};
+const saveGiftRes = await mockCallApi('saveMemberGift', { userId: '2351120028', giftData: testGiftData });
+assert('mockCallApi saveMemberGift succeeds', saveGiftRes && saveGiftRes.success === true);
+
+const updatedMembersRes = await mockCallApi('getAllMembers');
+const savedMember = (updatedMembersRes.data || []).find(m => m.MSSV === '2351120028');
+assert('saveMemberGift updates member gift2010 in mock state', savedMember && savedMember.gift2010 && savedMember.gift2010.claimCode === giftCall1.claimCode);
+
+// 19.5 Task Submission with Gift Code Attached
+const subWithGiftRes = await mockCallApi('submitTaskAssignment', {
+  taskId: 'TASK_20261015_001',
+  mssv: '2351120028',
+  hoTen: 'Phạm Phương Anh',
+  email: 'phuonganh.cntt@gmail.com',
+  fileName: 'BaoCaoTuan1.pdf',
+  giftCode: giftCall1.claimCode
+});
+assert('submitTaskAssignment accepts giftCode', subWithGiftRes && subWithGiftRes.success === true);
+const allSubsRes = await mockCallApi('getAllSubmissions');
+const attachedSub = (allSubsRes.data || []).find(s => s.SubID === subWithGiftRes.subId);
+assert('Attached submission records 20/10 gift tag', attachedSub && (attachedSub.Feedback.includes(giftCall1.claimCode) || attachedSub.TenFile.includes(giftCall1.claimCode)));
+
+// 19.6 UI Banner & Admin Table Badge Rendering
+const femaleBannerHtml = renderGift2010Banner(phuongAnh);
+assert('renderGift2010Banner for female contains 20/10 celebration', femaleBannerHtml.includes('20/10 • Ngày Phụ Nữ Việt Nam') && femaleBannerHtml.includes('open-gift-modal'));
+
+const claimedFemaleBannerHtml = renderGift2010Banner({
+  ...phuongAnh,
+  gift2010: giftCall1
+});
+assert('renderGift2010Banner for claimed female displays reward pill', claimedFemaleBannerHtml.includes('🎁 Đã sở hữu:') && claimedFemaleBannerHtml.includes(giftCall1.claimCode));
+
+const maleBannerHtml = renderGift2010Banner(dinhHoang);
+assert('renderGift2010Banner for male contains warm reminder and IT wish button', maleBannerHtml.includes('Anh em CLB Tin học VNUF2 đừng quên') && !maleBannerHtml.includes('open-gift-modal') && maleBannerHtml.includes('random-male-wish'));
+
+const memberRowHtml = renderMemberRow(savedMember);
+assert('renderMemberRow renders gift badge with claimCode for member with gift2010', memberRowHtml.includes(giftCall1.claimCode) && memberRowHtml.includes('🎁'));
+
+// 19.7 DOM Template & App Action Wiring
+const memberHtmlStr = fs.readFileSync('./frontend/views/member.html', 'utf8');
+const appJsStr = fs.readFileSync('./frontend/app.js', 'utf8');
+
+assert('member.html contains #member-oct20-banner-container', memberHtmlStr.includes('id="member-oct20-banner-container"'));
+assert('member.html contains #modal-gift-2010', memberHtmlStr.includes('id="modal-gift-2010"'));
+assert('member.html contains #submit-gift-2010-checkbox', memberHtmlStr.includes('id="submit-gift-2010-checkbox"'));
+assert('member.html includes .bht-oct20-corner-flower on logo', memberHtmlStr.includes('bht-oct20-corner-flower'));
+assert('app.js registers open-gift-modal action', appJsStr.includes("'open-gift-modal':"));
+assert('app.js registers close-gift-modal action', appJsStr.includes("'close-gift-modal':"));
+assert('app.js registers copy-gift-code action', appJsStr.includes("'copy-gift-code':"));
+assert('app.js registers reset-gift-2010 action', appJsStr.includes("'reset-gift-2010':"));
+assert('app.js registers preview-gift-2010 action', appJsStr.includes("'preview-gift-2010':"));
+assert('app.js registers apply-quiz-bonus-voucher action', appJsStr.includes("'apply-quiz-bonus-voucher':"));
+assert('app.js registers random-male-wish action', appJsStr.includes("'random-male-wish':"));
+assert('app.js registers shuffle-2010-wish action', appJsStr.includes("'shuffle-2010-wish':"));
+assert('app.js registers replay-gift-unboxing action', appJsStr.includes("'replay-gift-unboxing':"));
+assert('app.js registers skip-gift-shuffle action', appJsStr.includes("'skip-gift-shuffle':"));
+assert('member.html modal-gift-2010 has enlarged layout', memberHtmlStr.includes('max-w-2xl sm:max-w-3xl lg:max-w-4xl'));
+assert('renderGift2010UnboxingStage renders 3D shuffle arena and cards', typeof renderGift2010UnboxingStage === 'function' && renderGift2010UnboxingStage().includes('bht-shuffle-arena'));
+assert('startGiftCardShuffleAnimation is a valid callable function', typeof startGiftCardShuffleAnimation === 'function');
+assert('stopGiftCardShuffleAnimation is a valid callable function', typeof stopGiftCardShuffleAnimation === 'function');
+
+// 19.8 Testing applyQuizBonusVoucher API
+await mockCallApi('submitQuiz', {
+  sessionId: 'MEET_20261008_190000',
+  mssv: '2351120015',
+  hoTen: 'Vũ Hoàng Long',
+  answers: { 1: 1, 2: 1, 3: 0, 4: 1, 5: 1, 6: 2, 7: 1, 8: 1 },
+  durationSeconds: 95,
+  isPractice: false
+});
+
+const bonusRes = await mockCallApi('applyQuizBonusVoucher', {
+  sessionId: 'MEET_20261008_190000',
+  mssv: '2351120015',
+  giftCode: 'ITC2010-88888-999'
+});
+assert('mockCallApi applyQuizBonusVoucher succeeds', bonusRes && bonusRes.success === true && bonusRes.data.appliedGift2010 === true);
+
+// --------------------------------------------------------------------
+// 20. Testing Universal Event & Academic Privilege Campaigns System
+// --------------------------------------------------------------------
+console.log('\n--- 20. Testing Universal Event & Academic Privilege Campaigns System ---');
+
+const {
+  CAMPAIGNS_CATALOG,
+  getActiveCampaign,
+  getActiveCampaignId,
+  renderAdminCampaignSelector
+} = await import('./frontend/modules/gift2010.js');
+
+assert('CAMPAIGNS_CATALOG contains OCT20 campaign', !!CAMPAIGNS_CATALOG.OCT20);
+assert('CAMPAIGNS_CATALOG contains TET campaign', !!CAMPAIGNS_CATALOG.TET);
+assert('CAMPAIGNS_CATALOG contains MARCH8 campaign', !!CAMPAIGNS_CATALOG.MARCH8);
+assert('CAMPAIGNS_CATALOG contains ANNIVERSARY campaign', !!CAMPAIGNS_CATALOG.ANNIVERSARY);
+
+// 20.1 Test getAllCampaigns
+const allCampsRes = await mockCallApi('getAllCampaigns', {});
+assert('getAllCampaigns returns list of campaigns and activeCampaignId', allCampsRes.success && Array.isArray(allCampsRes.data.campaigns));
+
+// 20.2 Test setActiveCampaign (Chuyển sang TET)
+const setTetRes = await mockCallApi('setActiveCampaign', { campaignId: 'TET' });
+assert('setActiveCampaign sets active campaign to TET', setTetRes.success && setTetRes.activeCampaignId === 'TET');
+
+const activeTet = await mockCallApi('getActiveCampaign', {});
+assert('getActiveCampaign reflects TET campaign', activeTet.success && activeTet.data && activeTet.data.id === 'TET');
+
+// 20.3 Test redeemPrivilegeVoucher on Submission
+const redeemSubRes = await mockCallApi('redeemPrivilegeVoucher', {
+  voucherCode: 'ITC-TET-2027-GOLD',
+  targetType: 'SUBMISSION',
+  targetId: 'SUB_20261016_120000',
+  mssv: '2351120028',
+  effectType: 'EXTEND_DEADLINE',
+  effectValue: 48
+});
+assert('redeemPrivilegeVoucher applies deadline extension to submission', redeemSubRes.success && redeemSubRes.data.Feedback.includes('+48H'));
+
+// 20.4 Test renderAdminCampaignSelector
+const selectorHtml = renderAdminCampaignSelector('TET');
+assert('renderAdminCampaignSelector renders TET and OCT20 buttons', selectorHtml.includes('data-campaign-id="TET"') && selectorHtml.includes('data-campaign-id="OCT20"'));
+
+// Đưa về OCT20 để giữ trạng thái chuẩn
+await mockCallApi('setActiveCampaign', { campaignId: 'OCT20' });
+
+const adminHtmlStr = fs.readFileSync('./frontend/views/admin.html', 'utf8');
+assert('admin.html contains #admin-campaign-selector-card', adminHtmlStr.includes('id="admin-campaign-selector-card"'));
+assert('app.js registers switch-admin-campaign action', appJsStr.includes("'switch-admin-campaign':"));
+
+// --------------------------------------------------------------------
+// 21. Testing Clean Gift Tools & Student Quiz Ranking Spotlight
+// --------------------------------------------------------------------
+console.log('\n--- 21. Testing Clean Gift Tools & Student Quiz Ranking Spotlight ---');
+
+// 21.1 Admin Sidebar & Header has NO open-gift-modal
+assert('admin.html has NO open-gift-modal in sidebar or header', !adminHtmlStr.includes('data-action="open-gift-modal"'));
+
+// 21.2 Member Gift modal has NO dev testing/reset buttons
+const modalGiftHtml = renderGift2010ModalContent({
+  giftId: 'BONUS_10PT',
+  giftTitle: 'Voucher +10 Điểm Trắc Nghiệm',
+  claimCode: 'ITC2010-12345-678'
+}, { hoTen: 'Nguyễn Thu Trang' });
+assert('renderGift2010ModalContent has NO reset-gift-2010 button', !modalGiftHtml.includes('reset-gift-2010'));
+assert('renderGift2010ModalContent has NO preview-gift-2010 button', !modalGiftHtml.includes('preview-gift-2010'));
+assert('renderGift2010ModalContent renders Personalized Greeting Box', modalGiftHtml.includes('Thân tặng bông hồng công nghệ:') && modalGiftHtml.includes('shuffle-2010-wish'));
+assert('renderGift2010ModalContent renders Coupon Ticket with cutouts and stamp', modalGiftHtml.includes('bht-ticket-cutout-left') && modalGiftHtml.includes('VERIFIED • BAN HỌC THUẬT ITC'));
+assert('renderGift2010ModalContent copy button has data-full-share attribute', modalGiftHtml.includes('data-full-share=') && modalGiftHtml.includes('gift-2010-code-text'));
+
+// 21.3 renderMemberQuizView shows student rank in top 5
+const mockLeaderboardTop5 = [
+  { MSSV: '2351120015', HoTen: 'Vũ Hoàng Long', DiemSo: 100, ThoiGianLamGiay: 90 },
+  { MSSV: '2351120028', HoTen: 'Nguyễn Thu Trang', DiemSo: 90, ThoiGianLamGiay: 85 }
+];
+const top5ViewHtml = renderMemberQuizView({
+  QuizID: 'QUIZ_01',
+  SessionID: 'MEET_01',
+  TieuDe: 'Trắc nghiệm OOP C++',
+  DanhSachCauHoi: [{ id: 1, cauHoi: 'Q1' }],
+  TrangThai: 'Open'
+}, {
+  MSSV: '2351120015',
+  DiemSo: 100,
+  SoCauDung: 1,
+  TongSoCau: 1,
+  IsOfficial: true
+}, {
+  sessionId: 'MEET_01',
+  leaderboard: mockLeaderboardTop5,
+  currentMssv: '2351120015'
+});
+assert('renderMemberQuizView displays student rank in spotlight', top5ViewHtml.includes('Hạng #1'));
+assert('renderMemberQuizView highlights student row with Bạn badge', top5ViewHtml.includes('Bạn</span>'));
+
+// 21.4 renderMemberQuizView displays student rank even when outside top 5
+const mockLeaderboardLong = [
+  { MSSV: 'SV01', HoTen: 'SV 1', DiemSo: 100, ThoiGianLamGiay: 50 },
+  { MSSV: 'SV02', HoTen: 'SV 2', DiemSo: 95, ThoiGianLamGiay: 55 },
+  { MSSV: 'SV03', HoTen: 'SV 3', DiemSo: 90, ThoiGianLamGiay: 60 },
+  { MSSV: 'SV04', HoTen: 'SV 4', DiemSo: 85, ThoiGianLamGiay: 65 },
+  { MSSV: 'SV05', HoTen: 'SV 5', DiemSo: 80, ThoiGianLamGiay: 70 },
+  { MSSV: 'SV06', HoTen: 'SV 6', DiemSo: 75, ThoiGianLamGiay: 75 },
+  { MSSV: '2351120099', HoTen: 'Lê Văn Tám', DiemSo: 70, ThoiGianLamGiay: 80 }
+];
+const outOfTop5Html = renderMemberQuizView({
+  QuizID: 'QUIZ_01',
+  SessionID: 'MEET_01',
+  TieuDe: 'Trắc nghiệm OOP C++',
+  DanhSachCauHoi: [{ id: 1, cauHoi: 'Q1' }],
+  TrangThai: 'Open'
+}, {
+  MSSV: '2351120099',
+  DiemSo: 70,
+  SoCauDung: 7,
+  TongSoCau: 10,
+  IsOfficial: true
+}, {
+  sessionId: 'MEET_01',
+  leaderboard: mockLeaderboardLong,
+  currentMssv: '2351120099'
+});
+assert('renderMemberQuizView displays rank #7 in spotlight', outOfTop5Html.includes('Hạng #7'));
+assert('renderMemberQuizView displays separator dots for out-of-top-5', outOfTop5Html.includes('• • •'));
+assert('renderMemberQuizView pins out-of-top-5 student row with Bạn badge', outOfTop5Html.includes('Lê Văn Tám') && outOfTop5Html.includes('Bạn</span>'));
+
+// --------------------------------------------------------------------
+// 22. Testing Event & Email Automation Management Tab (Campaigns Studio)
+// --------------------------------------------------------------------
+console.log('\n--- 22. Testing Event & Email Automation Management Tab (Campaigns Studio) ---');
+
+const gasConfigContentLocal = fs.readFileSync('./gas-backend/Config.js', 'utf8');
+const gasRouterContent2 = fs.readFileSync('./gas-backend/Router.js', 'utf8');
+const adminHtmlContent2 = fs.readFileSync('./frontend/views/admin.html', 'utf8');
+const appJsContent2 = fs.readFileSync('./frontend/app.js', 'utf8');
+
+// 22.1 Config & Router Contracts
+assert('Config.js registers saveCampaignConfig in ADMIN_ACTIONS', gasConfigContentLocal.includes("'saveCampaignConfig'"));
+assert('Config.js registers sendEventBulkEmail in ADMIN_ACTIONS', gasConfigContentLocal.includes("'sendEventBulkEmail'"));
+assert('Config.js registers getAllCampaigns in QUERY_ACTIONS', gasConfigContentLocal.includes("'getAllCampaigns'"));
+assert('Config.js registers getActiveCampaign in QUERY_ACTIONS', gasConfigContentLocal.includes("'getActiveCampaign'"));
+assert('Router.js routes saveCampaignConfig', gasRouterContent2.includes("case 'saveCampaignConfig':"));
+assert('Router.js routes sendEventBulkEmail', gasRouterContent2.includes("case 'sendEventBulkEmail':"));
+assert('MUTATION_INVALIDATION_MAP contains saveCampaignConfig', MUTATION_INVALIDATION_MAP.saveCampaignConfig && MUTATION_INVALIDATION_MAP.saveCampaignConfig.includes('getActiveCampaign'));
+
+// 22.2 Admin Tab Navigation & Section Wiring
+assert('admin.html has #admin-tab-btn-campaigns sidebar button', adminHtmlContent2.includes('id="admin-tab-btn-campaigns"'));
+assert('admin.html has #admin-tab-campaigns section', adminHtmlContent2.includes('id="admin-tab-campaigns"'));
+assert('app.js registers select-admin-campaign action', appJsContent2.includes("'select-admin-campaign':"));
+assert('app.js registers save-campaign-schedule action', appJsContent2.includes("'save-campaign-schedule':"));
+assert('app.js registers insert-campaign-email-tag action', appJsContent2.includes("'insert-campaign-email-tag':"));
+assert('app.js registers update-campaign-email-preview action', appJsContent2.includes("'update-campaign-email-preview':"));
+assert('app.js registers dispatch-campaign-bulk-email action', appJsContent2.includes("'dispatch-campaign-bulk-email':"));
+
+// 22.3 Mock saveCampaignConfig Action
+const saveConfigRes = await mockCallApi('saveCampaignConfig', {
+  campaignId: 'OCT20',
+  startDate: '2026-10-20T00:00',
+  endDate: '2026-10-21T23:59',
+  emailSubject: '[VNUF2-ITC] Thân chúc bạn 20/10 tuyệt vời {HoTen}',
+  emailTemplate: 'Chào {HoTen}, hộp quà bí ẩn chờ bạn tại {LinkWeb}',
+  webLink: 'https://vnuf2-itc.edu.vn/app',
+  targetAudience: 'female',
+  setActive: true
+});
+assert('saveCampaignConfig succeeds', saveConfigRes && saveConfigRes.success === true);
+assert('saveCampaignConfig updates subject, date and webLink', saveConfigRes.data && saveConfigRes.data.emailSubject.includes('{HoTen}') && saveConfigRes.data.webLink === 'https://vnuf2-itc.edu.vn/app');
+
+// 22.4 Mock sendEventBulkEmail Action
+const bulkEmailRes = await mockCallApi('sendEventBulkEmail', {
+  campaignId: 'OCT20',
+  targetFilter: 'female',
+  subject: '[VNUF2-ITC] Thân chúc mừng bạn',
+  template: 'Thân gửi {HoTen}, mở quà tại: {LinkWeb}',
+  webLink: 'https://vnuf2-itc.edu.vn/app'
+});
+assert('sendEventBulkEmail succeeds', bulkEmailRes && bulkEmailRes.success === true);
+assert('sendEventBulkEmail returns sent count and logs', bulkEmailRes.data && bulkEmailRes.data.sentCount > 0 && Array.isArray(bulkEmailRes.data.logs));
+
+// 22.5 Template Rendering (renderAdminCampaignTabContent)
+const { renderAdminCampaignTabContent } = await import('./frontend/modules/templates/campaignTemplates.js');
+const sampleAllCampaigns = await mockCallApi('getAllCampaigns', {});
+const campaignTabHtml = renderAdminCampaignTabContent({
+  campaigns: sampleAllCampaigns.data.campaigns,
+  activeCampaignId: 'OCT20',
+  selectedCampaignId: 'OCT20',
+  members: INITIAL_MOCK_DATA.members,
+  lastDispatch: bulkEmailRes.data
+});
+assert('renderAdminCampaignTabContent renders Auto Scheduler inputs', campaignTabHtml.includes('id="admin-campaign-start-time"') && campaignTabHtml.includes('id="admin-campaign-end-time"'));
+assert('renderAdminCampaignTabContent renders Configurable WebLink input', campaignTabHtml.includes('id="admin-campaign-web-link"'));
+assert('renderAdminCampaignTabContent renders Email Editor & Toolbar tags', campaignTabHtml.includes('id="admin-campaign-email-body"') && campaignTabHtml.includes('{LinkWeb}'));
+assert('renderAdminCampaignTabContent renders Email Live Mockup preview', campaignTabHtml.includes('id="email-preview-subject"') && campaignTabHtml.includes('id="email-preview-body"') && campaignTabHtml.includes('id="email-preview-cta-btn"'));
+assert('renderAdminCampaignTabContent renders Bulk Dispatch Queue with send button', campaignTabHtml.includes('data-action="dispatch-campaign-bulk-email"'));
+
+// 22.6 GAS Backend Service_Campaign.js & Event Privilege Integration
+const serviceCampaignContent = fs.readFileSync('./gas-backend/Service_Campaign.js', 'utf8');
+const serviceSubmitContent = fs.readFileSync('./gas-backend/Service_Submit.js', 'utf8');
+const serviceQuizContent = fs.readFileSync('./gas-backend/Service_Quiz.js', 'utf8');
+
+assert('Service_Campaign.js defines getAllCampaigns', serviceCampaignContent.includes('function getAllCampaigns('));
+assert('Service_Campaign.js defines getActiveCampaign', serviceCampaignContent.includes('function getActiveCampaign('));
+assert('Service_Campaign.js defines setActiveCampaign', serviceCampaignContent.includes('function setActiveCampaign('));
+assert('Service_Campaign.js defines saveCampaignConfig', serviceCampaignContent.includes('function saveCampaignConfig('));
+assert('Service_Campaign.js defines sendEventBulkEmail', serviceCampaignContent.includes('function sendEventBulkEmail('));
+assert('Service_Campaign.js defines redeemPrivilegeVoucher', serviceCampaignContent.includes('function redeemPrivilegeVoucher('));
+assert('Service_Campaign.js defines markMemberGiftUsedInSheet', serviceCampaignContent.includes('function markMemberGiftUsedInSheet('));
+assert('Service_Campaign.js keeps MailApp outside withScriptLock', !serviceCampaignContent.includes('withScriptLock(function() { MailApp'));
+assert('Service_Submit.js records attached giftCode', serviceSubmitContent.includes('payload.giftCode') && serviceSubmitContent.includes('markMemberGiftUsedInSheet'));
+assert('Service_Quiz.js marks gift voucher as used', serviceQuizContent.includes('markMemberGiftUsedInSheet(currentMssv, giftCode)'));
 
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);

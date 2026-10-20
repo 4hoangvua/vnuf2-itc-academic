@@ -305,7 +305,8 @@ export function renderMemberQuizView(quiz, userResult, options = {}) {
   const {
     sessionId = '',
     memberProfile = {},
-    leaderboard = []
+    leaderboard = [],
+    claimedGift = null
   } = options;
 
   if (!quiz) {
@@ -336,33 +337,83 @@ export function renderMemberQuizView(quiz, userResult, options = {}) {
 
   const hasOfficialResult = Boolean(userResult && userResult.IsOfficial !== false);
 
+  const myMssv = String(
+    options.currentMssv || 
+    (options.currentUser && (options.currentUser.mssv || options.currentUser.MSSV)) || 
+    (userResult && userResult.MSSV) || 
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_mssv') : '') || 
+    ''
+  ).trim().toUpperCase();
+
+  let myRank = -1;
+  let myRowInLeaderboard = null;
+  if (leaderboard && leaderboard.length > 0 && myMssv) {
+    const idx = leaderboard.findIndex(r => String(r.MSSV || '').trim().toUpperCase() === myMssv);
+    if (idx !== -1) {
+      myRank = idx + 1;
+      myRowInLeaderboard = leaderboard[idx];
+    }
+  }
+
+  const mySeconds = myRowInLeaderboard ? (myRowInLeaderboard.ThoiGianLamGiay || 0) : (userResult ? (userResult.ThoiGianLamGiay || 0) : 0);
+  const myM = Math.floor(mySeconds / 60);
+  const myS = mySeconds % 60;
+  const myTimeStr = `${myM}m ${myS < 10 ? '0' : ''}${myS}s`;
+
   // 1. Render Bảng Xếp Hạng Mini (Leaderboard)
   let leaderboardHtml = '';
   if (leaderboard && leaderboard.length > 0) {
-    const topRows = leaderboard.slice(0, 5).map((r, idx) => {
+    const renderLeaderboardRow = (r, rankNumber, isCurrentUser) => {
       let rankBadge = '';
-      if (idx === 0) rankBadge = '<span class="text-amber-500 font-bold">🥇 #1</span>';
-      else if (idx === 1) rankBadge = '<span class="text-slate-400 font-bold">🥈 #2</span>';
-      else if (idx === 2) rankBadge = '<span class="text-amber-700 dark:text-amber-600 font-bold">🥉 #3</span>';
-      else rankBadge = `<span class="text-ink-muted font-mono">#${idx + 1}</span>`;
+      if (rankNumber === 1) rankBadge = '<span class="text-amber-500 font-bold">🥇 #1</span>';
+      else if (rankNumber === 2) rankBadge = '<span class="text-slate-400 font-bold">🥈 #2</span>';
+      else if (rankNumber === 3) rankBadge = '<span class="text-amber-700 dark:text-amber-600 font-bold">🥉 #3</span>';
+      else rankBadge = `<span class="${isCurrentUser ? 'text-accent font-bold' : 'text-ink-muted'} font-mono">#${rankNumber}</span>`;
 
       const m = Math.floor((r.ThoiGianLamGiay || 0) / 60);
       const s = (r.ThoiGianLamGiay || 0) % 60;
       const timeStr = `${m}m ${s < 10 ? '0' : ''}${s}s`;
 
+      const rowClass = isCurrentUser
+        ? 'border-b border-accent/40 bg-accent-soft/40 font-semibold border-l-4 border-accent transition-colors'
+        : 'border-b border-hairline/60 hover:bg-subtle/40 transition-colors';
+
       return `
-        <tr class="border-b border-hairline/60 hover:bg-subtle/40 transition-colors">
+        <tr class="${rowClass}">
           <td class="py-2.5 px-3 text-center text-xs">${rankBadge}</td>
-          <td class="py-2.5 px-3 text-xs font-semibold text-ink">${escapeHTML(r.HoTen || r.MSSV)}</td>
+          <td class="py-2.5 px-3 text-xs font-semibold text-ink">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span>${escapeHTML(r.HoTen || r.MSSV)}</span>
+              ${isCurrentUser ? '<span class="bht-badge bht-badge-ok text-[10px] py-0 px-1.5 font-bold shadow-xs">Bạn</span>' : ''}
+            </div>
+          </td>
           <td class="py-2.5 px-3 text-xs text-ink-muted font-mono hidden sm:table-cell">${escapeHTML(r.MSSV)}</td>
-          <td class="py-2.5 px-3 text-right font-mono font-bold text-accent text-sm">${r.DiemSo}</td>
+          <td class="py-2.5 px-3 text-right font-mono font-bold text-accent text-sm">
+            <span>${r.DiemSo}</span>
+            ${r.appliedGift2010 ? '<span class="inline-flex items-center text-[10px] text-rose-500 font-bold ml-1" title="Đã dùng Voucher (+10đ)">🌸</span>' : ''}
+          </td>
           <td class="py-2.5 px-3 text-right text-[11px] text-ink-faint font-mono hidden sm:table-cell">${timeStr}</td>
         </tr>
       `;
+    };
+
+    const topRows = leaderboard.slice(0, 5).map((r, idx) => {
+      const isCurrentUser = Boolean(myMssv && String(r.MSSV || '').trim().toUpperCase() === myMssv);
+      return renderLeaderboardRow(r, idx + 1, isCurrentUser);
     }).join('');
 
+    let myOutOfTop5Row = '';
+    if (myRank > 5 && myRowInLeaderboard) {
+      myOutOfTop5Row = `
+        <tr class="border-b border-hairline/40 text-center text-ink-faint text-xs">
+          <td colspan="5" class="py-1 tracking-widest bg-subtle/20">• • •</td>
+        </tr>
+        ${renderLeaderboardRow(myRowInLeaderboard, myRank, true)}
+      `;
+    }
+
     leaderboardHtml = `
-      <div class="bht-card p-5 bg-surface border border-hairline space-y-3">
+      <div class="bht-card p-4 sm:p-5 bg-surface border border-hairline space-y-3.5">
         <div class="flex items-center justify-between pb-2 border-b border-hairline">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-trophy text-amber-500"></i>
@@ -370,6 +421,40 @@ export function renderMemberQuizView(quiz, userResult, options = {}) {
           </div>
           <span class="text-xs text-ink-muted font-mono">${leaderboard.length} thí sinh đã nộp</span>
         </div>
+
+        <!-- SPOTLIGHT VỊ TRÍ XẾP HẠNG CỦA CHÍNH TÀI KHOẢN -->
+        ${myRank > 0 ? `
+          <div class="p-3 sm:p-3.5 rounded-xl bg-accent-soft/70 border border-accent/30 flex items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-accent text-accent-fg flex items-center justify-center text-sm font-black font-mono shrink-0 shadow-xs">
+                #${myRank}
+              </div>
+              <div class="min-w-0">
+                <div class="text-xs font-bold text-ink flex items-center gap-1.5 flex-wrap">
+                  <span>Vị trí của bạn:</span>
+                  <span class="text-accent font-extrabold font-mono text-sm">Hạng #${myRank}</span>
+                  <span class="text-ink-muted text-[11px] font-normal hidden sm:inline">/ ${leaderboard.length} thí sinh</span>
+                </div>
+                <div class="text-[11px] text-ink-muted flex items-center gap-2 mt-0.5">
+                  <span>Điểm: <strong class="text-ink font-mono font-bold">${myRowInLeaderboard ? myRowInLeaderboard.DiemSo : (userResult ? userResult.DiemSo : 0)}đ</strong></span>
+                  <span>•</span>
+                  <span>Thời gian: <span class="font-mono">${myTimeStr}</span></span>
+                </div>
+              </div>
+            </div>
+            <div class="shrink-0">
+              <span class="bht-badge bht-badge-ok text-[11px] font-bold px-2 py-0.5">
+                <i class="fa-solid fa-user mr-1 text-[10px]"></i>Bạn
+              </span>
+            </div>
+          </div>
+        ` : (hasOfficialResult ? '' : `
+          <div class="p-2.5 rounded-xl bg-subtle/60 border border-hairline text-center text-xs text-ink-muted flex items-center justify-center gap-2">
+            <i class="fa-solid fa-circle-info text-ink-faint"></i>
+            <span>Bạn chưa có kết quả xếp hạng. ${isOpen ? 'Hãy làm bài thi chính thức để ghi danh!' : 'Đề thi hiện đang đóng.'}</span>
+          </div>
+        `)}
+
         <div class="overflow-x-auto">
           <table class="w-full text-left">
             <thead>
@@ -383,6 +468,7 @@ export function renderMemberQuizView(quiz, userResult, options = {}) {
             </thead>
             <tbody>
               ${topRows}
+              ${myOutOfTop5Row}
             </tbody>
           </table>
         </div>
@@ -423,9 +509,41 @@ export function renderMemberQuizView(quiz, userResult, options = {}) {
           ${hasOfficialResult ? `
             <div class="flex items-center gap-3 shrink-0 sm:border-l sm:border-hairline sm:pl-6 text-center justify-center sm:justify-start pt-2 sm:pt-0 border-t sm:border-t-0 border-hairline">
               <div>
-                <div class="text-3xl sm:text-4xl font-extrabold text-accent font-mono">${userResult.DiemSo}</div>
+                <div class="text-3xl sm:text-4xl font-extrabold text-accent font-mono flex items-center justify-center gap-1.5">
+                  <span>${userResult.DiemSo}</span>
+                  ${userResult.appliedGift2010 ? `<span class="text-xs px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30 font-sans font-bold" title="Điểm đã được cộng +10 theo Voucher 20/10">🌸 +10đ</span>` : ''}
+                </div>
                 <div class="text-[11px] text-ink-muted font-medium mt-0.5">Điểm chính thức (${userResult.SoCauDung}/${userResult.TongSoCau} câu)</div>
                 <div class="text-[10px] text-ink-faint font-mono mt-0.5">Đã chốt xếp hạng</div>
+
+                <!-- Thứ hạng của chính account -->
+                <div class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-soft text-accent border border-accent/25 text-xs font-bold font-mono">
+                  <i class="fa-solid fa-ranking-star text-[11px]"></i>
+                  <span>${myRank > 0 ? `Hạng #${myRank} / ${leaderboard.length}` : 'Đã ghi nhận kết quả'}</span>
+                </div>
+
+                ${(!userResult.appliedGift2010 && claimedGift && claimedGift.giftId === 'BONUS_10PT') ? `
+                  <button 
+                    type="button" 
+                    data-action="apply-quiz-bonus-voucher" 
+                    data-session-id="${escapeHTML(sessionId)}" 
+                    data-gift-code="${escapeHTML(claimedGift.claimCode || '')}"
+                    class="mt-2.5 bht-btn bht-btn-xs bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold shadow-xs active:scale-95 transition-all w-full justify-center py-1 px-2.5"
+                    title="Áp dụng Voucher 20/10 để cộng trực tiếp +10 điểm vào bài thi này"
+                  >
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1 text-[10px]"></i>
+                    <span>Dùng Voucher (+10đ)</span>
+                  </button>
+                ` : ''}
+
+                ${userResult.appliedGift2010 ? `
+                  <div class="mt-1.5">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20">
+                      <i class="fa-solid fa-check text-[9px]"></i>
+                      <span>Đã áp dụng Voucher 20/10</span>
+                    </span>
+                  </div>
+                ` : ''}
               </div>
             </div>
           ` : ''}
@@ -744,9 +862,12 @@ export function renderAdminQuizPanel(quiz, results = [], stats = null, sessionId
         <td class="p-2.5 sm:p-3 font-mono text-xs font-semibold text-accent">${mssv}</td>
         <td class="p-2.5 sm:p-3 text-xs font-medium text-ink truncate max-w-[120px] sm:max-w-none">${hoTen}</td>
         <td class="p-2.5 sm:p-3 text-center">
-          <span class="bht-badge ${diem >= 80 ? 'bht-badge-ok' : diem >= 60 ? 'bg-accent-soft text-accent' : 'bht-badge-err'} text-[11px] sm:text-xs font-mono font-bold">
-            ${diem}/100
-          </span>
+          <div class="inline-flex items-center gap-1">
+            <span class="bht-badge ${diem >= 80 ? 'bht-badge-ok' : diem >= 60 ? 'bg-accent-soft text-accent' : 'bht-badge-err'} text-[11px] sm:text-xs font-mono font-bold">
+              ${diem}/100
+            </span>
+            ${r.appliedGift2010 ? `<span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30" title="Đã cộng +10đ theo Voucher 20/10">🌸 +10đ</span>` : ''}
+          </div>
         </td>
         <td class="p-2.5 sm:p-3 text-center text-xs font-mono text-ink-muted hidden md:table-cell">${soDung}/${tongCau}</td>
         <td class="p-2.5 sm:p-3 text-right text-xs font-mono text-ink-muted hidden lg:table-cell">${thoiGianNop}</td>

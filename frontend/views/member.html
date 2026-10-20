@@ -6,9 +6,10 @@
     <!-- Brand Header -->
     <div class="h-16 px-4 border-b border-hairline flex items-center justify-between gap-2 overflow-hidden sidebar-header shrink-0">
       <div class="flex items-center gap-3 min-w-0 sidebar-brand-box">
-        <div class="w-9 h-9 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm sidebar-logo">
+        <div class="relative w-9 h-9 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center shrink-0 shadow-sm sidebar-logo">
           <img src="./assets/images/logo-clb.png" alt="CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
           <i class="fa-solid fa-code text-accent text-sm hidden"></i>
+          <span class="bht-oct20-corner-flower" title="Chào mừng Ngày Phụ Nữ Việt Nam 20/10! 🌸">🌸</span>
         </div>
         <div class="overflow-hidden sidebar-text">
           <h1 class="bht-heading-serif text-base font-semibold leading-tight text-ink truncate">Ban Học Thuật</h1>
@@ -128,9 +129,10 @@
   <!-- ==================== MOBILE TOPBAR (< 768px) ==================== -->
   <header class="md:hidden sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-hairline px-4 h-14 flex items-center justify-between">
     <div class="flex items-center gap-2.5">
-      <div class="w-8 h-8 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+      <div class="relative w-8 h-8 rounded-full bg-surface p-0.5 border border-hairline flex items-center justify-center shrink-0 shadow-sm">
         <img src="./assets/images/logo-clb.png" alt="CLB Tin Học VNUF2" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
         <i class="fa-solid fa-code text-accent text-xs hidden"></i>
+        <span class="bht-oct20-corner-flower" title="Chào mừng 20/10! 🌸">🌸</span>
       </div>
       <div>
         <h1 class="bht-heading-serif text-sm font-semibold text-ink leading-tight">Ban Học Thuật</h1>
@@ -236,6 +238,9 @@
           </span>
         </div>
       </div>
+
+      <!-- BANNER 20/10 (Render tự động theo giới tính: Nữ nhận lời chúc & quà, Nam nhận lời nhắc) -->
+      <div id="member-oct20-banner-container"></div>
 
       <!-- 2. Hàng 1: Bento Grid (Tỷ lệ 7 : 5) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
@@ -646,6 +651,14 @@
         </div>
       </div>
 
+      <!-- Checkbox quà 20/10 (chỉ hiển thị nếu user có quà) -->
+      <div id="submit-gift-2010-container" class="hidden p-3 rounded-xl border border-rose-400/40 bg-rose-500/5 items-start gap-2.5">
+        <input type="checkbox" id="submit-gift-2010-checkbox" class="mt-0.5 rounded text-accent cursor-pointer">
+        <label for="submit-gift-2010-checkbox" class="text-xs text-ink cursor-pointer select-none leading-relaxed">
+          🎁 Đính kèm thẻ quà 20/10: <strong id="submit-gift-2010-label" class="font-mono text-rose-600 dark:text-rose-400">ITC2010-XXXXX</strong> vào bài nộp này
+        </label>
+      </div>
+
       <!-- Upload Progress Bar -->
       <div id="submit-upload-progress" class="hidden space-y-1.5">
         <div class="flex items-center justify-between text-xs text-ink-muted">
@@ -835,6 +848,19 @@
     </div>
   </footer>
 </div>
+
+<!-- Modal Hộp Quà 20/10 Dành Riêng Cho Nữ -->
+<div id="modal-gift-2010" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-2.5 sm:p-4 md:p-6">
+  <div class="bht-card bg-elevated max-w-2xl sm:max-w-3xl lg:max-w-4xl w-full p-3.5 sm:p-6 md:p-8 lg:p-10 shadow-[var(--shadow-float)] border border-rose-400/30 relative animate-fade-in overflow-hidden max-h-[92vh] overflow-y-auto">
+    <button type="button" data-action="close-gift-modal" class="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-20 bht-btn bht-btn-ghost bht-btn-icon text-ink-muted hover:text-ink" title="Đóng">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+    <div id="gift-2010-modal-body">
+      <!-- Nội dung render động từ gift2010.js -->
+    </div>
+  </div>
+</div>
+
 
 
 

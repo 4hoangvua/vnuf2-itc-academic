@@ -2,7 +2,7 @@
 // MODULE QUẢN LÝ NHÂN SỰ & THÀNH VIÊN ADMIN (ADMIN MEMBERS CONTROLLER)
 // ====================================================================
 
-import { callApi } from '../../services/api.js';
+import { callApi, setActiveCampaign } from '../../services/api.js';
 import { 
   appState, 
   uiActionLocks, 
@@ -17,6 +17,11 @@ import {
 import { renderMemberRow, uiEmptyState } from '../templates.js';
 import { paginate, renderPagination, resetPagination } from '../pagination.js';
 import { updateAdminStats } from '../admin.js';
+import { 
+  renderAdminCampaignSelector, 
+  getActiveCampaign, 
+  getActiveCampaignId 
+} from '../gift2010.js';
 
 export function renderAdminMembersTable() {
   const tbody = document.getElementById('admin-members-table-body');
@@ -57,6 +62,69 @@ export function renderAdminMembersTable() {
 
   if (pagEl) {
     pagEl.innerHTML = renderPagination('admin-members');
+  }
+
+  // Cập nhật bộ chọn sự kiện Admin (Campaign Selector)
+  const campaignContainer = document.getElementById('admin-campaign-selector-container');
+  if (campaignContainer) {
+    campaignContainer.innerHTML = renderAdminCampaignSelector();
+  }
+
+  // Cập nhật thống kê Quà / Đặc quyền học thuật theo sự kiện đang chọn
+  const activeCamp = getActiveCampaign();
+  const statBadge = document.getElementById('admin-gift-2010-stat-badge');
+  const statCard = document.getElementById('admin-gift-2010-stat-card');
+
+  if (activeCamp && statCard) {
+    statCard.classList.remove('hidden');
+    const isFemaleOnly = activeCamp.targetAudience === 'female';
+    const targetPool = isFemaleOnly ? members.filter(m => String(m.Sex || '').toLowerCase() === 'female') : members;
+    const claimedCount = targetPool.filter(m => {
+      const raw = m.gift2010 || m.Gift2010;
+      return !!raw;
+    }).length;
+
+    if (statBadge) {
+      statBadge.innerHTML = `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-accent-soft text-accent border border-hairline">
+          <span>${activeCamp.icon}</span>
+          <span>${claimedCount}/${targetPool.length} ${isFemaleOnly ? 'Bạn nữ có quà' : 'Đã nhận quà'}</span>
+        </span>
+        <button 
+          type="button" 
+          data-action="open-gift-modal" 
+          class="bht-btn bht-btn-xs bg-accent text-accent-fg font-semibold shadow-xs"
+          title="Xem thử hoặc mở Hộp quà sự kiện"
+        >
+          <i class="fa-solid fa-gift mr-1"></i>Xem Quà
+        </button>
+      `;
+    }
+  } else if (statCard) {
+    // Nếu chọn NONE (Tắt sự kiện), tạm ẩn stat card
+    statCard.classList.add('hidden');
+  }
+}
+
+/**
+ * Xử lý khi Admin chọn chuyển đổi sự kiện đặc quyền
+ * @param {string} campaignId Mã sự kiện
+ */
+export async function handleSwitchAdminCampaign(campaignId) {
+  if (!campaignId) return;
+  try {
+    const res = await setActiveCampaign(campaignId);
+    if (res && res.success) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('bht_active_campaign', campaignId);
+      }
+      showToast(res.message || 'Đã chuyển đổi sự kiện thành công!', 'success');
+      renderAdminMembersTable();
+    } else {
+      showToast(res ? res.message : 'Không thể chuyển đổi sự kiện!', 'error');
+    }
+  } catch (err) {
+    showToast('Lỗi khi cập nhật sự kiện: ' + err.message, 'error');
   }
 }
 

@@ -19,7 +19,8 @@ import {
   escapeHtml 
 } from '../ui.js';
 import { emptyStateTemplate } from '../templates.js';
-import { refreshMemberData } from '../member.js';
+import { refreshMemberData, getCurrentMemberUser } from '../member.js';
+import { getClaimedGift } from '../gift2010.js';
 
 /**
  * Lấy danh sách bài nộp của thành viên cho một task, sắp xếp mới nhất lên đầu
@@ -118,6 +119,26 @@ export function openSubmitModal(taskId) {
   const progress = document.getElementById('submit-upload-progress');
   if (progress) progress.classList.add('hidden');
 
+  // Kiểm tra quà 20/10 của sinh viên để hiển thị lựa chọn đính kèm
+  const user = getCurrentMemberUser();
+  const claimedGift = getClaimedGift(user);
+  const giftContainer = document.getElementById('submit-gift-2010-container');
+  const giftLabel = document.getElementById('submit-gift-2010-label');
+  const giftCheckbox = document.getElementById('submit-gift-2010-checkbox');
+
+  if (giftContainer && giftLabel && giftCheckbox) {
+    if (claimedGift && claimedGift.claimCode) {
+      giftContainer.classList.remove('hidden');
+      giftContainer.classList.add('flex');
+      giftLabel.textContent = `${claimedGift.claimCode} (${claimedGift.shortTitle || claimedGift.giftTitle})`;
+      giftCheckbox.checked = false;
+    } else {
+      giftContainer.classList.add('hidden');
+      giftContainer.classList.remove('flex');
+      giftCheckbox.checked = false;
+    }
+  }
+
   if (modal) modal.classList.remove('hidden');
 }
 
@@ -201,6 +222,10 @@ export async function handleUploadSubmission(e) {
       if (progressPct) progressPct.textContent = '70%';
 
       const base64Data = event.target.result.split(',')[1];
+      const giftCheckbox = document.getElementById('submit-gift-2010-checkbox');
+      const claimedGift = getClaimedGift(user);
+      const isAttachingGift = giftCheckbox && giftCheckbox.checked && claimedGift && claimedGift.claimCode;
+
       const payload = {
         taskId: taskId,
         mssv: user.mssv,
@@ -208,7 +233,11 @@ export async function handleUploadSubmission(e) {
         email: user.email,
         fileName: file.name,
         mimeType: file.type || 'application/octet-stream',
-        base64Data: base64Data
+        base64Data: base64Data,
+        ...(isAttachingGift ? {
+          giftCode: claimedGift.claimCode,
+          feedback: `[🎁 Quà 20/10: ${claimedGift.claimCode}]`
+        } : {})
       };
 
       const res = await callApi('submitTaskAssignment', payload);

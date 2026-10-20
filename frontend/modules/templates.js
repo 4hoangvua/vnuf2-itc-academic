@@ -402,6 +402,8 @@ export function renderSubmissionRow(submission = {}, options = {}) {
   const statusBadge = uiStatusBadge(s.TrangThaiDuyet || 'Pending');
   const turn = Number(options.submissionTurn || s._submissionTurn || 0);
   const turnBadge = turn > 0 ? `<span class="bht-badge-mono text-[9px] px-1 py-0.5 bg-subtle text-ink-muted border border-hairline ml-1 font-semibold">Lần ${turn}/3</span>` : '';
+  const hasGift2010 = s.giftCode || (s.TenFile && s.TenFile.includes('20/10')) || (s.Feedback && s.Feedback.includes('20/10'));
+  const giftBadge = hasGift2010 ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30 ml-1" title="Bài nộp áp dụng đặc quyền Quà 20/10">🌸 Quà 20/10</span>` : '';
 
   // Nút duyệt Đạt / Sửa
   const disabledClass = isProcessing ? 'opacity-60 pointer-events-none' : '';
@@ -425,6 +427,7 @@ export function renderSubmissionRow(submission = {}, options = {}) {
               <span class="truncate max-w-[190px]" title="${tenFile}">${tenFile}</span>
             </a>
             ${turnBadge}
+            ${giftBadge}
           </div>
           <p class="text-[10px] text-ink-faint font-mono mt-0.5">${thoiGianNop}</p>
         </td>
@@ -1336,6 +1339,22 @@ export function renderMemberRow(member = {}, options = {}) {
   const role = escapeHTML(m.Role || 'MEMBER');
   const isActive = String(m.TrangThai || 'Active').toLowerCase() === 'active';
 
+  // Badge quà 20/10 nếu thành viên đã nhận quà
+  const rawGift = m.gift2010 || m.Gift2010;
+  let giftData = null;
+  if (typeof rawGift === 'string' && rawGift.trim()) {
+    try { giftData = JSON.parse(rawGift); } catch (e) {}
+  } else if (typeof rawGift === 'object' && rawGift !== null) {
+    giftData = rawGift;
+  }
+
+  const giftBadge = giftData && giftData.claimCode 
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/20" title="${escapeHTML(giftData.giftTitle || 'Quà 20/10')} (Mã: ${escapeHTML(giftData.claimCode)})">
+         <span>🎁</span>
+         <span>${escapeHTML(giftData.claimCode)}</span>
+       </span>`
+    : '';
+
   return `
     <tr data-key="${mssv}" class="hover:bg-subtle/40 transition-colors">
       <td class="py-3 px-4 font-mono font-bold text-ink">${mssv}</td>
@@ -1343,6 +1362,7 @@ export function renderMemberRow(member = {}, options = {}) {
         <div class="flex items-center gap-2.5">
           ${uiInitialsAvatar(hoTen, 'sm')}
           <span class="font-medium text-ink">${hoTen}</span>
+          ${giftBadge}
         </div>
       </td>
       <td class="py-3 px-4 font-mono text-ink-muted text-xs">${email}</td>
@@ -1649,3 +1669,9 @@ export const memberDocCardTemplate = renderDocCard;
 // Re-export từ ./templates/quizTemplates.js để tinh giản kích thước module
 // ====================================================================
 export * from './templates/quizTemplates.js';
+
+// ====================================================================
+// 18. CAMPAIGN & MAILER STUDIO TEMPLATES (UNIVERSAL EVENT MANAGEMENT)
+// ====================================================================
+export * from './templates/campaignTemplates.js';
+

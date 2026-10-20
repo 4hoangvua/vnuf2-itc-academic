@@ -24,6 +24,7 @@ import {
   handleSearchAdminAttendance, 
   renderAdminAttendanceGrid 
 } from './admin/adminSessions.js';
+import { INITIAL_MOCK_DATA } from '../services/mockData.js';
 
 /**
  * Hiển thị các khối Skeleton nhấp nháy êm dịu trên các bảng và card của Admin
@@ -144,7 +145,7 @@ export function initAdminView(silent = true) {
 
   // Tự động mở đúng tab theo URL Hash nếu có
   const currentHash = window.location.hash.replace('#', '');
-  const validTabs = ['submissions', 'tasks', 'members', 'attendance', 'docs'];
+  const validTabs = ['submissions', 'tasks', 'members', 'attendance', 'docs', 'campaigns'];
   const initialTab = validTabs.includes(currentHash) ? currentHash : 'submissions';
   switchAdminTab(initialTab, false);
 
@@ -248,7 +249,7 @@ export function updateAdminStats() {
  * @param {'submissions'|'attendance'|'members'} tab
  */
 export function switchAdminTab(tab, updateHash = true) {
-  const tabs = ['submissions', 'attendance', 'members', 'docs'];
+  const tabs = ['submissions', 'attendance', 'members', 'docs', 'campaigns'];
   // Nếu truyền 'tasks' từ URL hash cũ hoặc bookmark, tự động chuyển sang 'attendance'
   const targetTab = (tab === 'tasks') ? 'attendance' : (tabs.includes(tab) ? tab : 'submissions');
 
@@ -270,6 +271,11 @@ export function switchAdminTab(tab, updateHash = true) {
   if (activeSec) activeSec.classList.remove('hidden');
   const activeBtn = document.getElementById('admin-tab-btn-' + targetTab);
   if (activeBtn) activeBtn.classList.add('active');
+
+  // Tải dữ liệu Tab Campaigns nếu được chọn
+  if (targetTab === 'campaigns') {
+    import('./admin/adminCampaigns.js').then(m => m.loadAdminCampaigns()).catch(console.error);
+  }
 
   // Đồng bộ URL Hash lên trình duyệt
   if (updateHash && window.location.hash !== '#' + targetTab) {
@@ -356,17 +362,35 @@ export * from './admin/adminQuiz.js';
  */
 export async function switchToMemberView(targetMssv = null) {
   let targetUser = null;
+  const memList = (appState.members && appState.members.length > 0) ? appState.members : (INITIAL_MOCK_DATA ? INITIAL_MOCK_DATA.members : []);
+
   if (targetMssv) {
-    const members = appState.members || [];
-    const found = members.find(m => String(m.MSSV).trim().toUpperCase() === String(targetMssv).trim().toUpperCase());
+    const found = memList.find(m => String(m.MSSV).trim().toUpperCase() === String(targetMssv).trim().toUpperCase());
     if (found) {
+      const initM = INITIAL_MOCK_DATA.members.find(x => x.MSSV === found.MSSV);
+      const exactSex = found.Sex || (initM ? initM.Sex : 'male');
       targetUser = {
         mssv: found.MSSV,
         hoTen: found.HoTen,
         email: found.Email || '',
-        role: 'MEMBER'
+        role: 'MEMBER',
+        sex: exactSex,
+        Sex: exactSex,
+        gift2010: found.gift2010 || (initM ? initM.gift2010 : null) || null
       };
     }
+  } else if (appState.user) {
+    // Nếu Admin bấm "Xem giao diện thành viên" cho chính mình
+    const currentAdminMssv = appState.user.mssv;
+    const found = memList.find(m => String(m.MSSV).trim().toUpperCase() === String(currentAdminMssv).trim().toUpperCase());
+    const exactSex = (found && found.Sex) ? found.Sex : (appState.user.Sex || appState.user.sex || 'male');
+    targetUser = {
+      ...appState.user,
+      role: 'MEMBER',
+      sex: exactSex,
+      Sex: exactSex,
+      gift2010: (found && found.gift2010) ? found.gift2010 : (appState.user.gift2010 || null)
+    };
   }
 
   if (targetUser) {
@@ -400,3 +424,7 @@ export async function returnToAdminView() {
   initAdminView(true);
   showToast('Đã quay lại Cổng Quản Trị Viên', 'success');
 }
+
+export { handleSwitchAdminCampaign } from './admin/adminMembers.js';
+export * from './admin/adminCampaigns.js';
+

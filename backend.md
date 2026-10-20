@@ -29,7 +29,7 @@ Hệ thống lưu trữ trên Google Spreadsheet thông qua các sheet tiêu chu
 
 | Tên Sheet | Mục đích | Các cột dữ liệu (Schema) |
 | :--- | :--- | :--- |
-| `ThanhVien` | Quản lý nhân sự | `MSSV`, `HoTen`, `Email`, `Role` (ADMIN/MEMBER), `TrangThai` (Active/Inactive), `NgayThamGia` |
+| `ThanhVien` | Quản lý nhân sự | `MSSV`, `HoTen`, `Email`, `Lớp`, `Ban`, `Role` (ADMIN/MEMBER), `TrangThai` (Active/Inactive), `NgayThamGia`, `Sex` (male/female), `Gift2010` (JSON thông tin quà 20/10) |
 | `DiemDanh` | Buổi học & Chuyên đề | `SessionID`, `TenBuoiHop`, `MaPin`, `TrangThai` (Open/Closed), `DS_CoMat` (JSON array MSSV), `NgayDienRa`, `NoiDungChuyenDe`, `LinkTaiLieu`, `TagChuyenDe`, `PhongHoc` |
 | `NhiemVu` | Danh mục bài tập | `TaskID`, `TieuDe`, `MoTa`, `NguoiNhan` (ALL hoặc MSSV), `Deadline`, `FolderID`, `TrangThai` (Open/Closed), `SessionID` |
 | `BaiNop` | Danh sách nộp bài | `SubID`, `TaskID`, `MSSV`, `HoTen`, `Email`, `TenFile`, `DriveLink`, `ThoiGianNop`, `TrangThaiDuyet` (Pending/Approved/Rejected), `Feedback` |
@@ -70,7 +70,7 @@ Hệ thống lưu trữ trên Google Spreadsheet thông qua các sheet tiêu chu
    - Đối tượng phiên lưu trữ bao gồm: `{ mssv, hoTen, email, role, trangThai, createdAt }`.
 2. **Middleware Phân quyền tại `Router.js`:**
    - **`PUBLIC_ACTIONS`** (`ping`, `requestLoginOtp`, `verifyLoginOtp`, `getAuthStatus`): Cho phép truy cập không cần token.
-   - **`MEMBER_ACTIONS`** (`checkInAttendance`, `submitTaskAssignment`, `getMemberSubmissions`, `logoutUser`): Bắt buộc có token hợp lệ. Router tự động tiêm `currentUser.mssv`, `currentUser.hoTen`, `currentUser.email` vào payload. **Tuyệt đối không tin tưởng hay nhận MSSV giả mạo từ client.**
+   - **`MEMBER_ACTIONS`** (`checkInAttendance`, `submitTaskAssignment`, `getMemberSubmissions`, `logoutUser`, `saveMemberGift`, `submitQuiz`...): Bắt buộc có token hợp lệ. Router tự động tiêm `currentUser.mssv`, `currentUser.hoTen`, `currentUser.email` vào payload. **Tuyệt đối không tin tưởng hay nhận MSSV giả mạo từ client.**
    - **`ADMIN_ACTIONS`** (`createAttendanceSession`, `createTask`, `reviewSubmission`, `getAllMembers`...): Bắt buộc token hợp lệ và `currentUser.role === 'ADMIN'`. Nếu vi phạm, trả về mã lỗi `403 FORBIDDEN`.
    - **`QUERY_ACTIONS`** (`getAttendanceSessions`, `getAllTasks`, `getAllDocuments`): Cho phép mọi người dùng đã xác thực truy vấn.
 

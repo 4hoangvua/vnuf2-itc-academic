@@ -81,7 +81,13 @@ export const MUTATION_INVALIDATION_MAP = {
   resetAllQuizSubmissions: ['getQuizBySession', 'getQuizResultsBySession'],
   recordQuizAnswer: ['getMemberQuizProfile', 'getPersonalQuizPool'],
   toggleQuestionBookmark: ['getMemberQuizProfile', 'getPersonalQuizPool'],
-  clearWrongHistory: ['getMemberQuizProfile', 'getPersonalQuizPool']
+  clearWrongHistory: ['getMemberQuizProfile', 'getPersonalQuizPool'],
+  saveMemberGift: ['getAllMembers'],
+  applyQuizBonusVoucher: ['getQuizBySession', 'getMemberQuizProfile', 'getQuizResultsBySession'],
+  setActiveCampaign: ['getActiveCampaign', 'getAllCampaigns'],
+  saveCampaignConfig: ['getActiveCampaign', 'getAllCampaigns'],
+  sendEventBulkEmail: ['getActiveCampaign', 'getAllCampaigns'],
+  redeemPrivilegeVoucher: ['getQuizBySession', 'getMemberQuizProfile', 'getQuizResultsBySession', 'getAllSubmissions', 'getMemberSubmissions', 'getActiveCampaign']
 };
 
 // Bể lưu trữ các request đang chạy để Deduplicate (Chống gọi trùng lặp khi Double-click)
@@ -493,10 +499,19 @@ function handleMutationInvalidation(action) {
   if (targets) {
     invalidateCache(targets);
     // Các thao tác trả lời trắc nghiệm & bookmark là tác vụ cá nhân tức thì, không phát broadcast làm reload giao diện
-    if (action !== 'recordQuizAnswer' && action !== 'toggleQuestionBookmark') {
+    if (action !== 'recordQuizAnswer' && action !== 'toggleQuestionBookmark' && action !== 'saveMemberGift') {
       broadcastDataSync(action);
     }
   }
+}
+
+/**
+ * Lưu quà 20/10 của thành viên lên máy chủ hoặc Mock data
+ * @param {string} userId MSSV của thành viên
+ * @param {Object} giftData Thông tin quà 20/10 { giftId, giftTitle, claimCode, claimedAt, used }
+ */
+export async function saveMemberGift(userId, giftData) {
+  return await callApi('saveMemberGift', { userId, giftData });
 }
 
 // --------------------------------------------------------------------
@@ -527,3 +542,53 @@ function setLocalCache(key, data) {
     console.warn('[API Cache] Không thể ghi cache (có thể vượt quota localStorage):', e);
   }
 }
+
+/**
+ * Áp dụng Voucher 20/10 (+10 điểm) vào bài thi trắc nghiệm
+ * @param {string} sessionId Mã buổi học
+ * @param {string} mssv Mã số sinh viên
+ * @param {string} giftCode Mã voucher 20/10
+ * @returns {Promise<ApiResponse>}
+ */
+export async function applyQuizBonusVoucher(sessionId, mssv, giftCode) {
+  return await callApi('applyQuizBonusVoucher', {
+    sessionId: sessionId,
+    mssv: mssv,
+    giftCode: giftCode
+  });
+}
+
+/**
+ * Lấy sự kiện đặc quyền đang kích hoạt
+ * @returns {Promise<ApiResponse>}
+ */
+export async function getActiveCampaign() {
+  return await callApi('getActiveCampaign', {});
+}
+
+/**
+ * Lấy tất cả danh mục sự kiện đặc quyền (Dành cho Admin)
+ * @returns {Promise<ApiResponse>}
+ */
+export async function getAllCampaigns() {
+  return await callApi('getAllCampaigns', {});
+}
+
+/**
+ * Cập nhật sự kiện kích hoạt (Dành cho Admin)
+ * @param {string} campaignId Mã sự kiện (OCT20, TET, MARCH8, ANNIVERSARY, NONE)
+ * @returns {Promise<ApiResponse>}
+ */
+export async function setActiveCampaign(campaignId) {
+  return await callApi('setActiveCampaign', { campaignId });
+}
+
+/**
+ * Áp dụng voucher đặc quyền học thuật tổng quát
+ * @param {Object} payload { voucherCode, targetType, targetId, mssv, effectType, effectValue }
+ * @returns {Promise<ApiResponse>}
+ */
+export async function redeemPrivilegeVoucher(payload) {
+  return await callApi('redeemPrivilegeVoucher', payload);
+}
+

@@ -26,6 +26,25 @@ import { handleSearchDocs, renderMemberDocs } from './member/memberDocs.js';
 import { handleFileSelected } from './member/memberSubmissions.js';
 import { isTakingMemberQuiz } from './member/memberQuiz.js';
 import { paginate, renderPagination, resetPagination } from './pagination.js';
+import { 
+  renderGift2010Banner, 
+  renderGift2010ModalContent, 
+  claimGiftForUser, 
+  isFemaleMember, 
+  getClaimedGift,
+  resetGiftForUser,
+  switchGiftTypeForUser,
+  FEMALE_IT_WISHES_2010,
+  MALE_IT_WISHES_2010,
+  triggerCelebrationBurst,
+  initVoucher3DTilt,
+  startTypewriter,
+  triggerClickBlossom,
+  startGiftCardShuffleAnimation,
+  stopGiftCardShuffleAnimation,
+  getDeterministicGiftForUser
+} from './gift2010.js';
+import { INITIAL_MOCK_DATA } from '../services/mockData.js';
 
 
 /**
@@ -76,14 +95,37 @@ export function renderMemberSkeletons(force = false) {
  * (Hỗ trợ Admin khi xem thử nghiệm hoặc xem dưới danh nghĩa 1 sinh viên cụ thể)
  */
 export function getCurrentMemberUser() {
+  let user = null;
   const viewingAs = sessionStorage.getItem('bht_viewing_as_member');
   if (viewingAs && viewingAs !== 'true') {
     try {
       const parsed = JSON.parse(viewingAs);
-      if (parsed && parsed.mssv) return parsed;
+      if (parsed && parsed.mssv) user = parsed;
     } catch (e) {}
   }
-  return appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null') || { hoTen: 'Thành Viên', mssv: localStorage.getItem('bht_mssv') || '' };
+  if (!user) {
+    user = appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null') || { hoTen: 'Thành Viên', mssv: localStorage.getItem('bht_mssv') || '' };
+  }
+
+  // Đảm bảo user luôn có trường Sex chính xác từ danh sách members (kể cả khi session cũ chưa kịp lưu hoặc lưu sai)
+  if (user && user.mssv) {
+    const memList = (appState.members && appState.members.length > 0) ? appState.members : (INITIAL_MOCK_DATA ? INITIAL_MOCK_DATA.members : []);
+    const mem = memList.find(m => String(m.MSSV).trim().toUpperCase() === String(user.mssv).trim().toUpperCase());
+    if (mem && mem.Sex) {
+      user.Sex = mem.Sex;
+      user.sex = mem.Sex;
+      if (!user.gift2010 && mem.gift2010) user.gift2010 = mem.gift2010;
+    } else {
+      const initM = INITIAL_MOCK_DATA.members.find(x => String(x.MSSV).trim().toUpperCase() === String(user.mssv).trim().toUpperCase());
+      if (initM && initM.Sex) {
+        user.Sex = initM.Sex;
+        user.sex = initM.Sex;
+        if (!user.gift2010 && initM.gift2010) user.gift2010 = initM.gift2010;
+      }
+    }
+  }
+
+  return user;
 }
 
 /**
@@ -423,6 +465,12 @@ export function renderMemberDashboard() {
     spotlightContainer.innerHTML = renderMemberSpotlightCard(targetSession, userAttended);
   }
 
+  // Render Banner 20/10 (Tự động cá nhân hóa theo giới tính)
+  const oct20Container = document.getElementById('member-oct20-banner-container');
+  if (oct20Container) {
+    oct20Container.innerHTML = renderGift2010Banner(user);
+  }
+
   // 2. Render Widget Tiến Độ ĐRL & Thống kê
   renderMemberStats();
 
@@ -637,3 +685,222 @@ export * from './member/memberSessions.js';
 // Re-export từ ./member/memberQuiz.js để tinh giản kích thước module
 // ====================================================================
 export * from './member/memberQuiz.js';
+
+// ====================================================================
+// PHÂN HỆ QUÀ TẶNG & EASTER EGG 20/10 (GIFT 20/10 HANDLERS)
+// ====================================================================
+
+/**
+ * Hiển thị chiếc vé quà tặng hoàn chỉnh sau khi xáo thẻ xong
+ */
+function revealFinalGiftTicket(modal, body, giftData, user) {
+  if (!modal || !body || !giftData) return;
+  body.innerHTML = renderGift2010ModalContent(giftData, user);
+
+  // Hiệu ứng 1: Pháo hoa bung nở 360 độ từ tâm Modal
+  const modalInnerCard = modal.querySelector('.bht-card') || modal;
+  triggerCelebrationBurst(modalInnerCard);
+
+  // Hiệu ứng 2: Kích hoạt nghiêng 3D Holographic cho vé
+  const voucherCard = modal.querySelector('.bht-voucher-holo');
+  if (voucherCard) {
+    initVoucher3DTilt(voucherCard);
+  }
+
+  // Hiệu ứng 4: Kích hoạt hiệu ứng gõ chữ Typewriter cho lời chúc
+  const wishEl = document.getElementById('gift-2010-wish-text');
+  if (wishEl) {
+    const text = wishEl.textContent.trim().replace(/^"|"$/g, '');
+    startTypewriter(wishEl, text, 20);
+  }
+}
+
+/**
+ * Mở modal hộp quà 20/10 cho nữ sinh viên (kèm hoạt cảnh xáo thẻ 3D chuyển động qua lại chậm rãi)
+ */
+export async function handleOpenGiftModal() {
+  const user = getCurrentMemberUser();
+  if (!user) return;
+
+  // Tự động mở quà & đồng bộ nếu chưa nhận
+  const giftData = await claimGiftForUser(user);
+  if (!giftData) {
+    showToast('Không thể mở quà tặng lúc này!', 'error');
+    return;
+  }
+
+  const modal = document.getElementById('modal-gift-2010');
+  const body = document.getElementById('gift-2010-modal-body');
+  if (!modal || !body) return;
+
+  modal.classList.remove('hidden');
+
+  // Khởi chạy hoạt cảnh xáo thẻ 3D qua lại chậm rãi, sau đó mới lộ diện vé chính thức
+  startGiftCardShuffleAnimation(body, giftData, user, () => {
+    revealFinalGiftTicket(modal, body, giftData, user);
+  });
+
+  // Cập nhật lại banner trên dashboard
+  const oct20Container = document.getElementById('member-oct20-banner-container');
+  if (oct20Container) {
+    oct20Container.innerHTML = renderGift2010Banner(user);
+  }
+}
+
+/**
+ * Xáo thẻ lại để thưởng thức hoạt cảnh 3D
+ */
+export function handleReplayGiftUnboxing() {
+  const user = getCurrentMemberUser();
+  if (!user) return;
+  const giftData = getClaimedGift(user) || getDeterministicGiftForUser(user);
+  const modal = document.getElementById('modal-gift-2010');
+  const body = document.getElementById('gift-2010-modal-body');
+  if (!modal || !body) return;
+
+  modal.classList.remove('hidden');
+  startGiftCardShuffleAnimation(body, giftData, user, () => {
+    revealFinalGiftTicket(modal, body, giftData, user);
+  });
+}
+
+/**
+ * Bỏ qua hoạt cảnh xáo thẻ và hiển thị ngay vé quà tặng
+ */
+export function handleSkipGiftShuffle() {
+  stopGiftCardShuffleAnimation();
+  const user = getCurrentMemberUser();
+  if (!user) return;
+  const giftData = getClaimedGift(user) || getDeterministicGiftForUser(user);
+  const modal = document.getElementById('modal-gift-2010');
+  const body = document.getElementById('gift-2010-modal-body');
+  if (!modal || !body) return;
+
+  revealFinalGiftTicket(modal, body, giftData, user);
+}
+
+/**
+ * Đóng modal hộp quà 20/10
+ */
+export function handleCloseGiftModal() {
+  stopGiftCardShuffleAnimation();
+  const modal = document.getElementById('modal-gift-2010');
+  if (modal) modal.classList.add('hidden');
+}
+
+/**
+ * Sao chép mã nhận quà 20/10 vào Clipboard (hỗ trợ sao chép toàn bộ thông điệp kèm mã)
+ * @param {string} code Mã voucher
+ * @param {string} [fullShare] Toàn bộ chuỗi thông điệp chia sẻ
+ */
+export function handleCopyGiftCode(code, fullShare) {
+  const textToCopy = fullShare || code || (document.getElementById('gift-2010-code-text') ? document.getElementById('gift-2010-code-text').textContent.trim() : '');
+  if (!textToCopy) return;
+
+  const successMsg = fullShare 
+    ? 'Đã sao chép trọn vẹn thông điệp nhận quà & mã xác nhận!' 
+    : `Đã sao chép mã quà 20/10: ${textToCopy}`;
+
+  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      showToast(successMsg, 'success');
+    }).catch(() => {
+      fallbackCopyText(textToCopy, successMsg);
+    });
+  } else {
+    fallbackCopyText(textToCopy, successMsg);
+  }
+}
+
+/**
+ * Tạo câu chúc 20/10 ấm áp cho thành viên Nam và sao chép vào Clipboard
+ */
+export function handleRandomMaleWish() {
+  const wish = MALE_IT_WISHES_2010[Math.floor(Math.random() * MALE_IT_WISHES_2010.length)];
+  const msg = 'Đã sao chép lời chúc 20/10! Hãy dán gửi vào nhóm chat CLB nhé 💐';
+  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(wish).then(() => {
+      showToast(msg, 'success');
+    }).catch(() => {
+      fallbackCopyText(wish, msg);
+    });
+  } else {
+    fallbackCopyText(wish, msg);
+  }
+}
+
+/**
+ * Đổi câu chúc trên Modal quà 20/10 kèm hiệu ứng Typewriter
+ */
+export function handleShuffle2010Wish() {
+  const wishEl = document.getElementById('gift-2010-wish-text');
+  if (!wishEl) return;
+  const currentWish = wishEl.textContent.trim().replace(/^"|"$/g, '');
+  const available = FEMALE_IT_WISHES_2010.filter(w => w !== currentWish);
+  const nextWish = available[Math.floor(Math.random() * available.length)] || FEMALE_IT_WISHES_2010[0];
+  
+  startTypewriter(wishEl, nextWish, 20);
+}
+
+function fallbackCopyText(text, successMsg) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(successMsg || `Đã sao chép: ${text}`, 'success');
+  } catch (e) {
+    showToast(`Nội dung của bạn: ${text}`, 'info');
+  }
+}
+
+export * from './gift2010.js';
+
+/**
+ * Xử lý reset quà 20/10 để kiểm thử lại từ đầu
+ */
+export async function handleResetGift() {
+  const user = getCurrentMemberUser();
+  if (!user) return;
+
+  await resetGiftForUser(user);
+  handleCloseGiftModal();
+
+  // Cập nhật lại banner trên dashboard thành nút mở quà màu đỏ
+  const oct20Container = document.getElementById('member-oct20-banner-container');
+  if (oct20Container) {
+    oct20Container.innerHTML = renderGift2010Banner(user);
+  }
+
+  showToast('Đã reset quà! Bạn có thể bấm "🎁 Mở Hộp Quà 20/10" để thử lại hiệu ứng mở quà.', 'success');
+}
+
+/**
+ * Xử lý chuyển đổi loại quà để kiểm thử cả 3 trường hợp
+ * @param {string} giftId DEADLINE_24H | BONUS_10PT | VIP_DEBUG
+ */
+export async function handlePreviewGift(giftId) {
+  const user = getCurrentMemberUser();
+  if (!user || !giftId) return;
+
+  const newGift = await switchGiftTypeForUser(user, giftId);
+  if (!newGift) return;
+
+  // Cập nhật ngay modal
+  const body = document.getElementById('gift-2010-modal-body');
+  if (body) {
+    body.innerHTML = renderGift2010ModalContent(newGift, user);
+  }
+
+  // Cập nhật lại banner
+  const oct20Container = document.getElementById('member-oct20-banner-container');
+  if (oct20Container) {
+    oct20Container.innerHTML = renderGift2010Banner(user);
+  }
+
+  showToast(`Đã chuyển sang quà: ${newGift.shortTitle || newGift.giftTitle}`, 'info');
+}
