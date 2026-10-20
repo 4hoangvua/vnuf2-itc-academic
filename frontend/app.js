@@ -174,6 +174,12 @@ import {
   setPaginationPageSize
 } from './modules/pagination.js';
 
+import {
+  initZaloInAppNotice,
+  handleCopyZaloLink,
+  handleDismissZaloBanner
+} from './modules/zaloHelper.js';
+
 // ====================================================================
 // BẢN ĐỒ ĐIỀU PHỐI EVENT DELEGATION TẬP TRUNG (CENTRAL ACTIONS DISPATCHER)
 // ====================================================================
@@ -185,6 +191,10 @@ const CENTRAL_ACTION_MAP = {
   'show-view': (el, ev, ds) => showView(ds.view || ds.id),
   'reload-page': () => location.reload(),
   'logout': () => handleLogout(),
+
+  // --- HỖ TRỢ TRÌNH DUYỆT ZALO IN-APP (MOBILE) ---
+  'copy-zalo-link': () => handleCopyZaloLink(),
+  'dismiss-zalo-banner': () => handleDismissZaloBanner(),
 
   // --- XÁC THỰC OTP ---
   'back-to-mssv-step': () => backToMssvStep(),
@@ -453,6 +463,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 1. Khởi tạo theme Dark / Light
   initTheme();
+
+  // 1b. Khởi tạo hỗ trợ trình duyệt nội bộ Zalo trên Mobile (Android Intent / iOS Banner)
+  initZaloInAppNotice();
 
   // 2. Gắn kết hệ thống Event Delegation tập trung trên toàn trang (document.body)
   attachEventDelegation(document.body, CENTRAL_ACTION_MAP, 'click');

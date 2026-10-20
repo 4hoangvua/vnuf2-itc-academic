@@ -1489,6 +1489,27 @@ assert('Service_Campaign.js keeps MailApp outside withScriptLock', !serviceCampa
 assert('Service_Submit.js records attached giftCode', serviceSubmitContent.includes('payload.giftCode') && serviceSubmitContent.includes('markMemberGiftUsedInSheet'));
 assert('Service_Quiz.js marks gift voucher as used', serviceQuizContent.includes('markMemberGiftUsedInSheet(currentMssv, giftCode)'));
 
+// --------------------------------------------------------------------
+// 23. Testing Mobile Zalo In-App Browser Helper (Android Intent & iOS Safari Guide)
+// --------------------------------------------------------------------
+console.log('\n--- 23. Testing Mobile Zalo In-App Browser Helper ---');
+const zaloHelperModule = await import('./frontend/modules/zaloHelper.js');
+const indexHtmlContent = fs.readFileSync('./frontend/index.html', 'utf8');
+
+assert('zaloHelper.js exports detectZaloEnvironment', typeof zaloHelperModule.detectZaloEnvironment === 'function');
+assert('zaloHelper.js exports buildAndroidChromeIntent', typeof zaloHelperModule.buildAndroidChromeIntent === 'function');
+assert('zaloHelper.js exports initZaloInAppNotice', typeof zaloHelperModule.initZaloInAppNotice === 'function');
+assert('zaloHelper.js exports handleCopyZaloLink', typeof zaloHelperModule.handleCopyZaloLink === 'function');
+assert('zaloHelper.js exports handleDismissZaloBanner', typeof zaloHelperModule.handleDismissZaloBanner === 'function');
+
+const testIntent = zaloHelperModule.buildAndroidChromeIntent('https://bht-itc.vnuf2.edu.vn/');
+assert('buildAndroidChromeIntent formats intent URL properly', testIntent.startsWith('intent://bht-itc.vnuf2.edu.vn/') && testIntent.includes('package=com.android.chrome'));
+
+assert('index.html contains Fast Android Zalo Intent script in head', indexHtmlContent.includes('Fast Android Zalo Intent') && indexHtmlContent.includes('package=com.android.chrome'));
+assert('app.js registers copy-zalo-link action', appJsContent2.includes("'copy-zalo-link':"));
+assert('app.js registers dismiss-zalo-banner action', appJsContent2.includes("'dismiss-zalo-banner':"));
+assert('app.js calls initZaloInAppNotice', appJsContent2.includes('initZaloInAppNotice();'));
+
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
   process.exit(1);

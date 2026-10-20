@@ -27,6 +27,22 @@
     })();
   </script>
 
+  <!-- Fast Android Zalo Intent: Tự động mở Google Chrome thật trên Android khi mở qua Zalo -->
+  <script>
+    (function() {
+      try {
+        var ua = navigator.userAgent || '';
+        var isZalo = /Zalo/i.test(ua) || /ZaloTheme/i.test(ua);
+        var isAndroid = /Android/i.test(ua);
+        if (isZalo && isAndroid && !sessionStorage.getItem('bht_zalo_intent_done')) {
+          sessionStorage.setItem('bht_zalo_intent_done', 'true');
+          var clean = window.location.href.replace(/^https?:\/\//i, '');
+          window.location.href = 'intent://' + clean + '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;end;';
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- CDN Preconnect & DNS-Prefetch (Tối ưu tốc độ tải trang & chống nghẽn CDN) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
