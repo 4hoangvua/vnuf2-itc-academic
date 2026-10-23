@@ -96,7 +96,7 @@ export function renderMemberSkeletons(force = false) {
  */
 export function getCurrentMemberUser() {
   let user = null;
-  const viewingAs = sessionStorage.getItem('bht_viewing_as_member');
+  const viewingAs = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('bht_viewing_as_member') : null;
   if (viewingAs && viewingAs !== 'true') {
     try {
       const parsed = JSON.parse(viewingAs);
@@ -104,11 +104,12 @@ export function getCurrentMemberUser() {
     } catch (e) {}
   }
   if (!user) {
-    user = appState.user || JSON.parse(sessionStorage.getItem('bht_user') || 'null') || { 
-      hoTen: localStorage.getItem('bht_hoten') || 'Thành Viên', 
-      mssv: localStorage.getItem('bht_mssv') || '',
-      Sex: localStorage.getItem('bht_sex') || '',
-      sex: localStorage.getItem('bht_sex') || ''
+    const rawSessionUser = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('bht_user') : null;
+    user = appState.user || JSON.parse(rawSessionUser || 'null') || { 
+      hoTen: (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_hoten') : '') || 'Thành Viên', 
+      mssv: (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_mssv') : '') || '',
+      Sex: (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_sex') : '') || '',
+      sex: (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_sex') : '') || ''
     };
   }
 

@@ -13,7 +13,8 @@ import { callApi } from '../../services/api.js';
 import { 
   showToast, 
   showGlobalLoading, 
-  hideGlobalLoading 
+  hideGlobalLoading,
+  setButtonLoading
 } from '../ui.js';
 import { 
   renderMemberQuizView, 
@@ -49,6 +50,57 @@ export let memberQuizTimerInterval = null;
 export let memberQuizStartTime = null;
 export let quizAutoNextTimeout = null;
 export let isQuizKeydownBound = false;
+
+/**
+ * Lấy storage key để lưu tạm tiến trình ôn luyện Nhánh 2 (Ôn luyện tự do)
+ * @param {string} sessionId
+ * @param {string} quizId
+ * @param {string} poolType
+ * @returns {string}
+ */
+export function getPracticeDraftKey(sessionId, quizId, poolType = 'session') {
+  const user = getCurrentMemberUser();
+  const mssv = (user && (user.mssv || user.MSSV)) || (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_mssv') : '') || 'GUEST';
+  const targetId = poolType === 'session' ? (quizId || sessionId || 'session') : poolType;
+  return `bht_quiz_practice_draft_${mssv}_${targetId}`;
+}
+
+/**
+ * Lưu tiến trình ôn luyện Nhánh 2 vào localStorage
+ * @param {string} sessionId
+ * @param {string} quizId
+ * @param {string} poolType
+ */
+export function savePracticeDraft(sessionId, quizId, poolType = 'session') {
+  if (quizMode !== 'practice') return;
+  try {
+    if (typeof localStorage === 'undefined' || typeof localStorage.setItem !== 'function') return;
+    const key = getPracticeDraftKey(sessionId, quizId, poolType);
+    const draftData = {
+      answers: memberQuizAnswers || {},
+      results: memberQuizAnswerResults || {},
+      lastIndex: quizCurrentIndex || 0,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(key, JSON.stringify(draftData));
+  } catch (e) {
+    console.warn('Không thể lưu nháp tiến trình ôn luyện:', e);
+  }
+}
+
+/**
+ * Xóa tiến trình ôn luyện đã lưu khi hoàn thành hoặc làm lại
+ * @param {string} sessionId
+ * @param {string} quizId
+ * @param {string} poolType
+ */
+export function clearPracticeDraft(sessionId, quizId, poolType = 'session') {
+  try {
+    if (typeof localStorage === 'undefined' || typeof localStorage.removeItem !== 'function') return;
+    const key = getPracticeDraftKey(sessionId, quizId, poolType);
+    localStorage.removeItem(key);
+  } catch (e) {}
+}
 
 /**
  * Cập nhật giao diện trong Zen Focus Arena (Phòng thi & Ôn luyện cao toàn màn hình)
@@ -419,6 +471,26 @@ export async function handleStartPracticeQuiz(sessionId, quizId, customPool) {
   memberQuizStartTime = Date.now();
   memberQuizRemainingSeconds = null;
 
+  // Khôi phục tiến trình ôn luyện đã lưu nếu có
+  try {
+    const draftKey = getPracticeDraftKey(sessionId, quizId || (currentMemberQuiz ? currentMemberQuiz.QuizID : ''), quizPoolType);
+    const savedDraftRaw = (typeof localStorage !== 'undefined') ? localStorage.getItem(draftKey) : null;
+    if (savedDraftRaw) {
+      const savedDraft = JSON.parse(savedDraftRaw);
+      if (savedDraft && typeof savedDraft.answers === 'object' && Object.keys(savedDraft.answers).length > 0) {
+        memberQuizAnswers = savedDraft.answers || {};
+        memberQuizAnswerResults = savedDraft.results || {};
+        const restoredIdx = Number(savedDraft.lastIndex);
+        if (!isNaN(restoredIdx) && restoredIdx >= 0 && restoredIdx < currentQuizPool.length) {
+          quizCurrentIndex = restoredIdx;
+        }
+        showToast(`Đã khôi phục tiến trình ôn luyện (${Object.keys(memberQuizAnswers).length}/${currentQuizPool.length} câu đã làm)!`, 'info');
+      }
+    }
+  } catch (draftErr) {
+    console.warn('Lỗi khôi phục nháp ôn luyện:', draftErr);
+  }
+
   renderActiveZenQuizView();
 }
 
@@ -483,6 +555,13 @@ export async function handleSelectQuizOption(questionId, optionIndex) {
 
     renderActiveZenQuizView();
 
+    // 4. Tự động lưu nháp tiến trình ôn luyện Nhánh 2
+    savePracticeDraft(
+      getCurrentMemberDetailSessionId(), 
+      currentMemberQuiz ? currentMemberQuiz.QuizID : '', 
+      quizPoolType
+    );
+
     // Tự động chuyển câu sau 1.2s nếu chọn đúng
     if (quizAutoNext && memberQuizAnswerResults[questionId]?.isCorrect) {
       if (quizAutoNextTimeout) clearTimeout(quizAutoNextTimeout);
@@ -505,6 +584,9 @@ export function handleNextQuizQuestion() {
   if (!isTakingMemberQuiz || !currentQuizPool.length) return;
   if (quizCurrentIndex < currentQuizPool.length - 1) {
     quizCurrentIndex++;
+    if (quizMode === 'practice') {
+      savePracticeDraft(getCurrentMemberDetailSessionId(), currentMemberQuiz ? currentMemberQuiz.QuizID : '', quizPoolType);
+    }
     renderActiveZenQuizView();
   }
 }
@@ -516,6 +598,9 @@ export function handlePrevQuizQuestion() {
   if (!isTakingMemberQuiz || !currentQuizPool.length) return;
   if (quizCurrentIndex > 0) {
     quizCurrentIndex--;
+    if (quizMode === 'practice') {
+      savePracticeDraft(getCurrentMemberDetailSessionId(), currentMemberQuiz ? currentMemberQuiz.QuizID : '', quizPoolType);
+    }
     renderActiveZenQuizView();
   }
 }
@@ -528,6 +613,9 @@ export function handleJumpQuizQuestion(index) {
   const idx = Number(index);
   if (!currentQuizPool.length || isNaN(idx)) return;
   quizCurrentIndex = Math.max(0, Math.min(idx, currentQuizPool.length - 1));
+  if (quizMode === 'practice') {
+    savePracticeDraft(getCurrentMemberDetailSessionId(), currentMemberQuiz ? currentMemberQuiz.QuizID : '', quizPoolType);
+  }
   handleCloseQuizGridModal();
   renderActiveZenQuizView();
 }
@@ -625,11 +713,19 @@ export async function handleExitTakingQuiz() {
   if (quizMode === 'exam') {
     const isConfirmed = confirm('Bạn đang trong bài thi tính giờ chính thức. Nếu thoát ra, hệ thống sẽ tự động nộp kết quả theo các câu bạn đã chọn. Bạn có chắc chắn muốn nộp bài và thoát?');
     if (!isConfirmed) return;
-    await handleSubmitMemberQuiz(currentSid, currentMemberQuiz ? currentMemberQuiz.QuizID : '');
+    const exitBtn = document.querySelector('[data-action="exit-taking-quiz"]');
+    if (exitBtn) setButtonLoading(exitBtn, true);
+    try {
+      await handleSubmitMemberQuiz(currentSid, currentMemberQuiz ? currentMemberQuiz.QuizID : '', exitBtn);
+    } finally {
+      if (exitBtn) setButtonLoading(exitBtn, false);
+    }
     return;
   }
 
-  // Chế độ ôn luyện -> Thoát ngay lập tức
+  // Chế độ ôn luyện -> Lưu lại tiến trình nháp trước khi thoát
+  savePracticeDraft(currentSid, currentMemberQuiz ? currentMemberQuiz.QuizID : '', quizPoolType);
+
   if (memberQuizTimerInterval) {
     clearInterval(memberQuizTimerInterval);
     memberQuizTimerInterval = null;
@@ -660,8 +756,9 @@ export function handleOpenQuizReviewDrawer() {
  * Nộp bài trắc nghiệm
  * @param {string} sessionId
  * @param {string} quizId
+ * @param {HTMLElement|null} [triggerBtn] Nút bấm trigger để xoay đồng bộ spinner loading
  */
-export async function handleSubmitMemberQuiz(sessionId, quizId) {
+export async function handleSubmitMemberQuiz(sessionId, quizId, triggerBtn = null) {
   const currentUser = getCurrentMemberUser();
   const mssv = currentUser.mssv || (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_mssv') : '') || '';
   const hoTen = currentUser.hoTen || '';
@@ -675,6 +772,10 @@ export async function handleSubmitMemberQuiz(sessionId, quizId) {
   const timeSpentSec = memberQuizStartTime ? Math.round((Date.now() - memberQuizStartTime) / 1000) : 0;
   const isPractice = (quizMode === 'practice');
 
+  // Khóa và hiển thị spinner xoay đồng bộ trên nút Submit (Cả nhánh 1 và nhánh 2)
+  const submitBtn = triggerBtn || document.querySelector('[data-action="submit-member-quiz"]');
+  if (submitBtn) setButtonLoading(submitBtn, true);
+
   showGlobalLoading(isPractice ? 'Đang tổng kết bài ôn luyện...' : 'Đang chấm điểm bài thi chính thức...');
   try {
     const res = await callApi('submitQuiz', {
@@ -687,7 +788,10 @@ export async function handleSubmitMemberQuiz(sessionId, quizId) {
       isPractice
     });
 
-    hideGlobalLoading();
+    // Sau khi đã nộp bài ôn luyện thành công, xóa bản nháp để lần sau làm mới
+    if (isPractice) {
+      clearPracticeDraft(currentSid, quizId || (currentMemberQuiz ? currentMemberQuiz.QuizID : ''), quizPoolType);
+    }
 
     // Đóng Zen Arena và đưa người dùng về Sub-tab Trắc Nghiệm để xem kết quả & xếp hạng
     const zenModal = document.getElementById('modal-quiz-zen-arena');
@@ -717,7 +821,6 @@ export async function handleSubmitMemberQuiz(sessionId, quizId) {
       await loadMemberQuiz(currentSid);
     }
   } catch (err) {
-    hideGlobalLoading();
     console.error('Lỗi khi nộp bài trắc nghiệm:', err);
     showToast('Đã xảy ra lỗi khi nộp bài. Vui lòng thử lại!', 'error');
     const zenModal = document.getElementById('modal-quiz-zen-arena');
@@ -727,15 +830,19 @@ export async function handleSubmitMemberQuiz(sessionId, quizId) {
     const quizSubtabBtn = document.getElementById('btn-member-subtab-quiz');
     if (quizSubtabBtn) quizSubtabBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
     loadMemberQuiz(currentSid);
+  } finally {
+    hideGlobalLoading();
+    if (submitBtn) setButtonLoading(submitBtn, false);
   }
 }
 
 /**
- * Làm lại bài trắc nghiệm (vào thẳng phòng ôn luyện)
+ * Làm lại bài trắc nghiệm (vào thẳng phòng ôn luyện và xóa nháp cũ)
  * @param {string} sessionId
  * @param {string} quizId
  */
 export function handleRetakeMemberQuiz(sessionId, quizId) {
+  clearPracticeDraft(sessionId, quizId, 'session');
   handleStartPracticeQuiz(sessionId, quizId, 'session');
 }
 

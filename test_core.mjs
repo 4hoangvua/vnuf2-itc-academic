@@ -5,6 +5,12 @@ globalThis.localStorage = {
   removeItem: (k) => memStore.delete(k),
   clear: () => memStore.clear()
 };
+globalThis.sessionStorage = {
+  getItem: (k) => (memStore.has('sess_' + k) ? memStore.get('sess_' + k) : null),
+  setItem: (k, v) => memStore.set('sess_' + k, String(v)),
+  removeItem: (k) => memStore.delete('sess_' + k),
+  clear: () => {}
+};
 
 import fs from 'fs';
 import { store, getState, setState, subscribe } from './frontend/modules/store.js';
@@ -1560,6 +1566,32 @@ assert('hydrateAppFromBootstrap populates getAttendanceSessions cache', attCache
 
 assert('member.js initMemberView accepts fetchApi parameter', memberModule.initMemberView.toString().includes('fetchApi'));
 assert('admin.js initAdminView accepts fetchApi parameter', adminModule.initAdminView.toString().includes('fetchApi'));
+
+// --------------------------------------------------------------------
+// 25. Testing Practice Quiz Draft Persistence & Submit Button Loading Synchronization
+// --------------------------------------------------------------------
+console.log('\n--- 25. Testing Practice Quiz Draft Persistence & Submit Button Loading Synchronization ---');
+
+const memberQuizContent = fs.readFileSync('./frontend/modules/member/memberQuiz.js', 'utf8');
+const appJsContentCurrent = fs.readFileSync('./frontend/app.js', 'utf8');
+
+assert('memberQuiz.js imports setButtonLoading from ui.js', memberQuizContent.includes('setButtonLoading'));
+assert('memberQuiz.js exports getPracticeDraftKey', memberQuizContent.includes('export function getPracticeDraftKey('));
+assert('memberQuiz.js exports savePracticeDraft', memberQuizContent.includes('export function savePracticeDraft('));
+assert('memberQuiz.js exports clearPracticeDraft', memberQuizContent.includes('export function clearPracticeDraft('));
+assert('memberQuiz.js saves practice draft on exit', memberQuizContent.includes('savePracticeDraft(currentSid, currentMemberQuiz ? currentMemberQuiz.QuizID : \'\', quizPoolType)'));
+assert('memberQuiz.js restores practice draft in handleStartPracticeQuiz', memberQuizContent.includes('getPracticeDraftKey(sessionId') && memberQuizContent.includes('Đã khôi phục tiến trình ôn luyện'));
+assert('memberQuiz.js calls setButtonLoading(submitBtn, true) in handleSubmitMemberQuiz', memberQuizContent.includes('if (submitBtn) setButtonLoading(submitBtn, true);'));
+assert('memberQuiz.js resets setButtonLoading in finally block of handleSubmitMemberQuiz', memberQuizContent.includes('if (submitBtn) setButtonLoading(submitBtn, false);'));
+assert('app.js passes button element to handleSubmitMemberQuiz', appJsContentCurrent.includes("'submit-member-quiz': (el, ev, ds) => handleSubmitMemberQuiz(ds.sessionId, ds.quizId, el)"));
+
+// Functional test for draft key and localStorage persistence
+const quizModule = await import('./frontend/modules/member/memberQuiz.js');
+const testDraftKey = quizModule.getPracticeDraftKey('MEET_TEST', 'QUIZ_TEST', 'session');
+assert('getPracticeDraftKey formats key with user mssv and target ID', testDraftKey.startsWith('bht_quiz_practice_draft_') && testDraftKey.includes('QUIZ_TEST'));
+
+quizModule.clearPracticeDraft('MEET_TEST', 'QUIZ_TEST', 'session');
+assert('clearPracticeDraft removes draft from localStorage', localStorage.getItem(testDraftKey) === null);
 
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
