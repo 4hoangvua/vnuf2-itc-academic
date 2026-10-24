@@ -67,6 +67,10 @@ Trung tâm điều phối lịch sinh hoạt hàng tuần của CLB:
        - Nút **"Khóa điểm danh"** / **"Mở điểm danh"**.
        - Nút **"Đổi PIN mới"** (nếu nghi ngờ bị lộ mã).
        - Bảng danh sách sinh viên đã điểm danh (nhảy số tức thì theo thời gian thực).
+       - **Điểm danh bổ sung thủ công:** Khi sinh viên quên điện thoại, hết pin hoặc lỗi kết nối, Admin chỉ cần nhập MSSV vào ô *Điểm danh bù bằng MSSV* rồi bấm **"Điểm danh bù"**. Sinh viên sẽ được thêm ngay vào danh sách có mặt và nếu trước đó có gửi đơn vắng thì đơn sẽ tự động được hủy.
+       - **Bảng Đơn Xin Vắng Mặt & Xét Duyệt (Popup Modal):**
+         - Theo dõi danh sách đơn vắng của buổi học (có phân trang riêng biệt).
+         - Bấm **"Xét duyệt"** để mở Popup Modal: Lựa chọn **"Duyệt đơn (Nghỉ có phép)"** hoặc **"Từ chối (Nghỉ không phép)"** và điền lời nhắn phản hồi gửi tới sinh viên.
      - **Sub-tab "Bài tập & Giao nhiệm vụ":** Giao bài tập về nhà cho buổi đó kèm hạn chót (Deadline) và chấm bài trực tiếp tại chỗ.
 
 3. **Chế độ Máy Chiếu Hội Trường (`Projector Mode`):**

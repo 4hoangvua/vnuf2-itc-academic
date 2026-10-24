@@ -360,14 +360,14 @@
 
         <!-- Bảng mật độ cao (High-density stream) -->
         <div class="overflow-x-auto -mx-0">
-          <table class="bht-table w-full text-xs min-w-[480px]">
+          <table class="bht-table w-full text-xs min-w-[540px]">
             <thead>
-              <tr class="text-ink-muted border-b border-hairline text-left bg-subtle/40">
-                <th class="w-28 py-2.5 px-3 sm:px-4 font-mono font-semibold">Thời gian</th>
-                <th class="py-2.5 px-3 sm:px-4 font-semibold">Chuyên đề &amp; Địa điểm</th>
-                <th class="w-24 py-2.5 px-3 sm:px-4 text-center font-semibold hidden sm:table-cell">Trạng thái</th>
-                <th class="w-24 py-2.5 px-3 sm:px-4 text-center font-semibold">Điểm danh</th>
-                <th class="w-14 py-2.5 px-3 sm:px-4 text-center font-semibold">Chi tiết</th>
+              <tr class="text-ink-muted border-b border-hairline text-left bg-subtle/40 whitespace-nowrap">
+                <th class="w-28 min-w-[100px] py-2.5 px-3 sm:px-4 font-mono font-semibold">Thời gian</th>
+                <th class="py-2.5 px-3 sm:px-4 font-semibold min-w-[180px]">Chuyên đề &amp; Địa điểm</th>
+                <th class="w-24 min-w-[90px] py-2.5 px-3 sm:px-4 text-center font-semibold hidden sm:table-cell">Trạng thái</th>
+                <th class="w-32 min-w-[120px] py-2.5 px-3 sm:px-4 text-center font-semibold">Điểm danh</th>
+                <th class="w-16 min-w-[60px] py-2.5 px-3 sm:px-4 text-center font-semibold">Chi tiết</th>
               </tr>
             </thead>
             <tbody id="member-attendance-audit-tbody" class="divide-y divide-hairline">
@@ -739,6 +739,100 @@
         <span>Xác nhận điểm danh</span>
         <i class="fa-solid fa-check text-xs ml-1"></i>
       </button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Popup Gửi Thư Xin Vắng Mặt Buổi Sinh Hoạt Cho Thành Viên -->
+<div id="modal-member-quick-absence" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bht-card bg-elevated max-w-md w-full p-6 animate-fade-in relative border border-hairline shadow-[var(--shadow-float)] space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-hairline">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center text-sm">
+          <i class="fa-regular fa-paper-plane"></i>
+        </div>
+        <div>
+          <h3 class="bht-heading-serif text-base font-bold text-ink">Thư Xin Vắng Mặt</h3>
+          <p class="text-[11px] text-ink-muted">Ban Học Thuật · CLB Tin Học VNUF2</p>
+        </div>
+      </div>
+      <button type="button" data-action="close-quick-absence-modal" class="bht-btn bht-btn-ghost bht-btn-icon" title="Đóng">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <!-- Thông tin buổi sinh hoạt đang chọn -->
+    <div class="p-3.5 rounded-xl bg-subtle/60 border border-hairline space-y-1">
+      <span class="text-[10px] font-mono uppercase tracking-wider text-accent font-bold">Buổi sinh hoạt:</span>
+      <h4 id="quick-absence-session-title" class="text-xs sm:text-sm font-semibold text-ink leading-snug">Chuyên đề học thuật</h4>
+      <div class="flex items-center gap-3 text-[11px] text-ink-muted font-mono pt-1">
+        <span id="quick-absence-session-date"><i class="fa-regular fa-calendar-check mr-1 text-accent"></i>--/--/----</span>
+        <span id="quick-absence-session-room"><i class="fa-solid fa-location-dot mr-1 text-rose-500"></i>Lab CNTT</span>
+      </div>
+    </div>
+
+    <form id="form-quick-absence-modal" data-action="submit-quick-absence-modal" novalidate class="space-y-3.5">
+      <!-- Dedicated Form Error Alert -->
+      <div id="quick-absence-error-alert" class="hidden bht-callout border-l-4 border-err bg-err-soft text-err text-xs p-3 rounded-r-md js-form-error text-left">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+          <span id="quick-absence-error-msg" class="leading-relaxed js-error-msg"></span>
+        </div>
+      </div>
+
+      <!-- Lý do xin vắng -->
+      <div>
+        <label for="quick-absence-reason-select" class="block text-xs font-semibold text-ink mb-1.5">
+          Lý do xin vắng <span class="text-err">*</span>
+        </label>
+        <select id="quick-absence-reason-select" class="bht-select w-full text-xs" required>
+          <option value="TRUNG_LICH_HOC">Trùng lịch học chính khóa / Lịch thi trên lớp</option>
+          <option value="LY_DO_SUC_KHOE">Lý do sức khỏe / Bị ốm, sốt</option>
+          <option value="VIEC_GIA_DINH">Gia đình có việc đột xuất / Về quê</option>
+          <option value="THI_CU_DU_AN">Tham gia kỳ thi học thuật / Dự án trường</option>
+          <option value="LY_DO_KHAC">Lý do cá nhân khác</option>
+        </select>
+      </div>
+
+      <!-- Giải trình chi tiết -->
+      <div>
+        <label for="quick-absence-detail-input" class="block text-xs font-semibold text-ink mb-1.5">
+          Giải trình chi tiết <span class="text-err">*</span>
+        </label>
+        <textarea 
+          id="quick-absence-detail-input" 
+          rows="3" 
+          required 
+          maxlength="500" 
+          placeholder="Nêu rõ lý do vắng mặt, môn thi/môn học bị trùng hoặc hoàn cảnh cụ thể..." 
+          class="bht-textarea w-full text-xs leading-relaxed"
+        ></textarea>
+        <span class="text-[10px] text-ink-faint block text-right mt-1 font-mono">Tối đa 500 ký tự</span>
+      </div>
+
+      <!-- Link minh chứng (Tùy chọn) -->
+      <div>
+        <label for="quick-absence-proof-input" class="block text-xs font-semibold text-ink mb-1.5">
+          Link minh chứng <span class="text-[10px] text-ink-muted font-normal">(Ảnh lịch thi, minh chứng nếu có)</span>
+        </label>
+        <input 
+          type="url" 
+          id="quick-absence-proof-input" 
+          placeholder="https://drive.google.com/file/d/..." 
+          class="bht-input w-full text-xs font-mono"
+        >
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-hairline">
+        <button type="button" data-action="close-quick-absence-modal" class="bht-btn bht-btn-secondary bht-btn-sm">
+          Hủy bỏ
+        </button>
+        <button type="submit" id="btn-submit-quick-absence-modal" class="bht-btn bht-btn-primary bht-btn-sm">
+          <i class="fa-regular fa-paper-plane text-xs mr-1"></i>
+          <span>Gửi thư xin vắng</span>
+        </button>
+      </div>
     </form>
   </div>
 </div>

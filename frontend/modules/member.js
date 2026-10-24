@@ -4,7 +4,7 @@
 
 import { callApi, hydrateAppFromBootstrap } from '../services/api.js';
 import { appState, showToast, showView, showGlobalLoading, hideGlobalLoading, escapeHtml, setFormControlsDisabled, setButtonLoading, showFormError, clearFormError } from './ui.js';
-import { 
+import {
   renderMemberDrlWidget,
   renderMemberSpotlightCard,
   renderMemberAttendanceAuditTable,
@@ -15,22 +15,22 @@ import {
   renderDrlWidgetSkeleton,
   renderAuditTableSkeleton
 } from './templates.js';
-import { 
-  currentMemberDetailSessionId, 
-  setCurrentMemberDetailSessionId, 
-  openMemberSessionDetail, 
-  applySessionsFilter, 
-  renderMemberSessions 
+import {
+  currentMemberDetailSessionId,
+  setCurrentMemberDetailSessionId,
+  openMemberSessionDetail,
+  applySessionsFilter,
+  renderMemberSessions
 } from './member/memberSessions.js';
 import { handleSearchDocs, renderMemberDocs } from './member/memberDocs.js';
 import { handleFileSelected } from './member/memberSubmissions.js';
 import { isTakingMemberQuiz } from './member/memberQuiz.js';
 import { paginate, renderPagination, resetPagination } from './pagination.js';
-import { 
-  renderGift2010Banner, 
-  renderGift2010ModalContent, 
-  claimGiftForUser, 
-  isFemaleMember, 
+import {
+  renderGift2010Banner,
+  renderGift2010ModalContent,
+  claimGiftForUser,
+  isFemaleMember,
   getClaimedGift,
   resetGiftForUser,
   switchGiftTypeForUser,
@@ -101,12 +101,12 @@ export function getCurrentMemberUser() {
     try {
       const parsed = JSON.parse(viewingAs);
       if (parsed && parsed.mssv) user = parsed;
-    } catch (e) {}
+    } catch (e) { }
   }
   if (!user) {
     const rawSessionUser = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('bht_user') : null;
-    user = appState.user || JSON.parse(rawSessionUser || 'null') || { 
-      hoTen: (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_hoten') : '') || 'Thành Viên', 
+    user = appState.user || JSON.parse(rawSessionUser || 'null') || {
+      hoTen: (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_hoten') : '') || 'Thành Viên',
       mssv: (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_mssv') : '') || '',
       Sex: (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_sex') : '') || '',
       sex: (typeof localStorage !== 'undefined' ? localStorage.getItem('bht_sex') : '') || ''
@@ -126,14 +126,14 @@ export function getCurrentMemberUser() {
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
-    const memList = (appState.members && appState.members.length > 0) 
-      ? appState.members 
+    const memList = (appState.members && appState.members.length > 0)
+      ? appState.members
       : (mockStoreMembers.length > 0 ? mockStoreMembers : (INITIAL_MOCK_DATA ? INITIAL_MOCK_DATA.members : []));
     const cleanUserMssv = String(user.mssv).trim().toUpperCase();
     const mem = memList.find(m => String(m.MSSV).trim().toUpperCase() === cleanUserMssv);
-    
+
     if (mem) {
       if (mem.HoTen && (!user.hoTen || user.hoTen === 'Thành Viên' || user.hoTen === user.mssv)) {
         user.hoTen = mem.HoTen;
@@ -265,7 +265,7 @@ export function initMemberView(silent = true, fetchApi = true) {
   // ĐỒNG BỘ REALTIME & CROSS-TAB TỰ ĐỘNG (Khi Admin tạo Chuyên đề / Giao task / Mở khóa điểm danh)
   if (!window._memberStorageListenerAttached) {
     window._memberStorageListenerAttached = true;
-    
+
     let syncThrottleTimer = null;
     const triggerSync = (src) => {
       // Bảo vệ phiên làm bài: Không làm gián đoạn khi người dùng đang làm trắc nghiệm trong Zen Arena
@@ -308,11 +308,12 @@ export async function loadMemberData(silent = true, skipCache = false) {
   if (!silent) showGlobalLoading('Đang tải dữ liệu học thuật...');
 
   try {
-    const [tasksRes, subsRes, attRes, docsRes] = await Promise.all([
+    const [tasksRes, subsRes, attRes, docsRes, absRes] = await Promise.all([
       callApi('getAllTasks', {}, { skipCache }),
       callApi('getMemberSubmissions', { mssv: user.mssv }, { skipCache }),
       callApi('getAttendanceSessions', {}, { skipCache }),
-      callApi('getAllDocuments', {}, { skipCache })
+      callApi('getAllDocuments', {}, { skipCache }),
+      callApi('getMemberAbsenceRequests', { mssv: user.mssv }, { skipCache })
     ]);
 
     hideGlobalLoading();
@@ -321,12 +322,13 @@ export async function loadMemberData(silent = true, skipCache = false) {
     if (subsRes && subsRes.success) appState.submissions = subsRes.data || [];
     if (attRes && attRes.success) appState.attendance = attRes.data || [];
     if (docsRes && docsRes.success) appState.docs = docsRes.data || [];
+    if (absRes && absRes.success) appState.absences = absRes.data || [];
 
     renderMemberDashboard();
 
     // Nếu đang mở xem chi tiết một buổi học và KHÔNG trong phòng thi trắc nghiệm, cập nhật lại chi tiết
     if (currentMemberDetailSessionId && !isTakingMemberQuiz) {
-      const activeSession = (appState.attendance || []).find(s => 
+      const activeSession = (appState.attendance || []).find(s =>
         String(s.SessionID || '').trim().toUpperCase() === String(currentMemberDetailSessionId).trim().toUpperCase()
       );
       if (activeSession) {
@@ -338,7 +340,7 @@ export async function loadMemberData(silent = true, skipCache = false) {
       if (hash.startsWith('sessions/') || hash.startsWith('session/')) {
         const sid = hash.split('/')[1];
         if (sid) {
-          const matchSession = (appState.attendance || []).find(s => 
+          const matchSession = (appState.attendance || []).find(s =>
             String(s.SessionID || '').trim().toUpperCase() === String(sid).trim().toUpperCase()
           );
           if (matchSession) {
@@ -365,7 +367,7 @@ export async function refreshMemberData() {
       showToast('Đã làm mới dữ liệu thành công!', 'success');
       return;
     }
-  } catch (e) {}
+  } catch (e) { }
   loadMemberData(false, true); // Bỏ qua cache để luôn lấy dữ liệu mới nhất (fallback)
 }
 
@@ -487,7 +489,7 @@ export function renderMemberAuditTable() {
     onPageChange: () => renderMemberAuditTable()
   });
 
-  auditTbody.innerHTML = renderMemberAttendanceAuditTable(pagedItems, user.mssv, 'ALL');
+  auditTbody.innerHTML = renderMemberAttendanceAuditTable(pagedItems, user.mssv, 'ALL', appState.absences || []);
 
   if (pagEl) {
     pagEl.innerHTML = renderPagination('member-audit', { showPageSize: false });
@@ -515,6 +517,7 @@ export function renderMemberDashboard() {
     const targetSession = openSession || sessions[0] || null;
 
     let userAttended = false;
+    let userAbsence = null;
     if (targetSession) {
       try {
         const ds = JSON.parse(targetSession.DS_CoMat || '[]');
@@ -522,9 +525,12 @@ export function renderMemberDashboard() {
       } catch (_) {
         userAttended = false;
       }
+      const allAbs = appState.absences || [];
+      const cleanUserMssv = String(user.mssv || '').trim().toUpperCase();
+      userAbsence = allAbs.find(a => a.SessionID === targetSession.SessionID && a.MSSV === cleanUserMssv && a.TrangThaiDuyet !== 'Cancelled') || null;
     }
 
-    spotlightContainer.innerHTML = renderMemberSpotlightCard(targetSession, userAttended);
+    spotlightContainer.innerHTML = renderMemberSpotlightCard(targetSession, userAttended, userAbsence);
   }
 
   // Render Banner 20/10 (Tự động cá nhân hóa theo giới tính)
@@ -552,7 +558,7 @@ export function renderMemberDashboard() {
  * @param {number} totalTasks Tổng số bài tập được giao
  * @returns {Object} Thông số tiến độ và khuyến nghị
  */
-export function calculateDrlProgress(attendedCount = 0, totalSessions = 0, approvedTasks = 0, totalTasks = 0) {
+export function calculateDrlProgress(attendedCount = 0, totalSessions = 0, approvedTasks = 0, totalTasks = 0, excusedCount = 0, unexcusedCount = 0, pendingAbsenceCount = 0) {
   const rate = totalSessions > 0 ? Math.round((attendedCount / totalSessions) * 100) : (attendedCount > 0 ? 100 : 0);
 
   let drlTier = 'GOOD';
@@ -591,6 +597,9 @@ export function calculateDrlProgress(attendedCount = 0, totalSessions = 0, appro
     attendanceRate: rate,
     approvedTasks,
     totalTasks,
+    excusedCount,
+    unexcusedCount,
+    pendingAbsenceCount,
     drlTier,
     drlTierLabel,
     drlPointsText,
@@ -606,7 +615,9 @@ function renderMemberStats() {
   const tasks = appState.tasks || [];
   const subs = appState.submissions || [];
   const atts = appState.attendance || [];
+  const allAbs = appState.absences || [];
   const user = getCurrentMemberUser();
+  const cleanMssv = String(user.mssv || '').trim().toUpperCase();
 
   const tEl = document.getElementById('stat-member-tasks') || document.getElementById('stat-open-tasks');
   const sEl = document.getElementById('stat-member-submits') || document.getElementById('stat-my-submissions');
@@ -615,7 +626,7 @@ function renderMemberStats() {
   // Đếm số bài tập của thành viên
   const myTasks = tasks.filter(t => {
     const target = String(t.NguoiNhan || 'ALL').trim().toUpperCase();
-    return target === 'ALL' || target === user.mssv;
+    return target === 'ALL' || target === cleanMssv;
   });
   const pendingTasks = myTasks.filter(t => {
     const sub = subs.find(s => s.TaskID === t.TaskID);
@@ -631,22 +642,43 @@ function renderMemberStats() {
   const totalSessionsCount = realSessions.length > 0 ? realSessions.length : atts.length;
 
   let attendedCount = 0;
+  let excusedCount = 0;
+  let unexcusedCount = 0;
+  let pendingAbsenceCount = 0;
   let openSession = null;
   let hasAttendedOpenSession = false;
 
-  atts.forEach(s => {
+  realSessions.forEach(s => {
     let ds = [];
     try { ds = JSON.parse(s.DS_CoMat || '[]'); } catch (e) {
       ds = s.DS_CoMat ? s.DS_CoMat.split(',').map(x => x.trim()) : [];
     }
-    const isAttended = ds.includes(user.mssv);
+    const isAttended = ds.includes(cleanMssv);
     if (isAttended) attendedCount++;
 
     const status = String(s.TrangThai || '').trim().toLowerCase();
+    const isClosed = status === 'closed';
+
     if (status === 'open' || status === 'dang_mo') {
-      if (!openSession || s.SessionID !== 'SESSION_GENERAL') {
+      if (!openSession) {
         openSession = s;
         hasAttendedOpenSession = isAttended;
+      }
+    }
+
+    // Đếm số buổi vắng có phép và không phép
+    if (!isAttended) {
+      const userAbs = allAbs.find(a => a.SessionID === s.SessionID && a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
+      if (userAbs) {
+        if (userAbs.TrangThaiDuyet === 'Approved' || userAbs.TrangThai === 'Approved') {
+          excusedCount++;
+        } else if (userAbs.TrangThaiDuyet === 'Pending' || userAbs.TrangThai === 'Pending') {
+          pendingAbsenceCount++;
+        } else if (userAbs.TrangThaiDuyet === 'Rejected' || userAbs.TrangThai === 'Rejected') {
+          unexcusedCount++;
+        }
+      } else if (isClosed) {
+        unexcusedCount++;
       }
     }
   });
@@ -656,7 +688,7 @@ function renderMemberStats() {
   // 1. Render Widget Tiến Độ Điểm Rèn Luyện (DRL Tracker)
   const drlContainer = document.getElementById('member-drl-widget-container');
   if (drlContainer) {
-    const drlData = calculateDrlProgress(attendedCount, totalSessionsCount, approvedTasks, myTasks.length);
+    const drlData = calculateDrlProgress(attendedCount, totalSessionsCount, approvedTasks, myTasks.length, excusedCount, unexcusedCount, pendingAbsenceCount);
     drlContainer.innerHTML = renderMemberDrlWidget(drlData);
   }
 
@@ -859,8 +891,8 @@ export function handleCopyGiftCode(code, fullShare) {
   const textToCopy = fullShare || code || (document.getElementById('gift-2010-code-text') ? document.getElementById('gift-2010-code-text').textContent.trim() : '');
   if (!textToCopy) return;
 
-  const successMsg = fullShare 
-    ? 'Đã sao chép trọn vẹn thông điệp nhận quà & mã xác nhận!' 
+  const successMsg = fullShare
+    ? 'Đã sao chép trọn vẹn thông điệp nhận quà & mã xác nhận!'
     : `Đã sao chép mã quà 20/10: ${textToCopy}`;
 
   if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
@@ -900,7 +932,7 @@ export function handleShuffle2010Wish() {
   const currentWish = wishEl.textContent.trim().replace(/^"|"$/g, '');
   const available = FEMALE_IT_WISHES_2010.filter(w => w !== currentWish);
   const nextWish = available[Math.floor(Math.random() * available.length)] || FEMALE_IT_WISHES_2010[0];
-  
+
   startTypewriter(wishEl, nextWish, 20);
 }
 

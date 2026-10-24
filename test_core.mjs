@@ -388,7 +388,7 @@ viewFiles.forEach(file => {
     assert(`Form #${formId} in ${file} has novalidate attribute (no native tooltips)`, tag.includes('novalidate'));
   });
 });
-assert('All project forms were found and validated for novalidate', totalFormsFound === 11);
+assert('All project forms were found and validated for novalidate', totalFormsFound === 14);
 
 // Test mock element behavior for showFormError and clearFormError
 function createMockClassList() {
@@ -1592,6 +1592,218 @@ assert('getPracticeDraftKey formats key with user mssv and target ID', testDraft
 
 quizModule.clearPracticeDraft('MEET_TEST', 'QUIZ_TEST', 'session');
 assert('clearPracticeDraft removes draft from localStorage', localStorage.getItem(testDraftKey) === null);
+
+// --------------------------------------------------------------------
+// 26. Testing Absence Requests & Leave Application System (Mock API & Contracts)
+// --------------------------------------------------------------------
+console.log('\n--- 26. Testing Absence Requests & Leave Application System (Mock API & Contracts) ---');
+
+const gasConfigAbsence = fs.readFileSync('./gas-backend/Config.js', 'utf8');
+const apiJsAbsence = fs.readFileSync('./frontend/services/api.js', 'utf8');
+
+assert('Config.js registers DON_XIN_VANG in SHEET_NAMES', gasConfigAbsence.includes("DON_XIN_VANG: 'DonXinVang'"));
+assert('Config.js registers DonXinVang in SCHEMA_HEADERS', gasConfigAbsence.includes("DonXinVang: ["));
+assert('Config.js registers submitAbsenceRequest in MEMBER_ACTIONS', gasConfigAbsence.includes("'submitAbsenceRequest'"));
+assert('Config.js registers getMemberAbsenceRequests in MEMBER_ACTIONS', gasConfigAbsence.includes("'getMemberAbsenceRequests'"));
+assert('Config.js registers cancelAbsenceRequest in MEMBER_ACTIONS', gasConfigAbsence.includes("'cancelAbsenceRequest'"));
+assert('Config.js registers getAllAbsenceRequests in ADMIN_ACTIONS', gasConfigAbsence.includes("'getAllAbsenceRequests'"));
+assert('Config.js registers reviewAbsenceRequest in ADMIN_ACTIONS', gasConfigAbsence.includes("'reviewAbsenceRequest'"));
+assert('Config.js registers getAbsenceRequestsBySession in QUERY_ACTIONS', gasConfigAbsence.includes("'getAbsenceRequestsBySession'"));
+
+assert('MUTATION_INVALIDATION_MAP contains submitAbsenceRequest', MUTATION_INVALIDATION_MAP.submitAbsenceRequest && MUTATION_INVALIDATION_MAP.submitAbsenceRequest.includes('getAttendanceSessions'));
+assert('MUTATION_INVALIDATION_MAP contains reviewAbsenceRequest', MUTATION_INVALIDATION_MAP.reviewAbsenceRequest && MUTATION_INVALIDATION_MAP.reviewAbsenceRequest.includes('getAttendanceSessions'));
+assert('MUTATION_INVALIDATION_MAP contains cancelAbsenceRequest', MUTATION_INVALIDATION_MAP.cancelAbsenceRequest && MUTATION_INVALIDATION_MAP.cancelAbsenceRequest.includes('getAttendanceSessions'));
+
+assert('api.js CACHEABLE_ACTIONS includes getAbsenceRequestsBySession', apiJsAbsence.includes("'getAbsenceRequestsBySession'"));
+assert('api.js CACHEABLE_ACTIONS includes getMemberAbsenceRequests', apiJsAbsence.includes("'getMemberAbsenceRequests'"));
+assert('api.js CACHEABLE_ACTIONS includes getAllAbsenceRequests', apiJsAbsence.includes("'getAllAbsenceRequests'"));
+
+// 1. Test nộp đơn xin vắng thành công cho buổi đang mở (MEET_20261015_190000 có TrangThai: Open, 257480104007 chưa có mặt)
+const resSubmitAbsence = await mockCallApi('submitAbsenceRequest', {
+  sessionId: 'MEET_20261015_190000',
+  mssv: '257480104007',
+  lyDo: 'TRUNG_LICH_HOC',
+  chiTiet: 'Trùng lịch thi vấn đáp môn Hệ quản trị CSDL',
+  minhChungLink: 'https://drive.google.com/test'
+});
+assert('mockCallApi submitAbsenceRequest succeeds for open session', resSubmitAbsence.success === true && resSubmitAbsence.data && resSubmitAbsence.data.AbsenceID);
+
+// 2. Test chống trùng lặp: gửi lại đơn cho cùng 1 buổi học
+const resDuplicateAbsence = await mockCallApi('submitAbsenceRequest', {
+  sessionId: 'MEET_20261015_190000',
+  mssv: '257480104007',
+  lyDo: 'VIEC_GIA_DINH',
+  chiTiet: 'Bận việc riêng'
+});
+assert('mockCallApi rejects duplicate absence request for same session', resDuplicateAbsence.success === false && resDuplicateAbsence.message.includes('đã gửi đơn'));
+
+// 3. Test CHẶN nộp đơn khi buổi sinh hoạt ĐÃ KẾT THÚC (MEET_20261022_190000 có TrangThai: Closed)
+const resClosedAbsence = await mockCallApi('submitAbsenceRequest', {
+  sessionId: 'MEET_20261022_190000',
+  mssv: '2451120033',
+  lyDo: 'LY_DO_SUC_KHOE',
+  chiTiet: 'Bị cảm sốt'
+});
+assert('mockCallApi rejects absence request if session is closed', resClosedAbsence.success === false && resClosedAbsence.message.includes('đã kết thúc'));
+
+// 4. Test chống nộp đơn khi đã điểm danh có mặt (MEET_20261015_190000 có 2351120015 có mặt)
+const resAttendedAbsence = await mockCallApi('submitAbsenceRequest', {
+  sessionId: 'MEET_20261015_190000',
+  mssv: '2351120015',
+  lyDo: 'LY_DO_SUC_KHOE',
+  chiTiet: 'Bị ốm'
+});
+assert('mockCallApi rejects absence request if student already attended', resAttendedAbsence.success === false && resAttendedAbsence.message.includes('đã điểm danh có mặt'));
+
+// 5. Test truy vấn đơn của thành viên
+const resMemberAbsences = await mockCallApi('getMemberAbsenceRequests', { mssv: '257480104007' });
+assert('mockCallApi getMemberAbsenceRequests returns student absences', resMemberAbsences.success === true && resMemberAbsences.data.some(a => a.MSSV === '257480104007'));
+
+// 6. Test truy vấn đơn theo buổi học
+const resSessionAbsences = await mockCallApi('getAbsenceRequestsBySession', { sessionId: 'MEET_20261015_190000' });
+assert('mockCallApi getAbsenceRequestsBySession returns session absences', resSessionAbsences.success === true && resSessionAbsences.data.some(a => a.SessionID === 'MEET_20261015_190000'));
+
+// 7. Test Admin phê duyệt / từ chối đơn xin vắng
+const absenceToReview = resSubmitAbsence.data.AbsenceID;
+
+// 7.1 Test Admin TỪ CHỐI đơn xin vắng (status: Rejected)
+const resReviewRejected = await mockCallApi('reviewAbsenceRequest', {
+  absenceId: absenceToReview,
+  status: 'Rejected',
+  feedback: 'Lý do chưa đủ căn cứ, không duyệt nghỉ có phép.',
+  reviewerMssv: '2251120001'
+});
+assert('mockCallApi reviewAbsenceRequest saves Rejected status properly', resReviewRejected.success === true && resReviewRejected.data.TrangThaiDuyet === 'Rejected' && resReviewRejected.data.TrangThai === 'Rejected');
+
+// 7.2 Test Admin CHẤP THUẬN đơn xin vắng (status: Approved)
+const resReviewAbsence = await mockCallApi('reviewAbsenceRequest', {
+  absenceId: absenceToReview,
+  status: 'Approved',
+  feedback: 'Đã duyệt nghỉ có phép. Nhớ xem lại tài liệu và làm bài tập nhé!',
+  reviewerMssv: '2251120001'
+});
+assert('mockCallApi reviewAbsenceRequest approves absence with feedback', resReviewAbsence.success === true && resReviewAbsence.data.TrangThaiDuyet === 'Approved' && resReviewAbsence.data.Feedback.includes('Đã duyệt'));
+
+// 8. Test sinh viên hủy đơn khi còn ở trạng thái Pending (thành viên 2251120099 nộp cho MEET_20261015_190000 rồi hủy)
+const resSubmitToCancel = await mockCallApi('submitAbsenceRequest', {
+  sessionId: 'MEET_20261015_190000',
+  mssv: '2251120099',
+  lyDo: 'LY_DO_KHAC',
+  chiTiet: 'Em đăng ký nhầm'
+});
+assert('submit pending absence for cancel test succeeds', resSubmitToCancel.success === true && resSubmitToCancel.data && resSubmitToCancel.data.AbsenceID);
+
+const resCancel = await mockCallApi('cancelAbsenceRequest', {
+  absenceId: resSubmitToCancel.data.AbsenceID,
+  mssv: '2251120099'
+});
+assert('mockCallApi cancelAbsenceRequest succeeds for pending request', resCancel.success === true);
+
+// 8. Testing Absence UI Integration & Event Delegation
+const memberHtmlCurrent = fs.readFileSync('./frontend/views/member.html', 'utf8');
+const adminHtmlCurrent = fs.readFileSync('./frontend/views/admin.html', 'utf8');
+const appJsCurrent2 = fs.readFileSync('./frontend/app.js', 'utf8');
+
+assert('member.html contains #modal-member-quick-absence singleton modal', memberHtmlCurrent.includes('id="modal-member-quick-absence"'));
+assert('member.html contains #form-quick-absence-modal', memberHtmlCurrent.includes('id="form-quick-absence-modal"'));
+assert('admin.html contains #admin-detail-absence-tbody', adminHtmlCurrent.includes('id="admin-detail-absence-tbody"'));
+assert('app.js registers open-quick-absence-modal action', appJsCurrent2.includes("'open-quick-absence-modal':"));
+assert('app.js registers close-quick-absence-modal action', appJsCurrent2.includes("'close-quick-absence-modal':"));
+assert('app.js registers cancel-absence-request action', appJsCurrent2.includes("'cancel-absence-request':"));
+assert('app.js registers submit-quick-absence-modal form', appJsCurrent2.includes("'submit-quick-absence-modal':"));
+assert('app.js registers admin-review-absence action', appJsCurrent2.includes("'admin-review-absence':"));
+
+// 9. Testing Spotlight Card & Session Card absence badge/button rendering
+const spotlightWithoutAbsence = renderMemberSpotlightCard(futureSession, false, null);
+assert('Spotlight Card renders open-quick-absence-modal button when not absent', spotlightWithoutAbsence.includes('data-action="open-quick-absence-modal"'));
+
+const mockPendingAbsence = {
+  AbsenceID: 'ABS_TEST_01',
+  SessionID: futureSession.SessionID,
+  MSSV: '2351120015',
+  TrangThai: 'Pending'
+};
+const spotlightWithPendingAbsence = renderMemberSpotlightCard(futureSession, false, mockPendingAbsence);
+assert('Spotlight Card renders Chờ duyệt đơn vắng badge when absence is Pending', spotlightWithPendingAbsence.includes('Chờ duyệt') && spotlightWithPendingAbsence.includes('bht-badge-warn'));
+
+const mockApprovedAbsence = {
+  AbsenceID: 'ABS_TEST_02',
+  SessionID: futureSession.SessionID,
+  MSSV: '2351120015',
+  TrangThai: 'Approved'
+};
+const spotlightWithApprovedAbsence = renderMemberSpotlightCard(futureSession, false, mockApprovedAbsence);
+assert('Spotlight Card renders Đã duyệt nghỉ có phép badge when absence is Approved', spotlightWithApprovedAbsence.includes('Đã duyệt') && spotlightWithApprovedAbsence.includes('bht-badge-ok'));
+
+const memberSessionCardHtml = memberSessionCardTemplate(futureSession, false, { userAbsence: mockPendingAbsence });
+assert('memberSessionCardTemplate renders absence badge', memberSessionCardHtml.includes('Vắng (Chờ duyệt)'));
+
+// 10. Testing Absence Hiding on Closed Sessions
+const closedSession = {
+  SessionID: 'MEET_CLOSED_TEST_01',
+  TenBuoiHop: 'Buổi đã kết thúc',
+  TrangThai: 'Closed',
+  NgayDienRa: '10/10/2026 19:30'
+};
+const closedCardHtml = memberSessionCardTemplate(closedSession, false, { isOpen: false });
+assert('memberSessionCardTemplate does NOT render Báo vắng button when session is Closed', !closedCardHtml.includes('data-action="open-quick-absence-modal"'));
+
+const closedSpotlightHtml = renderMemberSpotlightCard(closedSession, false, null);
+assert('renderMemberSpotlightCard does NOT render Báo vắng button when session is Closed', !closedSpotlightHtml.includes('data-action="open-quick-absence-modal"'));
+
+// 11. Testing renderMemberAttendanceAuditTable with absence statuses
+const auditSessions = [
+  { SessionID: 'S1', TenBuoiHop: 'B1', TrangThai: 'Closed', DS_CoMat: '["2351120015"]' },
+  { SessionID: 'S2', TenBuoiHop: 'B2', TrangThai: 'Closed', DS_CoMat: '[]' },
+  { SessionID: 'S3', TenBuoiHop: 'B3', TrangThai: 'Closed', DS_CoMat: '[]' },
+  { SessionID: 'S4', TenBuoiHop: 'B4', TrangThai: 'Open', DS_CoMat: '[]' }
+];
+const auditAbsences = [
+  { SessionID: 'S2', MSSV: '2351120015', TrangThaiDuyet: 'Approved' },
+  { SessionID: 'S4', MSSV: '2351120015', TrangThaiDuyet: 'Pending' }
+];
+const auditHtmlResult = renderMemberAttendanceAuditTable(auditSessions, '2351120015', 'ALL', auditAbsences);
+assert('Audit table renders Có mặt for S1', auditHtmlResult.includes('Có mặt'));
+assert('Audit table renders Vắng có phép for S2', auditHtmlResult.includes('Vắng có phép'));
+assert('Audit table renders Vắng for unexcused closed session S3', auditHtmlResult.includes('Vắng') && !auditHtmlResult.includes('Có mặt</td>'));
+assert('Audit table renders Chờ duyệt vắng for S4', auditHtmlResult.includes('Chờ duyệt vắng'));
+
+// 12. Testing calculateDrlProgress with absence breakdown
+const drlWithAbs = calculateDrlProgress(3, 5, 2, 3, 1, 1, 0);
+assert('calculateDrlProgress preserves excusedCount and unexcusedCount', drlWithAbs.excusedCount === 1 && drlWithAbs.unexcusedCount === 1);
+
+// --- 27. Testing Manual Check-In & Absence Review Modal Popup ---
+console.log('\n--- 27. Testing Manual Check-In & Absence Review Modal Popup ---');
+const cfgManualCheckin = fs.readFileSync('./gas-backend/Config.js', 'utf8');
+const routerManualCheckin = fs.readFileSync('./gas-backend/Router.js', 'utf8');
+const adminViewManualCheckin = fs.readFileSync('./frontend/views/admin.html', 'utf8');
+const appManualCheckin = fs.readFileSync('./frontend/app.js', 'utf8');
+
+assert('Config.js registers adminManualCheckIn in ADMIN_ACTIONS', cfgManualCheckin.includes("'adminManualCheckIn'"));
+assert('Router.js routes adminManualCheckIn', routerManualCheckin.includes("case 'adminManualCheckIn':"));
+assert('MUTATION_INVALIDATION_MAP contains adminManualCheckIn', Array.isArray(MUTATION_INVALIDATION_MAP.adminManualCheckIn) && MUTATION_INVALIDATION_MAP.adminManualCheckIn.includes('getAttendanceSessions'));
+
+// Test mockCallApi adminManualCheckIn
+const manualMssv = 'MANUAL_' + Date.now();
+const resManualCheckin = await mockCallApi('adminManualCheckIn', {
+  sessionId: 'MEET_20261015_190000',
+  mssv: manualMssv
+});
+assert('mockCallApi adminManualCheckIn succeeds for valid MSSV', resManualCheckin.success === true && resManualCheckin.data.dsCoMat.includes(manualMssv));
+
+const resDuplicateCheckin = await mockCallApi('adminManualCheckIn', {
+  sessionId: 'MEET_20261015_190000',
+  mssv: manualMssv
+});
+assert('mockCallApi rejects duplicate manual check-in', resDuplicateCheckin.success === false);
+
+assert('admin.html has form-admin-manual-checkin', adminViewManualCheckin.includes('id="form-admin-manual-checkin"'));
+assert('admin.html has admin-detail-absence-pagination', adminViewManualCheckin.includes('id="admin-detail-absence-pagination"'));
+assert('admin.html has modal-admin-review-absence', adminViewManualCheckin.includes('id="modal-admin-review-absence"'));
+assert('app.js registers submit-admin-manual-checkin form action', appManualCheckin.includes("'submit-admin-manual-checkin'"));
+assert('app.js registers open-admin-review-absence-modal action', appManualCheckin.includes("'open-admin-review-absence-modal'"));
+assert('app.js registers close-admin-review-absence-modal action', appManualCheckin.includes("'close-admin-review-absence-modal'"));
+assert('app.js registers submit-admin-review-absence-modal action', appManualCheckin.includes("'submit-admin-review-absence-modal'"));
 
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);

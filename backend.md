@@ -38,6 +38,7 @@ Hệ thống lưu trữ trên Google Spreadsheet thông qua các sheet tiêu chu
 | `TracNghiem` | Ngân hàng đề thi trắc nghiệm | `QuizID`, `SessionID`, `TieuDe`, `ThoiGianLamBai`, `TrangThai` (Open/Closed), `DanhSachCauHoi` (JSON), `DiemToiDa`, `NgayTao` |
 | `KetQuaQuiz` | Lịch sử nộp bài & Bảng điểm | `ResultID`, `QuizID`, `MSSV`, `HoTen`, `DiemSo`, `CauDung`, `TongCau`, `ChiTietTraLoi` (JSON), `ThoiGianNop`, `TrangThai` (Pass/Fail) |
 | `HoSoQuiz` | Hồ sơ gamification & Ôn luyện | `MSSV`, `WrongQuestionIds` (JSON), `BookmarkedQuestionIds` (JSON), `StreakDays`, `LastActiveDate` |
+| `DonXinVang` | Đơn xin vắng sinh hoạt & duyệt phép | `AbsenceID`, `SessionID`, `MSSV`, `HoTen`, `Email`, `LyDo`, `ChiTiet`, `MinhChungLink`, `ThoiGianGui`, `TrangThaiDuyet` (Pending/Approved/Rejected/Cancelled), `Feedback`, `NguoiDuyet`, `ThoiGianDuyet` |
 
 ---
 
@@ -71,9 +72,9 @@ Hệ thống lưu trữ trên Google Spreadsheet thông qua các sheet tiêu chu
    - Đối tượng phiên lưu trữ bao gồm: `{ mssv, hoTen, email, role, trangThai, createdAt }`.
 2. **Middleware Phân quyền tại `Router.js`:**
    - **`PUBLIC_ACTIONS`** (`ping`, `requestLoginOtp`, `verifyLoginOtp`, `getAuthStatus`): Cho phép truy cập không cần token.
-   - **`MEMBER_ACTIONS`** (`checkInAttendance`, `submitTaskAssignment`, `getMemberSubmissions`, `logoutUser`, `saveMemberGift`, `submitQuiz`...): Bắt buộc có token hợp lệ. Router tự động tiêm `currentUser.mssv`, `currentUser.hoTen`, `currentUser.email` vào payload. **Tuyệt đối không tin tưởng hay nhận MSSV giả mạo từ client.**
-   - **`ADMIN_ACTIONS`** (`createAttendanceSession`, `createTask`, `reviewSubmission`, `getAllMembers`...): Bắt buộc token hợp lệ và `currentUser.role === 'ADMIN'`. Nếu vi phạm, trả về mã lỗi `403 FORBIDDEN`.
-   - **`QUERY_ACTIONS`** (`getAttendanceSessions`, `getAllTasks`, `getAllDocuments`): Cho phép mọi người dùng đã xác thực truy vấn.
+   - **`MEMBER_ACTIONS`** (`checkInAttendance`, `submitTaskAssignment`, `getMemberSubmissions`, `logoutUser`, `saveMemberGift`, `submitQuiz`, `submitAbsenceRequest`, `getMemberAbsenceRequests`, `cancelAbsenceRequest`...): Bắt buộc có token hợp lệ. Router tự động tiêm `currentUser.mssv`, `currentUser.hoTen`, `currentUser.email` vào payload. **Tuyệt đối không tin tưởng hay nhận MSSV giả mạo từ client.**
+   - **`ADMIN_ACTIONS`** (`createAttendanceSession`, `createTask`, `reviewSubmission`, `getAllMembers`, `getAllAbsenceRequests`, `reviewAbsenceRequest`, `adminManualCheckIn`...): Bắt buộc token hợp lệ và `currentUser.role === 'ADMIN'`. Nếu vi phạm, trả về mã lỗi `403 FORBIDDEN`.
+   - **`QUERY_ACTIONS`** (`getAttendanceSessions`, `getAllTasks`, `getAllDocuments`, `getAbsenceRequestsBySession`, `getAppInitData`): Cho phép mọi người dùng đã xác thực truy vấn.
 
 ### 4.2. Buổi Sinh Hoạt & Điểm Danh PIN Tốc Độ Cao (`Service_Member.js`)
 - `getAttendanceSessions()`: Tải danh sách buổi họp, kết hợp `CacheService` phía máy chủ để giảm tải I/O.
@@ -122,6 +123,26 @@ Hệ thống lưu trữ trên Google Spreadsheet thông qua các sheet tiêu chu
      - **Gia hạn bài tập:** Tự động cộng thêm +24h / +48h vào hạn nộp của sinh viên.
      - **Cộng điểm bài thi Trắc nghiệm:** Tự động cộng +10 điểm / +15 điểm trực tiếp vào kết quả bài thi trong sheet `KetQuaQuiz`.
    - Đánh dấu trạng thái quà đã sử dụng trong cột `Gift2010` của sheet `ThanhVien` để chống tái sử dụng mã voucher (`markMemberGiftUsedInSheet`).
+
+### 4.7. Quản Lý Đơn Xin Vắng Mặt & Điểm Danh Bổ Sung Thủ Công (`Service_Member.js` & `Service_Auth.js`)
+1. **Nộp và Quản lý Đơn Xin Vắng Mặt:**
+   - `submitAbsenceRequest(data, currentUser)`: Sinh viên nộp đơn báo vắng. Hệ thống tự động kiểm tra:
+     - Buổi sinh hoạt phải còn đang mở (chặn nếu `TrangThai === 'Closed'`).
+     - Sinh viên chưa có mặt trong danh sách `DS_CoMat` của buổi đó.
+     - Chống nộp trùng đơn cho cùng một buổi học.
+     - Tự động sinh `AbsenceID` và lưu vào sheet `DonXinVang` với trạng thái ban đầu `Pending`.
+   - `getMemberAbsenceRequests(mssv)`: Tra cứu toàn bộ lịch sử đơn xin vắng của sinh viên (bỏ qua các đơn đã hủy `Cancelled`).
+   - `cancelAbsenceRequest(absenceId, mssv)`: Cho phép sinh viên tự hủy đơn xin vắng khi đơn còn ở trạng thái `Pending`.
+   - `getAllAbsenceRequests()` & `getAbsenceRequestsBySession(sessionId)`: Quản trị viên truy vấn danh sách đơn xin vắng (hỗ trợ CacheService 3 phút).
+2. **Phê Duyệt Đơn Xin Vắng (Admin Review):**
+   - `reviewAbsenceRequest(data, reviewerMssv)`: Quản trị viên phê duyệt (`Approved` - Nghỉ có phép) hoặc từ chối (`Rejected` - Nghỉ không phép).
+   - Ghi nhận `Feedback` nhận xét, `NguoiDuyet` (Admin MSSV) và `ThoiGianDuyet`. Thao tác được bọc trong `withScriptLock()` và tự động xóa cache `DON_XIN_VANG`.
+3. **Điểm Danh Bổ Sung Thủ Công Bằng MSSV (`adminManualCheckIn`):**
+   - `adminManualCheckIn(data, reviewerMssv)`: Dành cho Quản trị viên điểm danh bù cho sinh viên (quên điện thoại, lỗi mạng, hỗ trợ sự kiện).
+   - Thêm MSSV vào mảng `DS_CoMat` trong sheet `DiemDanh` qua `withScriptLock()`.
+   - **Tự động hủy đơn vắng (Auto Cancel):** Nếu sinh viên đã gửi đơn xin vắng trước đó cho buổi này, hệ thống tự động cập nhật đơn sang `Cancelled` vì sinh viên đã có mặt thực tế.
+4. **Khởi Động Nhanh Qua Single-Request Bootstrap (`getAppInitData`):**
+   - Đóng gói toàn bộ tài nguyên khởi tạo (`tasks`, `attendance`, `docs`, `submissions`, `members`, `activeCampaign`, `absences`) chỉ trong 1 HTTP request duy nhất, giảm 85% số lượt kết nối mạng ban đầu và triệt tiêu CLS.
 
 ---
 

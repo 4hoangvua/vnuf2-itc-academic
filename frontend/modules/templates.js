@@ -564,6 +564,7 @@ export function renderSessionCard(session = {}, options = {}) {
   const {
     isAdmin = false,
     hasAttended = false,
+    userAbsence = null,
     attendeeCount = 0,
     isOpen = false,
     taskTitle = '',
@@ -577,6 +578,7 @@ export function renderSessionCard(session = {}, options = {}) {
   const maPin = escapeHTML(s.MaPin || '------');
   const phongHoc = escapeHTML(s.PhongHoc || 'Phòng Lab 02 - Tầng 3 Nhà A3');
   const tagBadgeHtml = uiTopicTagBadge(s.TagChuyenDe || 'GENERAL');
+  const isClosed = String(s.TrangThai || '').trim().toLowerCase() === 'closed';
 
   if (isAdmin) {
     // Master Card Quản Trị Viên
@@ -693,11 +695,21 @@ export function renderSessionCard(session = {}, options = {}) {
 
         <div class="mt-4 pt-3 border-t border-hairline flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-1.5">
-            <!-- Chip Điểm danh -->
-            <span class="bht-badge ${hasAttended ? 'bht-badge-ok' : 'bg-subtle text-ink-muted'} text-[10px]">
-              <i class="fa-solid ${hasAttended ? 'fa-user-check' : 'fa-user-clock'} text-[9px] mr-1"></i>
-              ${hasAttended ? 'Đã có mặt' : 'Chưa điểm danh'}
-            </span>
+            <!-- Chip Điểm danh / Vắng mặt -->
+            ${hasAttended ? `
+              <span class="bht-badge bht-badge-ok text-[10px]">
+                <i class="fa-solid fa-user-check text-[9px] mr-1"></i>Đã có mặt
+              </span>
+            ` : (userAbsence ? `
+              <span class="bht-badge ${(userAbsence.TrangThai === 'Approved' || userAbsence.TrangThaiDuyet === 'Approved') ? 'bht-badge-ok bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/20' : ((userAbsence.TrangThai === 'Rejected' || userAbsence.TrangThaiDuyet === 'Rejected') ? 'bht-badge-err' : 'bht-badge-warn')} text-[10px]" title="${escapeHTML(userAbsence.Feedback || userAbsence.ChiTiet || '')}">
+                <i class="fa-solid ${(userAbsence.TrangThai === 'Approved' || userAbsence.TrangThaiDuyet === 'Approved') ? 'fa-envelope-circle-check' : ((userAbsence.TrangThai === 'Rejected' || userAbsence.TrangThaiDuyet === 'Rejected') ? 'fa-circle-xmark' : 'fa-clock')} text-[9px] mr-1"></i>
+                ${(userAbsence.TrangThai === 'Approved' || userAbsence.TrangThaiDuyet === 'Approved') ? 'Vắng có phép' : ((userAbsence.TrangThai === 'Rejected' || userAbsence.TrangThaiDuyet === 'Rejected') ? 'Vắng không phép' : 'Vắng (Chờ duyệt)')}
+              </span>
+            ` : `
+              <span class="bht-badge bg-subtle text-ink-muted text-[10px]">
+                <i class="fa-solid fa-user-clock text-[9px] mr-1"></i>Chưa điểm danh
+              </span>
+            `)}
 
             <!-- Chip Bài tập -->
             <span class="bht-badge ${taskBadgeClass} text-[10px]">
@@ -713,7 +725,7 @@ export function renderSessionCard(session = {}, options = {}) {
             ` : ''}
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5">
             ${(isOpen && !hasAttended) ? `
               <button 
                 data-action="open-quick-pin-modal" 
@@ -723,6 +735,17 @@ export function renderSessionCard(session = {}, options = {}) {
               >
                 <i class="fa-solid fa-qrcode text-[10px]"></i>
                 <span>Điểm danh PIN</span>
+              </button>
+            ` : ''}
+            ${(!isClosed && !hasAttended && !userAbsence) ? `
+              <button 
+                data-action="open-quick-absence-modal" 
+                data-id="${sessionId}"
+                class="bht-btn bht-btn-secondary bht-btn-xs text-ink-muted hover:text-amber-500"
+                title="Gửi thư xin vắng mặt buổi này"
+              >
+                <i class="fa-regular fa-paper-plane text-[10px]"></i>
+                <span>Báo vắng</span>
               </button>
             ` : ''}
             <button 
@@ -872,9 +895,10 @@ export function getSessionRemainingTime(dateStr) {
  * Hiển thị nổi bật trên Tab 1 Dashboard của sinh viên
  * @param {Object} session Buổi học mới nhất
  * @param {boolean} [userAttended=false] Sinh viên đã điểm danh có mặt chưa
+ * @param {Object|null} [userAbsence=null] Đơn xin vắng mặt của sinh viên (nếu có)
  * @returns {string} Chuỗi HTML card
  */
-export function renderMemberSpotlightCard(session, userAttended = false) {
+export function renderMemberSpotlightCard(session, userAttended = false, userAbsence = null) {
   if (!session || !session.SessionID) {
     return `
       <div class="glass-bento-card p-6 rounded-2xl flex flex-col items-center justify-center text-center py-10 h-full">
@@ -891,6 +915,7 @@ export function renderMemberSpotlightCard(session, userAttended = false) {
   const formattedDate = escapeHTML(formatSessionDateVN(s.NgayDienRa));
   const phongHoc = escapeHTML(s.PhongHoc || 'Lab 02 - A3 (Tòa CNTT)');
   const isTrangThaiOpen = String(s.TrangThai || '').toLowerCase() === 'open';
+  const isClosed = String(s.TrangThai || '').trim().toLowerCase() === 'closed';
   const tagBadgeHtml = uiTopicTagBadge(s.TagChuyenDe || 'GENERAL');
 
   const timeInfo = getSessionRemainingTime(s.NgayDienRa);
@@ -987,27 +1012,45 @@ export function renderMemberSpotlightCard(session, userAttended = false) {
 
       <!-- Action Footer -->
       <div class="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-        <!-- Attendance Verification Badge / Quick PIN Action -->
-        <div class="flex items-center gap-2">
+        <!-- Attendance Verification Badge / Quick PIN & Absence Actions -->
+        <div class="flex flex-wrap items-center gap-2">
           ${userAttended ? `
             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
               <i class="fa-solid fa-circle-check"></i>
               <span>Bạn đã điểm danh có mặt</span>
             </span>
-          ` : (isActuallyLive ? `
-            <button 
-              data-action="open-quick-pin-modal" 
-              data-id="${sessionId}"
-              class="bht-btn bht-btn-primary bht-btn-sm font-semibold shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse"
-            >
-              <i class="fa-solid fa-qrcode mr-1"></i>
-              <span>Điểm danh ngay (Nhập PIN)</span>
-            </button>
-          ` : `
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-white/5 text-slate-400 text-xs font-medium">
-              <i class="fa-solid fa-clock"></i>
-              <span>${isUpcoming ? 'Điểm danh chưa mở (Sắp diễn ra)' : 'Điểm danh đã đóng'}</span>
+          ` : (userAbsence ? `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${(userAbsence.TrangThai === 'Approved' || userAbsence.TrangThaiDuyet === 'Approved') ? 'bht-badge-ok bg-teal-500/15 border-teal-500/30 text-teal-300' : ((userAbsence.TrangThai === 'Rejected' || userAbsence.TrangThaiDuyet === 'Rejected') ? 'bht-badge-err bg-rose-500/15 border-rose-500/30 text-rose-300' : 'bht-badge-warn bg-amber-500/15 border-amber-500/30 text-amber-300')} border text-xs font-semibold" title="${escapeHTML(userAbsence.Feedback || userAbsence.ChiTiet || '')}">
+              <i class="fa-solid ${(userAbsence.TrangThai === 'Approved' || userAbsence.TrangThaiDuyet === 'Approved') ? 'fa-envelope-circle-check' : ((userAbsence.TrangThai === 'Rejected' || userAbsence.TrangThaiDuyet === 'Rejected') ? 'fa-circle-xmark' : 'fa-clock-rotate-left')}"></i>
+              <span>${(userAbsence.TrangThai === 'Approved' || userAbsence.TrangThaiDuyet === 'Approved') ? 'Đã duyệt nghỉ có phép' : ((userAbsence.TrangThai === 'Rejected' || userAbsence.TrangThaiDuyet === 'Rejected') ? 'Đơn xin vắng bị từ chối' : 'Chờ duyệt đơn vắng')}</span>
             </span>
+          ` : `
+            ${isActuallyLive ? `
+              <button 
+                data-action="open-quick-pin-modal" 
+                data-id="${sessionId}"
+                class="bht-btn bht-btn-primary bht-btn-sm font-semibold shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse"
+              >
+                <i class="fa-solid fa-qrcode mr-1"></i>
+                <span>Điểm danh ngay (Nhập PIN)</span>
+              </button>
+            ` : `
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-white/5 text-slate-400 text-xs font-medium">
+                <i class="fa-solid fa-clock"></i>
+                <span>${isUpcoming ? 'Điểm danh chưa mở (Sắp diễn ra)' : 'Điểm danh đã đóng'}</span>
+              </span>
+            `}
+            ${(!isClosed && (isActuallyLive || isUpcoming)) ? `
+              <button 
+                data-action="open-quick-absence-modal" 
+                data-id="${sessionId}"
+                class="bht-btn bht-btn-ghost bht-btn-sm text-slate-300 hover:text-amber-300 border border-white/10 hover:border-amber-400/40 text-xs transition-colors"
+                title="Gửi thư xin vắng mặt nếu không thể tham gia"
+              >
+                <i class="fa-regular fa-paper-plane mr-1 text-[11px]"></i>
+                <span>Báo vắng</span>
+              </button>
+            ` : ''}
           `)}
         </div>
 
@@ -1032,7 +1075,7 @@ export function renderMemberSpotlightCard(session, userAttended = false) {
  * @param {'ALL'|'OPEN'|'CLOSED'} [filter='ALL'] Bộ lọc trạng thái
  * @returns {string} Chuỗi HTML các thẻ <tr>
  */
-export function renderMemberAttendanceAuditTable(sessions = [], currentMssv = '', filter = 'ALL') {
+export function renderMemberAttendanceAuditTable(sessions = [], currentMssv = '', filter = 'ALL', absences = []) {
   if (!Array.isArray(sessions) || sessions.length === 0) {
     return uiEmptyState({
       icon: 'fa-calendar-xmark',
@@ -1044,6 +1087,9 @@ export function renderMemberAttendanceAuditTable(sessions = [], currentMssv = ''
   }
 
   const cleanMssv = String(currentMssv || '').trim().toUpperCase();
+  const allAbsences = Array.isArray(absences) && absences.length > 0
+    ? absences
+    : ((typeof appState !== 'undefined' && Array.isArray(appState.absences)) ? appState.absences : []);
 
   // Áp dụng filter tab nếu có
   const filtered = sessions.filter(s => {
@@ -1093,6 +1139,14 @@ export function renderMemberAttendanceAuditTable(sessions = [], currentMssv = ''
     }
 
     const isOpen = String(s.TrangThai || '').toLowerCase() === 'open';
+    const isClosed = String(s.TrangThai || '').toLowerCase() === 'closed';
+
+    // Tìm đơn xin vắng của thành viên cho buổi này
+    const userAbsence = allAbsences.find(a => 
+      a.SessionID === s.SessionID && 
+      String(a.MSSV || '').trim().toUpperCase() === cleanMssv && 
+      a.TrangThaiDuyet !== 'Cancelled'
+    );
 
     return `
       <tr class="hover:bg-subtle/30 transition-colors">
@@ -1136,17 +1190,35 @@ export function renderMemberAttendanceAuditTable(sessions = [], currentMssv = ''
           `}
         </td>
 
-        <!-- Attendance Status -->
-        <td class="py-3 px-3 sm:px-4 text-center">
+        <!-- Attendance & Absence Status -->
+        <td class="py-2.5 sm:py-3 px-2 sm:px-4 text-center whitespace-nowrap">
           ${hasAttended ? `
-            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-ok-soft text-ok font-semibold text-[11px] border border-ok/20">
+            <span class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-ok-soft text-ok font-semibold text-[11px] border border-ok/20 whitespace-nowrap">
               <i class="fa-solid fa-check text-[9px]"></i> Có mặt
             </span>
+          ` : (userAbsence ? `
+            ${(userAbsence.TrangThaiDuyet === 'Approved' || userAbsence.TrangThai === 'Approved') ? `
+              <span class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-accent-soft text-accent font-semibold text-[11px] border border-accent/20 whitespace-nowrap" title="${escapeHTML(userAbsence.Feedback || userAbsence.ChiTiet || 'Vắng có phép')}">
+                <i class="fa-solid fa-envelope-circle-check text-[9px]"></i> Vắng có phép
+              </span>
+            ` : ((userAbsence.TrangThaiDuyet === 'Rejected' || userAbsence.TrangThai === 'Rejected') ? `
+              <span class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-500 font-semibold text-[11px] border border-rose-500/30 whitespace-nowrap" title="${escapeHTML(userAbsence.Feedback || 'Đơn bị từ chối')}">
+                <i class="fa-solid fa-circle-xmark text-[9px]"></i> Không phép
+              </span>
+            ` : `
+              <span class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-500 font-semibold text-[11px] border border-amber-500/30 whitespace-nowrap" title="Đang chờ Ban tổ chức phê duyệt">
+                <i class="fa-solid fa-clock-rotate-left text-[9px]"></i> Chờ duyệt vắng
+              </span>
+            `)}
+          ` : (isClosed ? `
+            <span class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-subtle text-ink-muted text-[11px] border border-hairline font-mono whitespace-nowrap" title="Không tham gia và không có đơn xin vắng">
+              <i class="fa-solid fa-minus text-[8px] text-ink-faint"></i> Vắng
+            </span>
           ` : `
-            <span class="text-ink-muted text-[11px] italic font-mono">
+            <span class="text-ink-muted text-[11px] italic font-mono whitespace-nowrap">
               Chưa có mặt
             </span>
-          `}
+          `))}
         </td>
 
         <!-- Icon Action Button -->
@@ -1176,6 +1248,9 @@ export function renderMemberDrlWidget(data = {}) {
     attendanceRate = 0,
     approvedTasks = 0,
     totalTasks = 0,
+    excusedCount = 0,
+    unexcusedCount = 0,
+    pendingAbsenceCount = 0,
     drlTier = 'GOOD',
     drlTierLabel = 'Đạt chuẩn',
     drlPointsText = '+10 ĐRL',
@@ -1204,8 +1279,11 @@ export function renderMemberDrlWidget(data = {}) {
           <h4 class="text-sm sm:text-base font-bold text-ink font-sans">
             Chuyên cần học vụ
           </h4>
-          <p class="text-xs text-ink-muted font-mono">
-            ${attendedCount}/${totalSessions} buổi tham gia
+          <p class="text-xs text-ink-muted font-mono flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span>${attendedCount}/${totalSessions} buổi tham gia</span>
+            ${excusedCount > 0 ? `<span class="text-accent font-semibold">• ${excusedCount} có phép</span>` : ''}
+            ${unexcusedCount > 0 ? `<span class="text-rose-500 font-semibold">• ${unexcusedCount} không phép</span>` : ''}
+            ${pendingAbsenceCount > 0 ? `<span class="text-amber-500 font-semibold">• ${pendingAbsenceCount} chờ duyệt</span>` : ''}
           </p>
           <div class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-mono text-[11px] font-medium pt-0.5">
             <i class="fa-solid fa-circle-check text-[10px]"></i>
@@ -1291,7 +1369,12 @@ export function renderMemberDrlWidget(data = {}) {
 }
 
 // Aliases tương thích ngược
-export const memberSessionCardTemplate = (session, options = {}) => renderSessionCard(session, { isAdmin: false, ...options });
+export const memberSessionCardTemplate = (session, arg2 = {}, arg3 = {}) => {
+  if (typeof arg2 === 'boolean') {
+    return renderSessionCard(session, { isAdmin: false, hasAttended: arg2, ...arg3 });
+  }
+  return renderSessionCard(session, { isAdmin: false, ...arg2 });
+};
 export const adminSessionCardTemplate = (session, options = {}) => renderSessionCard(session, { isAdmin: true, ...options });
 
 /**

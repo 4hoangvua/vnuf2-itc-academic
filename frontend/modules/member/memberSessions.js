@@ -143,6 +143,10 @@ export function renderMemberSessions(filteredSessions) {
     const hasAttended = ds.includes(user.mssv);
     const isOpen = String(s.TrangThai || '').toLowerCase() === 'open';
 
+    const absences = appState.absences || [];
+    const cleanUserMssv = String(user.mssv || '').trim().toUpperCase();
+    const userAbsence = absences.find(a => a.SessionID === s.SessionID && a.MSSV === cleanUserMssv && a.TrangThaiDuyet !== 'Cancelled') || null;
+
     // Tìm bài tập gắn với buổi học này (chuẩn hóa SessionID tránh lệch hoa/thường)
     const sid = String(s.SessionID || '').trim().toUpperCase();
     const task = allTasks.find(t => String(t.SessionID || '').trim().toUpperCase() === sid) || (s.BaiTap ? { ...s.BaiTap, SessionID: s.SessionID } : null);
@@ -168,7 +172,7 @@ export function renderMemberSessions(filteredSessions) {
       }
     }
 
-    return memberSessionCardTemplate(s, { hasAttended, taskStatusLabel, taskBadgeClass, isOpen });
+    return memberSessionCardTemplate(s, { hasAttended, userAbsence, taskStatusLabel, taskBadgeClass, isOpen });
   }).join('');
 
   if (pagEl) {
@@ -257,10 +261,34 @@ export function openMemberSessionDetail(sessionId, updateHash = true, targetSubT
   const hasAttended = Array.isArray(ds) && ds.includes(user.mssv);
   const isOpen = String(s.TrangThai || '').toLowerCase() === 'open';
 
+  const absences = appState.absences || [];
+  const cleanMssv = String(user.mssv || '').trim().toUpperCase();
+  const userAbsence = absences.find(a => a.SessionID === sessionId && a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled') || null;
+
+  const bannerAbsenceBtn = document.getElementById('member-detail-banner-absence-btn');
+  if (bannerAbsenceBtn) {
+    if (!hasAttended && !userAbsence) {
+      bannerAbsenceBtn.setAttribute('data-id', sessionId);
+      bannerAbsenceBtn.classList.remove('hidden');
+    } else {
+      bannerAbsenceBtn.classList.add('hidden');
+    }
+  }
+
   if (hasAttended) {
     if (badgeEl) {
       badgeEl.className = 'bht-badge bht-badge-ok text-xs';
       badgeEl.innerHTML = '<i class="fa-solid fa-circle-check mr-1 text-[11px]"></i>Đã có mặt';
+      badgeEl.classList.remove('hidden');
+    }
+    if (ctaBtn) ctaBtn.classList.add('hidden');
+    if (bannerPinBtn) bannerPinBtn.classList.add('hidden');
+  } else if (userAbsence) {
+    if (badgeEl) {
+      const isAppr = userAbsence.TrangThaiDuyet === 'Approved';
+      const isRej = userAbsence.TrangThaiDuyet === 'Rejected';
+      badgeEl.className = isAppr ? 'bht-badge bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/30 text-xs' : (isRej ? 'bht-badge bht-badge-err text-xs' : 'bht-badge bht-badge-warn text-xs');
+      badgeEl.innerHTML = `<i class="fa-solid ${isAppr ? 'fa-envelope-circle-check' : (isRej ? 'fa-circle-xmark' : 'fa-clock')} mr-1 text-[11px]"></i>${isAppr ? 'Đã duyệt nghỉ có phép' : (isRej ? 'Không phép' : 'Chờ duyệt vắng')}`;
       badgeEl.classList.remove('hidden');
     }
     if (ctaBtn) ctaBtn.classList.add('hidden');
@@ -311,9 +339,70 @@ export function openMemberSessionDetail(sessionId, updateHash = true, targetSubT
       checkinStatusEl.innerHTML = '<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ok-soft text-ok font-semibold text-xs"><i class="fa-solid fa-check"></i> Bạn đã hoàn tất điểm danh có mặt cho buổi này</span>';
     }
     if (pinBoxEl) pinBoxEl.classList.add('hidden');
+  } else if (userAbsence) {
+    if (checkinStatusEl) {
+      const isAppr = userAbsence.TrangThaiDuyet === 'Approved';
+      const isRej = userAbsence.TrangThaiDuyet === 'Rejected';
+      const reasonMap = {
+        'TRUNG_LICH_HOC': 'Trùng lịch học / Lịch thi trên lớp',
+        'LY_DO_SUC_KHOE': 'Lý do sức khỏe / Bị ốm, sốt',
+        'VIEC_GIA_DINH': 'Gia đình có việc đột xuất / Về quê',
+        'THI_CU_DU_AN': 'Tham gia kỳ thi học thuật / Dự án',
+        'LY_DO_KHAC': 'Lý do cá nhân khác'
+      };
+      const reasonLabel = reasonMap[userAbsence.LyDo] || userAbsence.LyDo || 'Khác';
+
+      checkinStatusEl.innerHTML = `
+        <div class="p-4 rounded-xl border ${isAppr ? 'border-teal-500/30 bg-teal-500/5' : (isRej ? 'border-err/30 bg-err-soft/50' : 'border-warn/30 bg-warn-soft/50')} text-xs space-y-2 text-left">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="font-bold flex items-center gap-1.5 ${isAppr ? 'text-teal-600 dark:text-teal-400' : (isRej ? 'text-err' : 'text-warn')}">
+              <i class="fa-solid ${isAppr ? 'fa-envelope-circle-check' : (isRej ? 'fa-circle-xmark' : 'fa-clock-rotate-left')}"></i>
+              <span>${isAppr ? 'Đã duyệt nghỉ có phép' : (isRej ? 'Đơn xin vắng bị từ chối' : 'Đơn xin vắng đang chờ BCN duyệt')}</span>
+            </span>
+            ${userAbsence.TrangThaiDuyet === 'Pending' ? `
+              <button 
+                type="button" 
+                data-action="cancel-absence-request" 
+                data-id="${userAbsence.AbsenceID}" 
+                class="text-[11px] text-err hover:underline font-mono"
+              >
+                <i class="fa-solid fa-trash-can mr-1"></i>Hủy đơn
+              </button>
+            ` : ''}
+          </div>
+          <div class="text-ink-muted leading-relaxed">
+            <strong class="text-ink">Lý do:</strong> ${escapeHtml(reasonLabel)}
+          </div>
+          ${userAbsence.ChiTiet ? `
+            <div class="text-ink-muted leading-relaxed">
+              <strong class="text-ink">Giải trình:</strong> ${escapeHtml(userAbsence.ChiTiet)}
+            </div>
+          ` : ''}
+          ${userAbsence.Feedback ? `
+            <div class="pt-2 border-t border-hairline text-accent font-sans">
+              <strong>Phản hồi từ Mentor:</strong> ${escapeHtml(userAbsence.Feedback)}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+    if (pinBoxEl) pinBoxEl.classList.add('hidden');
   } else if (isOpen) {
     if (checkinStatusEl) {
-      checkinStatusEl.innerHTML = '<span class="text-ink-muted">Buổi học đang mở điểm danh. Vui lòng nhập mã PIN gồm 6 số hiển thị trên máy chiếu:</span>';
+      checkinStatusEl.innerHTML = `
+        <div class="space-y-2 text-left">
+          <span class="text-ink-muted block">Buổi học đang mở điểm danh. Vui lòng nhập mã PIN gồm 6 số hiển thị trên máy chiếu:</span>
+          <button 
+            type="button" 
+            data-action="open-quick-absence-modal" 
+            data-id="${sessionId}"
+            class="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium inline-flex items-center gap-1"
+          >
+            <i class="fa-regular fa-paper-plane text-[10px]"></i>
+            <span>Không thể tham gia? Gửi thư xin vắng mặt tại đây</span>
+          </button>
+        </div>
+      `;
     }
     if (pinBoxEl) {
       pinBoxEl.classList.remove('hidden');
@@ -674,5 +763,183 @@ export async function handleSubmitQuickPinModal(e) {
     if (btn) setButtonLoading(btn, false);
     if (pinInput) pinInput.disabled = false;
     showFormError('form-quick-pin-modal', 'Lỗi điểm danh: ' + (err.message || err.toString()), pinInput);
+  }
+}
+
+/**
+ * Mở Modal Popup Gửi Thư Xin Vắng Mặt Nhanh Cho Thành Viên
+ * @param {string} sessionId
+ */
+export function openQuickAbsenceModal(sessionId) {
+  const modal = document.getElementById('modal-member-quick-absence');
+  if (!modal) return;
+
+  const s = (appState.attendance || []).find(item => item.SessionID === sessionId);
+  if (!s) {
+    showToast('Không tìm thấy thông tin buổi sinh hoạt!', 'error');
+    return;
+  }
+
+  // 1. Chặn nếu buổi học đã kết thúc
+  const isClosed = String(s.TrangThai || '').trim().toLowerCase() === 'closed';
+  if (isClosed) {
+    showToast('Buổi sinh hoạt này đã kết thúc, không thể gửi đơn xin vắng mặt!', 'warning');
+    return;
+  }
+
+  // 2. Chặn nếu sinh viên đã điểm danh có mặt
+  const user = getCurrentMemberUser();
+  const cleanMssv = String(user.mssv || '').trim().toUpperCase();
+  let dsCoMat = [];
+  try { dsCoMat = JSON.parse(s.DS_CoMat || '[]'); } catch (_) { dsCoMat = []; }
+  if (Array.isArray(dsCoMat) && dsCoMat.includes(cleanMssv)) {
+    showToast('Bạn đã điểm danh có mặt trong buổi học này, không thể nộp đơn xin vắng!', 'warning');
+    return;
+  }
+
+  // 3. Chặn nếu sinh viên đã có đơn xin vắng đang có hiệu lực
+  const allAbs = appState.absences || [];
+  const existingAbs = allAbs.find(a => a.SessionID === sessionId && a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
+  if (existingAbs) {
+    const isApproved = existingAbs.TrangThaiDuyet === 'Approved' || existingAbs.TrangThai === 'Approved';
+    showToast(isApproved ? 'Đơn xin vắng của bạn đã được phê duyệt cho buổi học này!' : 'Bạn đã gửi đơn xin vắng và đang chờ Ban tổ chức duyệt!', 'info');
+    return;
+  }
+
+  const titleEl = document.getElementById('quick-absence-session-title');
+  const dateEl = document.getElementById('quick-absence-session-date');
+  const roomEl = document.getElementById('quick-absence-session-room');
+  const detailInput = document.getElementById('quick-absence-detail-input');
+  const proofInput = document.getElementById('quick-absence-proof-input');
+  const reasonSelect = document.getElementById('quick-absence-reason-select');
+
+  if (titleEl) titleEl.textContent = s.TenBuoiHop || 'Chuyên đề học thuật';
+  if (dateEl) dateEl.innerHTML = `<i class="fa-regular fa-calendar-check mr-1 text-accent"></i>${formatSessionDateVN(s.NgayDienRa)}`;
+  if (roomEl) roomEl.innerHTML = `<i class="fa-solid fa-location-dot mr-1 text-rose-500"></i>${s.PhongHoc || 'Lab CNTT'}`;
+
+  if (detailInput) {
+    detailInput.value = '';
+    detailInput.disabled = false;
+  }
+  if (proofInput) {
+    proofInput.value = '';
+    proofInput.disabled = false;
+  }
+  if (reasonSelect) {
+    reasonSelect.selectedIndex = 0;
+    reasonSelect.disabled = false;
+  }
+
+  clearFormError('form-quick-absence-modal');
+
+  modal.dataset.sessionId = sessionId;
+  modal.classList.remove('hidden');
+  setTimeout(() => { if (detailInput) detailInput.focus(); }, 100);
+}
+
+/**
+ * Đóng Modal Popup Gửi Thư Xin Vắng Mặt Cho Thành Viên
+ */
+export function closeQuickAbsenceModal() {
+  const modal = document.getElementById('modal-member-quick-absence');
+  if (modal) modal.classList.add('hidden');
+}
+
+/**
+ * Xử lý gửi thư xin vắng mặt từ Quick Absence Modal
+ */
+export async function handleSubmitQuickAbsenceModal(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  const modal = document.getElementById('modal-member-quick-absence');
+  const sessionId = modal ? modal.dataset.sessionId : null;
+  if (!sessionId) {
+    showToast('Thiếu thông tin buổi sinh hoạt!', 'error');
+    return;
+  }
+
+  const reasonSelect = document.getElementById('quick-absence-reason-select');
+  const detailInput = document.getElementById('quick-absence-detail-input');
+  const proofInput = document.getElementById('quick-absence-proof-input');
+
+  const lyDo = reasonSelect ? reasonSelect.value.trim() : 'LY_DO_KHAC';
+  const chiTiet = detailInput ? detailInput.value.trim() : '';
+  const minhChungLink = proofInput ? proofInput.value.trim() : '';
+
+  clearFormError('form-quick-absence-modal');
+
+  if (!chiTiet) {
+    showFormError('form-quick-absence-modal', 'Vui lòng giải trình lý do xin vắng mặt cụ thể!', detailInput);
+    if (detailInput) detailInput.focus();
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit-quick-absence-modal');
+  const user = getCurrentMemberUser();
+
+  if (btn) setButtonLoading(btn, true);
+  if (detailInput) detailInput.disabled = true;
+  if (reasonSelect) reasonSelect.disabled = true;
+  if (proofInput) proofInput.disabled = true;
+
+  try {
+    const res = await callApi('submitAbsenceRequest', {
+      sessionId: sessionId,
+      mssv: user.mssv,
+      lyDo: lyDo,
+      chiTiet: chiTiet,
+      minhChungLink: minhChungLink
+    });
+
+    if (btn) setButtonLoading(btn, false);
+    if (detailInput) detailInput.disabled = false;
+    if (reasonSelect) reasonSelect.disabled = false;
+    if (proofInput) proofInput.disabled = false;
+
+    if (res && res.success) {
+      showToast(res.message || 'Đã gửi thư xin vắng mặt thành công!', 'success');
+      closeQuickAbsenceModal();
+      await loadMemberData(true, true);
+      if (currentMemberDetailSessionId && currentMemberDetailSessionId === sessionId) {
+        openMemberSessionDetail(sessionId, false);
+      }
+    } else {
+      showFormError('form-quick-absence-modal', (res && res.message) ? res.message : 'Gửi thư không thành công!', detailInput);
+    }
+  } catch (err) {
+    if (btn) setButtonLoading(btn, false);
+    if (detailInput) detailInput.disabled = false;
+    if (reasonSelect) reasonSelect.disabled = false;
+    if (proofInput) proofInput.disabled = false;
+    showFormError('form-quick-absence-modal', 'Lỗi gửi thư: ' + (err.message || err.toString()), detailInput);
+  }
+}
+
+/**
+ * Xử lý hủy đơn xin vắng mặt (khi đang ở trạng thái Pending)
+ * @param {string} absenceId
+ */
+export async function handleCancelAbsenceRequest(absenceId) {
+  if (!absenceId) return;
+  if (!confirm('Bạn có chắc chắn muốn hủy đơn xin vắng mặt này không?')) return;
+
+  const user = getCurrentMemberUser();
+  try {
+    const res = await callApi('cancelAbsenceRequest', {
+      absenceId: absenceId,
+      mssv: user.mssv
+    });
+
+    if (res && res.success) {
+      showToast(res.message || 'Đã hủy đơn xin vắng thành công!', 'success');
+      await loadMemberData(true, true);
+      if (currentMemberDetailSessionId) {
+        openMemberSessionDetail(currentMemberDetailSessionId, false);
+      }
+    } else {
+      showToast((res && res.message) ? res.message : 'Không thể hủy đơn!', 'error');
+    }
+  } catch (err) {
+    showToast('Lỗi hủy đơn: ' + (err.message || err.toString()), 'error');
   }
 }

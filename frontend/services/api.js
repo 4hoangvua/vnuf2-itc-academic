@@ -48,7 +48,10 @@ export const API_CONFIG = {
     'getMemberQuizProfile',
     'getPersonalQuizPool',
     'getAppInitData',
-    'getAllCampaigns'
+    'getAllCampaigns',
+    'getAbsenceRequestsBySession',
+    'getMemberAbsenceRequests',
+    'getAllAbsenceRequests'
   ]
 };
 
@@ -62,6 +65,10 @@ export const MUTATION_INVALIDATION_MAP = {
   updateAttendanceTopic: ['getAttendanceSessions'],
   toggleAttendanceSession: ['getAttendanceSessions'],
   checkInAttendance: ['getAttendanceSessions'],
+  submitAbsenceRequest: ['getAttendanceSessions', 'getAbsenceRequestsBySession', 'getMemberAbsenceRequests', 'getAllAbsenceRequests', 'getAppInitData'],
+  reviewAbsenceRequest: ['getAttendanceSessions', 'getAbsenceRequestsBySession', 'getMemberAbsenceRequests', 'getAllAbsenceRequests', 'getAppInitData'],
+  cancelAbsenceRequest: ['getAttendanceSessions', 'getAbsenceRequestsBySession', 'getMemberAbsenceRequests', 'getAllAbsenceRequests', 'getAppInitData'],
+  adminManualCheckIn: ['getAttendanceSessions', 'getAbsenceRequestsBySession', 'getMemberAbsenceRequests', 'getAllAbsenceRequests', 'getAppInitData'],
   createTask: ['getAllTasks', 'getAttendanceSessions'],
   updateTask: ['getAllTasks', 'getAttendanceSessions'],
   deleteTask: ['getAllTasks', 'getAttendanceSessions'],
@@ -644,9 +651,15 @@ export function hydrateAppFromBootstrap(bootstrapData, role, mssv) {
     if (Array.isArray(bootstrapData.submissions)) {
       setCache('getAllSubmissions', {}, bootstrapData.submissions);
     }
+    if (Array.isArray(bootstrapData.absences)) {
+      setCache('getAllAbsenceRequests', {}, bootstrapData.absences);
+    }
   } else if (cleanMssv) {
     if (Array.isArray(bootstrapData.submissions)) {
       setCache('getMemberSubmissions', { mssv: cleanMssv }, bootstrapData.submissions);
+    }
+    if (Array.isArray(bootstrapData.absences)) {
+      setCache('getMemberAbsenceRequests', { mssv: cleanMssv }, bootstrapData.absences);
     }
   }
 

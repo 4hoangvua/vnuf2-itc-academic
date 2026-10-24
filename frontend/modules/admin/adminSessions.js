@@ -570,6 +570,7 @@ export function openAdminSessionDetail(sessionId, updateHash = true) {
   const pinDisplay = document.getElementById('admin-detail-pin-display');
   if (pinDisplay) pinDisplay.textContent = session.MaPin || '------';
   renderDetailAttendanceList(session);
+  renderDetailAbsenceList(session);
 
   // 3. Tab Bài tập & Chấm bài
   renderDetailTaskPanel(session);
@@ -737,6 +738,362 @@ function renderDetailAttendanceList(session, filterQuery = '') {
 
   if (pagEl) {
     pagEl.innerHTML = renderPagination('admin-detail-attendees');
+  }
+}
+
+const ABSENCE_REASON_LABELS = {
+  'TRUNG_LICH_HOC': 'Trùng lịch học / thi',
+  'LY_DO_SUC_KHOE': 'Sức khỏe / Ốm đau',
+  'VIEC_GIA_DINH': 'Việc gia đình',
+  'LY_DO_KHAC': 'Lý do khác'
+};
+
+/**
+ * Render bảng danh sách đơn xin vắng mặt của sinh viên trong buổi học
+ * @param {Object} session
+ */
+export function renderDetailAbsenceList(session) {
+  const tbody = document.getElementById('admin-detail-absence-tbody');
+  const countEl = document.getElementById('admin-detail-absence-count');
+  const pendingBadgeEl = document.getElementById('admin-detail-absence-pending-badge');
+  const pagEl = document.getElementById('admin-detail-absence-pagination');
+  if (!tbody) return;
+
+  const allAbsences = appState.absences || [];
+  const absencesForSession = allAbsences.filter(a => a.SessionID === session.SessionID);
+
+  if (countEl) countEl.textContent = absencesForSession.length;
+
+  const pendingCount = absencesForSession.filter(a => (a.TrangThaiDuyet || a.TrangThai || 'Pending') === 'Pending').length;
+  if (pendingBadgeEl) {
+    if (pendingCount > 0) {
+      pendingBadgeEl.textContent = `${pendingCount} chờ duyệt`;
+      pendingBadgeEl.classList.remove('hidden');
+    } else {
+      pendingBadgeEl.classList.add('hidden');
+    }
+  }
+
+  if (absencesForSession.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="py-8 text-center text-ink-muted">
+          <i class="fa-regular fa-clipboard-check text-2xl mb-1.5 text-ink-faint block"></i>
+          <span>Không có đơn xin vắng mặt nào cho buổi sinh hoạt này.</span>
+        </td>
+      </tr>
+    `;
+    if (pagEl) pagEl.innerHTML = '';
+    return;
+  }
+
+  const { pagedItems } = paginate('admin-detail-absences', absencesForSession, {
+    pageSize: 5,
+    pageSizeOptions: [5, 10, 20],
+    onPageChange: () => renderDetailAbsenceList(session)
+  });
+
+  const allMembers = appState.members || [];
+
+  tbody.innerHTML = pagedItems.map(a => {
+    const mem = allMembers.find(m => m.MSSV === a.MSSV) || { MSSV: a.MSSV, HoTen: 'Sinh viên ' + a.MSSV };
+    const reasonLabel = ABSENCE_REASON_LABELS[a.LyDo] || a.LyDo || 'Lý do khác';
+    const status = a.TrangThaiDuyet || a.TrangThai || 'Pending';
+
+    let statusBadge = '';
+    if (status === 'Approved') {
+      statusBadge = '<span class="bht-badge bht-badge-ok text-[10px]">Có phép</span>';
+    } else if (status === 'Rejected') {
+      statusBadge = '<span class="bht-badge bht-badge-err text-[10px]">Từ chối</span>';
+    } else if (status === 'Cancelled') {
+      statusBadge = '<span class="bht-badge bg-subtle text-ink-muted text-[10px]">Đã hủy</span>';
+    } else {
+      statusBadge = '<span class="bht-badge bht-badge-warn text-[10px]">Chờ duyệt</span>';
+    }
+
+    const proofLink = a.MinhChungLink ? `
+      <a href="${escapeHtml(a.MinhChungLink)}" target="_blank" rel="noopener noreferrer" class="bht-btn bht-btn-secondary bht-btn-xs text-accent" title="Xem link minh chứng">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+      </a>
+    ` : '<span class="text-ink-faint text-[11px]">—</span>';
+
+    return `
+      <tr class="hover:bg-subtle/30 transition-colors">
+        <td class="font-mono text-accent font-semibold">${escapeHtml(a.MSSV)}</td>
+        <td class="font-medium text-ink">${escapeHtml(mem.HoTen)}</td>
+        <td>
+          <span class="bht-badge bg-subtle text-ink-muted text-[10px]">${escapeHtml(reasonLabel)}</span>
+        </td>
+        <td class="text-xs text-ink-muted max-w-xs break-words whitespace-pre-line leading-relaxed">
+          ${escapeHtml(a.ChiTiet || '—')}
+        </td>
+        <td class="text-center">${proofLink}</td>
+        <td class="text-center">${statusBadge}</td>
+        <td class="text-center">
+          <div class="inline-flex items-center gap-1.5">
+            <button 
+              type="button"
+              data-action="open-admin-review-absence-modal" 
+              data-id="${escapeHtml(a.AbsenceID)}" 
+              class="bht-btn bht-btn-secondary bht-btn-xs text-accent font-medium hover:bg-accent-soft" 
+              title="Xem toàn văn đơn và xét duyệt"
+            >
+              <i class="fa-solid fa-eye mr-1"></i>Xem / Duyệt
+            </button>
+            <button 
+              type="button"
+              data-action="admin-review-absence" 
+              data-id="${escapeHtml(a.AbsenceID)}" 
+              data-status="Approved"
+              class="bht-btn bht-btn-ghost bht-btn-icon text-ok hover:bg-emerald-500/10 ${status === 'Approved' ? 'opacity-30 pointer-events-none' : ''}" 
+              title="Duyệt nhanh có phép"
+            >
+              <i class="fa-solid fa-check"></i>
+            </button>
+            <button 
+              type="button"
+              data-action="admin-review-absence" 
+              data-id="${escapeHtml(a.AbsenceID)}" 
+              data-status="Rejected"
+              class="bht-btn bht-btn-ghost bht-btn-icon text-err hover:bg-rose-500/10 ${status === 'Rejected' ? 'opacity-30 pointer-events-none' : ''}" 
+              title="Từ chối nhanh"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  if (pagEl) {
+    pagEl.innerHTML = renderPagination('admin-detail-absences');
+  }
+}
+
+/**
+ * Mở Popup Modal xem chi tiết và xét duyệt đơn xin vắng mặt
+ * @param {string} absenceId
+ */
+export function openAdminReviewAbsenceModal(absenceId) {
+  if (!absenceId) return;
+  const modal = document.getElementById('modal-admin-review-absence');
+  if (!modal) return;
+
+  const allAbsences = appState.absences || [];
+  const absence = allAbsences.find(a => a.AbsenceID === absenceId);
+  if (!absence) {
+    showToast('Không tìm thấy thông tin đơn xin vắng!', 'error');
+    return;
+  }
+
+  const allMembers = appState.members || [];
+  const member = allMembers.find(m => m.MSSV === absence.MSSV) || { MSSV: absence.MSSV, HoTen: 'Sinh viên ' + absence.MSSV, Lop: '—', Email: '—' };
+  const allSessions = appState.attendance || [];
+  const session = allSessions.find(s => s.SessionID === absence.SessionID) || {};
+
+  const idEl = document.getElementById('modal-review-absence-id');
+  const targetIdEl = document.getElementById('modal-review-absence-target-id');
+  const statusBadgeEl = document.getElementById('modal-review-absence-status-badge');
+  const nameEl = document.getElementById('modal-review-absence-name');
+  const mssvEl = document.getElementById('modal-review-absence-mssv');
+  const classEl = document.getElementById('modal-review-absence-class');
+  const emailEl = document.getElementById('modal-review-absence-email');
+  const sessionInfoEl = document.getElementById('modal-review-absence-session-info');
+  const reasonEl = document.getElementById('modal-review-absence-reason');
+  const detailEl = document.getElementById('modal-review-absence-detail');
+  const proofContentEl = document.getElementById('modal-review-absence-proof-content');
+  const feedbackEl = document.getElementById('modal-review-absence-feedback');
+
+  if (idEl) idEl.textContent = absence.AbsenceID;
+  if (targetIdEl) targetIdEl.value = absence.AbsenceID;
+  if (nameEl) nameEl.textContent = member.HoTen || member.hoTen || member.MSSV;
+  if (mssvEl) mssvEl.textContent = member.MSSV;
+  if (classEl) classEl.textContent = member.Lop || member.lop || '—';
+  if (emailEl) emailEl.textContent = member.Email || member.email || '—';
+
+  const sessionName = session.ChuyenDe || session.Topic || session.SessionID || 'Buổi sinh hoạt';
+  const sessionDate = session.NgayDienRa ? formatSessionDateVN(session.NgayDienRa) : '';
+  if (sessionInfoEl) sessionInfoEl.textContent = `${sessionName} (${sessionDate || session.SessionID})`;
+
+  const reasonLabel = ABSENCE_REASON_LABELS[absence.LyDo] || absence.LyDo || 'Lý do khác';
+  if (reasonEl) reasonEl.textContent = reasonLabel;
+  if (detailEl) detailEl.textContent = absence.ChiTiet || 'Không có giải trình thêm.';
+
+  const status = absence.TrangThaiDuyet || absence.TrangThai || 'Pending';
+  if (statusBadgeEl) {
+    if (status === 'Approved') {
+      statusBadgeEl.innerHTML = '<span class="bht-badge bht-badge-ok text-[10px]">Có phép</span>';
+    } else if (status === 'Rejected') {
+      statusBadgeEl.innerHTML = '<span class="bht-badge bht-badge-err text-[10px]">Từ chối</span>';
+    } else if (status === 'Cancelled') {
+      statusBadgeEl.innerHTML = '<span class="bht-badge bg-subtle text-ink-muted text-[10px]">Đã hủy</span>';
+    } else {
+      statusBadgeEl.innerHTML = '<span class="bht-badge bht-badge-warn text-[10px]">Chờ duyệt</span>';
+    }
+  }
+
+  if (proofContentEl) {
+    if (absence.MinhChungLink) {
+      proofContentEl.innerHTML = `
+        <a href="${escapeHtml(absence.MinhChungLink)}" target="_blank" rel="noopener noreferrer" class="bht-btn bht-btn-secondary bht-btn-xs text-accent font-mono" title="Xem liên kết minh chứng">
+          <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Xem minh chứng
+        </a>
+      `;
+    } else {
+      proofContentEl.innerHTML = '<span class="text-ink-muted text-[11px] italic">Không có minh chứng đính kèm</span>';
+    }
+  }
+
+  if (feedbackEl) {
+    feedbackEl.value = absence.Feedback || '';
+  }
+
+  modal.classList.remove('hidden');
+}
+
+/**
+ * Đóng Modal xem chi tiết và xét duyệt đơn vắng
+ */
+export function closeAdminReviewAbsenceModal() {
+  const modal = document.getElementById('modal-admin-review-absence');
+  if (modal) modal.classList.add('hidden');
+}
+
+/**
+ * Xử lý khi Admin bấm nút Duyệt / Từ chối trên Modal Popup
+ * @param {'Approved'|'Rejected'} status
+ */
+export async function handleSubmitAdminReviewAbsenceModal(status) {
+  const targetIdEl = document.getElementById('modal-review-absence-target-id');
+  const feedbackEl = document.getElementById('modal-review-absence-feedback');
+  const absenceId = targetIdEl ? targetIdEl.value : '';
+  const feedback = feedbackEl ? feedbackEl.value.trim() : '';
+
+  if (!absenceId) {
+    showToast('Không xác định được mã đơn cần duyệt!', 'error');
+    return;
+  }
+
+  await handleAdminReviewAbsence(absenceId, status, feedback);
+}
+
+/**
+ * Xử lý Ban Điều Hành duyệt / từ chối đơn xin vắng mặt
+ * @param {string} absenceId
+ * @param {'Approved'|'Rejected'} status
+ * @param {string} [feedback='']
+ */
+export async function handleAdminReviewAbsence(absenceId, status, feedback = '') {
+  if (!absenceId || !status) return;
+
+  try {
+    const res = await callApi('reviewAbsenceRequest', {
+      absenceId: absenceId,
+      status: status,
+      trangThai: status,
+      feedback: feedback
+    });
+
+    if (res && res.success) {
+      showToast(res.message || 'Đã cập nhật trạng thái đơn thành công!', 'success');
+      // Cập nhật Optimistic vào local state
+      if (appState.absences) {
+        const item = appState.absences.find(a => a.AbsenceID === absenceId);
+        if (item) {
+          item.TrangThai = status;
+          item.TrangThaiDuyet = status;
+          if (feedback) item.Feedback = feedback;
+        }
+      }
+      if (currentAdminActiveSessionId) {
+        const s = (appState.attendance || []).find(item => item.SessionID === currentAdminActiveSessionId);
+        if (s) renderDetailAbsenceList(s);
+      }
+      closeAdminReviewAbsenceModal();
+    } else {
+      showToast((res && res.message) ? res.message : 'Không thể cập nhật trạng thái đơn!', 'error');
+    }
+  } catch (err) {
+    showToast('Lỗi cập nhật đơn: ' + (err.message || err.toString()), 'error');
+  }
+}
+
+/**
+ * Admin điểm danh bổ sung bằng tay chỉ cần nhập mã MSSV
+ * @param {Event} event
+ */
+export async function handleAdminManualCheckIn(event) {
+  if (event) event.preventDefault();
+  const inputEl = document.getElementById('admin-manual-checkin-mssv-input');
+  const btnEl = document.getElementById('btn-admin-manual-checkin');
+  if (!inputEl) return;
+  const mssv = (inputEl.value || '').trim().toUpperCase();
+
+  if (!mssv) {
+    showToast('Vui lòng nhập MSSV cần điểm danh!', 'warning');
+    inputEl.focus();
+    return;
+  }
+
+  if (!currentAdminActiveSessionId) {
+    showToast('Không xác định được buổi học hiện tại!', 'error');
+    return;
+  }
+
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Đang lưu...';
+  }
+
+  try {
+    const res = await callApi('adminManualCheckIn', {
+      sessionId: currentAdminActiveSessionId,
+      mssv: mssv
+    });
+
+    if (res && res.success) {
+      showToast(res.message || `Đã điểm danh cho sinh viên ${mssv} thành công!`, 'success');
+      inputEl.value = '';
+
+      // Cập nhật Optimistic state
+      const session = (appState.attendance || []).find(s => s.SessionID === currentAdminActiveSessionId);
+      if (session) {
+        let ds = [];
+        try {
+          ds = typeof session.DS_CoMat === 'string' ? JSON.parse(session.DS_CoMat || '[]') : (session.DS_CoMat || []);
+        } catch (_) {
+          ds = session.DS_CoMat ? String(session.DS_CoMat).split(',') : [];
+        }
+        if (!Array.isArray(ds)) ds = [];
+        if (!ds.includes(mssv)) {
+          ds.push(mssv);
+          session.DS_CoMat = ds;
+        }
+
+        // Tự động chuyển đơn vắng của MSSV này sang Cancelled nếu có
+        if (appState.absences) {
+          const abs = appState.absences.find(a => a.SessionID === currentAdminActiveSessionId && String(a.MSSV).toUpperCase() === mssv);
+          if (abs) {
+            abs.TrangThai = 'Cancelled';
+            abs.TrangThaiDuyet = 'Cancelled';
+          }
+        }
+
+        renderDetailAttendanceList(session);
+        renderDetailAbsenceList(session);
+      }
+      updateAdminStats();
+    } else {
+      showToast((res && res.message) ? res.message : 'Không thể điểm danh thủ công!', 'error');
+    }
+  } catch (err) {
+    showToast('Lỗi điểm danh: ' + (err.message || err.toString()), 'error');
+  } finally {
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.innerHTML = '<i class="fa-solid fa-user-plus mr-1"></i> Điểm danh';
+    }
   }
 }
 

@@ -221,4 +221,39 @@ Phân hệ mở rộng phụ trách các chiến dịch lễ hội (`OCT20`, `TE
      - Âm thanh Web Audio API tổng hợp (không load file ngoài).
      - Nút điều khiển tiện ích: `⏩ Xem ngay` (bỏ qua xáo thẻ) và `🎲 Xáo thẻ lại`.
 
+---
+
+## 9. Phân Hệ Đơn Xin Vắng Mặt, Điểm Danh Bổ Sung Thủ Công & Tối Ưu Mobile
+
+Nhằm đảm bảo tính minh bạch học vụ, quyền lợi rèn luyện (ĐRL) của sinh viên và sự thuận tiện cho Ban Quản trị:
+
+1. **Phân Hệ Đơn Xin Vắng Mặt Phía Thành Viên (`memberSessions.js` & `modal-member-quick-absence`):**
+   - **Singleton Quick Modal:** Tích hợp form báo vắng nhanh `#modal-member-quick-absence` trong `member.html`.
+   - **Ràng buộc nghiệp vụ phía Client & Server:**
+     - Tự động kiểm tra trạng thái buổi sinh hoạt: Buổi đã kết thúc (`Closed`) sẽ không hiển thị nút hoặc chặn gửi đơn với thông báo rõ ràng.
+     - Sinh viên đã điểm danh có mặt trong buổi học sẽ không thể gửi đơn vắng.
+     - Chống nộp trùng đơn cho cùng 1 buổi học.
+   - **Hiển thị trực quan theo thời gian thực:**
+     - Thẻ chuyên đề nổi bật (Spotlight Card) và Danh sách buổi học hiển thị huy hiệu: `Chờ duyệt đơn vắng` (vàng nhạt), `Đã duyệt nghỉ có phép` (xanh ngọc) hoặc `Bị từ chối` (đỏ).
+     - **Bảng đối soát ĐRL:** Phân tách rõ ràng giữa *Vắng có phép* (được tính vào tỷ lệ chuyên cần) và *Vắng không phép*.
+     - **Tự hủy đơn:** Sinh viên có thể tự hủy đơn xin vắng (`cancel-absence-request`) khi đơn còn ở trạng thái `Pending`.
+
+2. **Phê Duyệt Đơn Vắng & Phân Trang Độc Lập Phía Quản Trị (`adminSessions.js` & `modal-admin-review-absence`):**
+   - **Phân trang độc lập (`PaginationInstance`):** Bảng Đơn xin vắng mặt trong chi tiết buổi học sở hữu bộ phân trang riêng biệt (`#admin-detail-absence-pagination`), tách biệt với bảng Sinh viên đã có mặt.
+   - **Modal Xét Duyệt Tập Trung (`#modal-admin-review-absence`):**
+     - Khắc phục triệt để lỗi ghi đè trạng thái: Người duyệt lựa chọn rõ ràng giữa hai nút Radio: **"Phê duyệt (Nghỉ có phép)"** hoặc **"Từ chối (Nghỉ không phép)"**.
+     - Nhập lời nhắn phản hồi (`Feedback`) học thuật gửi tới sinh viên.
+     - Tự động kích hoạt cơ chế Button Loading và chống double-click khi gửi kết quả.
+
+3. **Điểm Danh Bổ Sung Thủ Công Bằng MSSV (`adminManualCheckIn`):**
+   - Form `#form-admin-manual-checkin` cho phép Quản trị viên nhập trực tiếp MSSV của sinh viên quên mang điện thoại hoặc gặp trục trặc mạng.
+   - Khi điểm danh bù thành công:
+     - Tự động thêm MSSV vào danh sách có mặt của buổi học.
+     - **Tự động hủy đơn vắng liên kết:** Nếu sinh viên đó đã nộp đơn xin vắng trước đó, hệ thống tự động đổi trạng thái đơn sang `Cancelled`.
+     - Tự động xóa cache và nạp lại cả 2 bảng (Danh sách có mặt & Đơn xin vắng) tức thì.
+
+4. **Tối Ưu Mobile Ergonomics & Chống Biến Dạng Badge (Anti-Deform Badges):**
+   - **Chống phình to huy hiệu Member:** Bổ sung thuộc tính `whitespace-nowrap` trên tất cả thẻ `<td>` và component `uiStatusBadge`, mở rộng độ rộng tối thiểu cột `<th>Điểm danh</th>` lên `min-w-[120px]`, đảm bảo badge luôn hiển thị dạng viên thuốc pill thon gọn, không bao giờ bị rớt dòng thành hình tròn hay quả trứng.
+   - **Thanh điều hướng đáy Admin 5 Tabs (`grid-cols-5`):** Khắc phục lỗi thiếu Tab 5 (Sự kiện) trên thiết bị di động bằng cách chuyển cấu trúc sang `grid-cols-5 px-1 min-w-0`, các nhãn rút gọn tinh tế kèm icon cân đối trên mọi kích cỡ màn hình hẹp (320px – 430px).
+
 

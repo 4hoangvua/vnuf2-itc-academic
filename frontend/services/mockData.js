@@ -934,6 +934,40 @@ export const INITIAL_MOCK_DATA = {
         }
       ]
     }
+  ],
+
+  // 9. Danh sách đơn xin vắng buổi sinh hoạt (Absence Requests)
+  absences: [
+    {
+      AbsenceID: 'ABS_20261015_001_2251120002',
+      SessionID: 'MEET_20261015_190000',
+      MSSV: '2251120002',
+      HoTen: 'Trần Thị Thu Trang',
+      Email: 'thutrang.cntt@gmail.com',
+      LyDo: 'TRUNG_LICH_HOC',
+      ChiTiet: 'Em bị trùng lịch thi vấn đáp môn Kiến trúc máy tính tại giảng đường A1.',
+      MinhChungLink: 'https://drive.google.com/file/d/mock-lich-thi/view',
+      ThoiGianGui: '15/10/2026 14:00',
+      TrangThaiDuyet: 'Approved',
+      Feedback: 'Đã duyệt nghỉ có phép. Trang nhớ xem lại slide và làm bài tập nhé!',
+      NguoiDuyet: '2251120001',
+      ThoiGianDuyet: '15/10/2026 16:30'
+    },
+    {
+      AbsenceID: 'ABS_20261029_002_2351120028',
+      SessionID: 'MEET_20261029_190000',
+      MSSV: '2351120028',
+      HoTen: 'Phạm Phương Anh',
+      Email: 'phuonganh.cntt@gmail.com',
+      LyDo: 'LY_DO_SUC_KHOE',
+      ChiTiet: 'Em bị sốt xuất huyết đang truyền dịch tại trạm y tế, xin phép vắng mặt.',
+      MinhChungLink: '',
+      ThoiGianGui: '29/10/2026 12:30',
+      TrangThaiDuyet: 'Pending',
+      Feedback: '',
+      NguoiDuyet: '',
+      ThoiGianDuyet: ''
+    }
   ]
 };
 
@@ -1018,6 +1052,11 @@ export function getLocalMockState() {
         parsed.activeCampaignId = INITIAL_MOCK_DATA.activeCampaignId || 'OCT20';
         hasChanges = true;
       }
+      // Tự động đồng bộ absences nếu store cũ chưa có
+      if (!parsed.absences || !Array.isArray(parsed.absences)) {
+        parsed.absences = JSON.parse(JSON.stringify(INITIAL_MOCK_DATA.absences));
+        hasChanges = true;
+      }
       if (hasChanges) {
         localStorage.setItem('bht_mock_store', JSON.stringify(parsed));
       }
@@ -1080,6 +1119,7 @@ export async function handleMockAction(action, payload) {
               attendance: state.attendance || [],
               docs: state.documents || [],
               submissions: isAdmin ? (state.submissions || []) : (state.submissions || []).filter(s => s.MSSV === member.MSSV),
+              absences: isAdmin ? (state.absences || []) : (state.absences || []).filter(a => a.MSSV === member.MSSV),
               members: isAdmin ? (state.members || []) : [],
               activeCampaign: (state.campaigns || []).find(c => c.id === state.activeCampaignId) || null
             };
@@ -1141,6 +1181,7 @@ export async function handleMockAction(action, payload) {
           attendance: state.attendance || [],
           docs: state.documents || [],
           submissions: isAdmin ? (state.submissions || []) : (state.submissions || []).filter(s => s.MSSV === currentMssv),
+          absences: isAdmin ? (state.absences || []) : (state.absences || []).filter(a => a.MSSV === currentMssv),
           members: isAdmin ? (state.members || []) : [],
           activeCampaign: (state.campaigns || []).find(c => c.id === state.activeCampaignId) || null
         }
@@ -1387,6 +1428,203 @@ export async function handleMockAction(action, payload) {
         success: true, 
         message: `Điểm danh thành công buổi "${session.TenBuoiHop}"!`,
         sessionId: session.SessionID
+      };
+    }
+
+    case 'adminManualCheckIn': {
+      const sid = String(data.sessionId || data.SessionID || '').trim();
+      const cleanMssv = String(data.mssv || '').trim().toUpperCase();
+
+      if (!sid) {
+        return { success: false, message: 'Vui lòng cung cấp mã buổi sinh hoạt!' };
+      }
+      if (!cleanMssv) {
+        return { success: false, message: 'Vui lòng nhập mã số sinh viên (MSSV) cần điểm danh!' };
+      }
+
+      const session = (state.attendance || []).find(s => s.SessionID === sid);
+      if (!session) {
+        return { success: false, message: 'Không tìm thấy buổi sinh hoạt tương ứng!' };
+      }
+
+      let ds = [];
+      try { ds = JSON.parse(session.DS_CoMat || '[]'); } catch (_) { ds = []; }
+      if (!Array.isArray(ds)) ds = [];
+
+      if (ds.includes(cleanMssv)) {
+        return { success: false, message: `Sinh viên (${cleanMssv}) đã có mặt trong danh sách điểm danh buổi này rồi!` };
+      }
+
+      ds.push(cleanMssv);
+      session.DS_CoMat = JSON.stringify(ds);
+
+      // Nếu có đơn vắng trước đó, tự động chuyển thành Cancelled vì sinh viên đã có mặt thực tế
+      state.absences = state.absences || [];
+      const userAbs = state.absences.find(a => a.SessionID === sid && a.MSSV === cleanMssv);
+      if (userAbs) {
+        userAbs.TrangThaiDuyet = 'Cancelled';
+        userAbs.TrangThai = 'Cancelled';
+      }
+
+      saveLocalMockState(state);
+
+      const mem = (state.members || []).find(m => m.MSSV === cleanMssv);
+      const hoTen = mem ? mem.HoTen : `Sinh viên ${cleanMssv}`;
+
+      return {
+        success: true,
+        message: `Đã điểm danh thủ công thành công cho sinh viên ${hoTen} (${cleanMssv})!`,
+        data: {
+          sessionId: sid,
+          mssv: cleanMssv,
+          hoTen: hoTen,
+          dsCoMat: ds
+        }
+      };
+    }
+
+    // 3.1. ABSENCE REQUESTS (ĐƠN XIN VẮNG BUỔI SINH HOẠT)
+    case 'submitAbsenceRequest': {
+      const sid = String(data.sessionId || '').trim();
+      if (!sid) {
+        return { success: false, message: 'Vui lòng cung cấp mã buổi sinh hoạt!' };
+      }
+      const session = (state.attendance || []).find(s => s.SessionID === sid);
+      if (!session) {
+        return { success: false, message: 'Buổi sinh hoạt không tồn tại trong hệ thống!' };
+      }
+
+      let cleanMssv = String(data.mssv || '').trim().toUpperCase();
+      if (!cleanMssv && typeof localStorage !== 'undefined') {
+        cleanMssv = String(localStorage.getItem('bht_mssv') || '').trim().toUpperCase();
+      }
+      if (!cleanMssv) {
+        return { success: false, message: 'Thiếu thông tin mã số sinh viên!' };
+      }
+
+      // 0. Kiểm tra xem buổi sinh hoạt đã kết thúc chưa
+      const isClosed = String(session.TrangThai || '').trim().toLowerCase() === 'closed';
+      if (isClosed) {
+        return { success: false, message: 'Buổi sinh hoạt này đã kết thúc, không thể nộp đơn xin vắng mặt!' };
+      }
+
+      // 1. Kiểm tra xem sinh viên đã điểm danh có mặt buổi này chưa
+      let dsCoMat = [];
+      try { dsCoMat = JSON.parse(session.DS_CoMat || '[]'); } catch (_) { dsCoMat = []; }
+      if (Array.isArray(dsCoMat) && dsCoMat.includes(cleanMssv)) {
+        return { success: false, message: 'Bạn đã điểm danh có mặt buổi này, không thể nộp đơn xin vắng!' };
+      }
+
+      // 2. Kiểm tra trùng lặp: Sinh viên đã gửi đơn xin vắng cho buổi này chưa
+      state.absences = state.absences || [];
+      const existing = state.absences.find(a => a.SessionID === sid && a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
+      if (existing) {
+        return { success: false, message: 'Bạn đã gửi đơn xin vắng cho buổi học này rồi!' };
+      }
+
+      const mem = (state.members || []).find(m => m.MSSV === cleanMssv);
+      const now = new Date();
+      const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      const newAbsence = {
+        AbsenceID: 'ABS_' + Date.now() + '_' + cleanMssv,
+        SessionID: sid,
+        MSSV: cleanMssv,
+        HoTen: mem ? mem.HoTen : (data.hoTen || `Sinh viên ${cleanMssv}`),
+        Email: mem ? (mem.Email || '') : (data.email || ''),
+        LyDo: String(data.lyDo || 'LY_DO_KHAC').trim(),
+        ChiTiet: String(data.chiTiet || data.moTa || '').trim(),
+        MinhChungLink: String(data.minhChungLink || '').trim(),
+        ThoiGianGui: timeStr,
+        TrangThaiDuyet: 'Pending',
+        Feedback: '',
+        NguoiDuyet: '',
+        ThoiGianDuyet: ''
+      };
+
+      state.absences.unshift(newAbsence);
+      saveLocalMockState(state);
+
+      return {
+        success: true,
+        message: 'Đã gửi thư xin vắng mặt thành công! Ban Quản trị sẽ xem xét và phản hồi sớm.',
+        data: newAbsence
+      };
+    }
+
+    case 'getMemberAbsenceRequests': {
+      let cleanMssv = String(data.mssv || '').trim().toUpperCase();
+      if (!cleanMssv && typeof localStorage !== 'undefined') {
+        cleanMssv = String(localStorage.getItem('bht_mssv') || '').trim().toUpperCase();
+      }
+      state.absences = state.absences || [];
+      const list = state.absences.filter(a => a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
+      return { success: true, data: list };
+    }
+
+    case 'getAbsenceRequestsBySession': {
+      const sid = String(data.sessionId || '').trim();
+      state.absences = state.absences || [];
+      const list = sid ? state.absences.filter(a => a.SessionID === sid && a.TrangThaiDuyet !== 'Cancelled') : state.absences;
+      return { success: true, data: list };
+    }
+
+    case 'getAllAbsenceRequests': {
+      state.absences = state.absences || [];
+      return { success: true, data: state.absences };
+    }
+
+    case 'reviewAbsenceRequest': {
+      const aid = String(data.absenceId || data.AbsenceID || '').trim();
+      const st = String(data.status || data.trangThai || data.TrangThai || data.TrangThaiDuyet || 'Approved').trim();
+      const fb = String(data.feedback || data.Feedback || '').trim();
+      state.absences = state.absences || [];
+      const abs = state.absences.find(a => a.AbsenceID === aid);
+      if (!abs) {
+        return { success: false, message: 'Không tìm thấy đơn xin vắng tương ứng!' };
+      }
+
+      const now = new Date();
+      const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      abs.TrangThaiDuyet = st;
+      abs.TrangThai = st;
+      abs.Feedback = fb;
+      abs.NguoiDuyet = String(data.reviewerMssv || data.adminMssv || 'ADMIN').trim();
+      abs.ThoiGianDuyet = timeStr;
+      saveLocalMockState(state);
+
+      return {
+        success: true,
+        message: st === 'Approved' ? 'Đã duyệt đơn xin vắng (Nghỉ có phép)!' : 'Đã từ chối đơn xin vắng (Nghỉ không phép)!',
+        data: abs
+      };
+    }
+
+    case 'cancelAbsenceRequest': {
+      const aid = String(data.absenceId || '').trim();
+      let cleanMssv = String(data.mssv || '').trim().toUpperCase();
+      if (!cleanMssv && typeof localStorage !== 'undefined') {
+        cleanMssv = String(localStorage.getItem('bht_mssv') || '').trim().toUpperCase();
+      }
+      state.absences = state.absences || [];
+      const abs = state.absences.find(a => a.AbsenceID === aid);
+      if (!abs) {
+        return { success: false, message: 'Không tìm thấy đơn xin vắng cần hủy!' };
+      }
+      if (cleanMssv && abs.MSSV !== cleanMssv) {
+        return { success: false, message: 'Bạn không có quyền hủy đơn của thành viên khác!' };
+      }
+      if (abs.TrangThaiDuyet !== 'Pending') {
+        return { success: false, message: 'Chỉ có thể hủy đơn khi còn ở trạng thái Chờ duyệt!' };
+      }
+
+      abs.TrangThaiDuyet = 'Cancelled';
+      saveLocalMockState(state);
+
+      return {
+        success: true,
+        message: 'Đã hủy đơn xin vắng thành công!'
       };
     }
 

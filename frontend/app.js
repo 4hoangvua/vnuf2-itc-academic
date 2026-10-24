@@ -54,6 +54,10 @@ import {
   openQuickPinModal,
   closeQuickPinModal,
   handleSubmitQuickPinModal,
+  openQuickAbsenceModal,
+  closeQuickAbsenceModal,
+  handleSubmitQuickAbsenceModal,
+  handleCancelAbsenceRequest,
   filterMemberAuditTable,
   handleStartMemberQuiz,
   handleSelectQuizOption,
@@ -82,7 +86,7 @@ import {
   triggerClickBlossom,
   handleReplayGiftUnboxing,
   handleSkipGiftShuffle
-} from './modules/member.js?v=20261020_4';
+} from './modules/member.js?v=20261024_rev3';
 
 import {
   initAdminView,
@@ -143,6 +147,11 @@ import {
   handleDeleteDocument,
   handleFilterAdminDocs,
   handleFilterAdminAttendance,
+  handleAdminReviewAbsence,
+  openAdminReviewAbsenceModal,
+  closeAdminReviewAbsenceModal,
+  handleSubmitAdminReviewAbsenceModal,
+  handleAdminManualCheckIn,
   switchToMemberView,
   returnToAdminView,
   handleToggleAdminQuizStatus,
@@ -159,7 +168,7 @@ import {
   handleInsertCampaignEmailTag,
   handleUpdateCampaignEmailPreview,
   handleDispatchCampaignBulkEmail
-} from './modules/admin.js?v=20261020_2';
+} from './modules/admin.js?v=20261024_rev3';
 
 import {
   openProjectorMode,
@@ -218,6 +227,9 @@ const CENTRAL_ACTION_MAP = {
   'filter-docs-category': (el, ev, ds) => filterDocsByCategory(ds.category || ds.cat),
   'open-quick-pin-modal': (el, ev, ds) => openQuickPinModal(ds.id),
   'close-quick-pin-modal': () => closeQuickPinModal(),
+  'open-quick-absence-modal': (el, ev, ds) => openQuickAbsenceModal(ds.id),
+  'close-quick-absence-modal': () => closeQuickAbsenceModal(),
+  'cancel-absence-request': (el, ev, ds) => handleCancelAbsenceRequest(ds.id),
   'filter-member-audit': (el, ev, ds) => filterMemberAuditTable(ds.filter),
   'scroll-to-member-audit': () => {
     const el = document.getElementById('member-attendance-audit-tbody');
@@ -308,6 +320,10 @@ const CENTRAL_ACTION_MAP = {
   'save-task-in-detail': () => handleSaveTaskInDetail(),
   'open-projector-from-detail': () => handleOpenProjectorFromDetail(),
   'filter-submissions-for-session': (el, ev, ds) => filterAndSwitchToSubmissions(ds.id),
+  'admin-review-absence': (el, ev, ds) => handleAdminReviewAbsence(ds.id, ds.status),
+  'open-admin-review-absence-modal': (el, ev, ds) => openAdminReviewAbsenceModal(ds.id),
+  'close-admin-review-absence-modal': () => closeAdminReviewAbsenceModal(),
+  'submit-admin-review-absence-modal': (el, ev, ds) => handleSubmitAdminReviewAbsenceModal(ds.status),
 
   // --- CHUYỂN ĐỔI CHẾ ĐỘ XEM ADMIN <-> MEMBER (PREVIEW MODE) ---
   'switch-to-member-view': () => switchToMemberView(),
@@ -453,7 +469,9 @@ const CENTRAL_FORM_MAP = {
   'quick-attendance': (form, ev) => handleQuickAttendance(ev),
   'checkin-from-detail': (form, ev) => handleCheckInFromDetail(ev),
   'submit-quick-pin-modal': (form, ev) => handleSubmitQuickPinModal(ev),
-  'submit-edit-quiz': (form, ev) => handleSubmitEditQuizForm(ev)
+  'submit-quick-absence-modal': (form, ev) => handleSubmitQuickAbsenceModal(ev),
+  'submit-edit-quiz': (form, ev) => handleSubmitEditQuizForm(ev),
+  'submit-admin-manual-checkin': (form, ev) => handleAdminManualCheckIn(ev)
 };
 
 // ====================================================================

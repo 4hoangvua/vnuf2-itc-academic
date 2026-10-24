@@ -165,12 +165,13 @@ export async function loadAdminData(silent = true, skipCache = false) {
   if (!silent) showGlobalLoading('Đang tải dữ liệu ban điều hành...');
 
   try {
-    const [membersRes, tasksRes, subsRes, attRes, docsRes] = await Promise.all([
+    const [membersRes, tasksRes, subsRes, attRes, docsRes, absenceRes] = await Promise.all([
       callApi('getAllMembers', {}, { skipCache }),
       callApi('getAllTasks', {}, { skipCache }),
       callApi('getAllSubmissions', {}, { skipCache }),
       callApi('getAttendanceSessions', {}, { skipCache }),
-      callApi('getAllDocuments', {}, { skipCache })
+      callApi('getAllDocuments', {}, { skipCache }),
+      callApi('getAllAbsenceRequests', {}, { skipCache })
     ]);
 
     hideGlobalLoading();
@@ -179,6 +180,7 @@ export async function loadAdminData(silent = true, skipCache = false) {
     if (tasksRes && tasksRes.success) appState.tasks = tasksRes.data || [];
     if (subsRes && subsRes.success) appState.submissions = subsRes.data || [];
     if (attRes && attRes.success) appState.attendance = attRes.data || [];
+    if (absenceRes && absenceRes.success) appState.absences = absenceRes.data || [];
     if (docsRes && docsRes.success) {
       appState.docs = docsRes.data || [];
       appState.documents = appState.docs;
