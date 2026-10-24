@@ -428,6 +428,7 @@ export async function switchToMemberView(targetMssv = null) {
 
   if (targetUser) {
     sessionStorage.setItem('bht_viewing_as_member', JSON.stringify(targetUser));
+    appState.user = targetUser;
     showToast(`Đang xem trước giao diện của: ${targetUser.hoTen} (${targetUser.mssv})`, 'info');
   } else {
     sessionStorage.setItem('bht_viewing_as_member', 'true');

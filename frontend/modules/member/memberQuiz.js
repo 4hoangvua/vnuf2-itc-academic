@@ -296,7 +296,7 @@ export async function loadMemberQuiz(sessionId) {
       sessionId,
       mssv: currentMssv,
       isAdmin: false
-    });
+    }, { skipCache: true });
 
     try {
       const profRes = await callApi('getMemberQuizProfile', { mssv: currentMssv });

@@ -254,8 +254,13 @@ export function hashString(str) {
  */
 export function isFemaleMember(user) {
   if (!user) return false;
-  const sex = String(user.Sex || user.sex || '').trim().toLowerCase();
-  return sex === 'female';
+  const sex = String(user.Sex || user.sex || user.gioiTinh || user.GioiTinh || '').trim().toLowerCase();
+  if (sex === 'female' || sex === 'nữ' || sex === 'nu' || sex === 'f') return true;
+  const name = String(user.hoTen || user.HoTen || '').toLowerCase();
+  if (name.includes('thị') || name.includes('thi') || name.includes('trang') || name.includes('ngọc') || name.includes('nguyên') || name.includes('nguyen') || name.includes('hương') || name.includes('anh') || name.includes('hoa') || name.includes('mai') || name.includes('linh') || name.includes('yến') || name.includes('lan')) {
+    return true;
+  }
+  return false;
 }
 
 /**

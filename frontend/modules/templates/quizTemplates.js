@@ -11,6 +11,7 @@
  */
 
 import { escapeHTML } from '../../utils/dom.js';
+import { getClaimedGift, getDeterministicGiftForUser } from '../gift2010.js';
 
 /**
  * Render ma trận câu hỏi cho modal chuyển câu nhanh (Question Grid)
@@ -522,28 +523,59 @@ export function renderMemberQuizView(quiz, userResult, options = {}) {
                   <span>${myRank > 0 ? `Hạng #${myRank} / ${leaderboard.length}` : 'Đã ghi nhận kết quả'}</span>
                 </div>
 
-                ${(!userResult.appliedGift2010 && claimedGift && claimedGift.giftId === 'BONUS_10PT') ? `
-                  <button 
-                    type="button" 
-                    data-action="apply-quiz-bonus-voucher" 
-                    data-session-id="${escapeHTML(sessionId)}" 
-                    data-gift-code="${escapeHTML(claimedGift.claimCode || '')}"
-                    class="mt-2.5 bht-btn bht-btn-xs bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold shadow-xs active:scale-95 transition-all w-full justify-center py-1 px-2.5"
-                    title="Áp dụng Voucher 20/10 để cộng trực tiếp +10 điểm vào bài thi này"
-                  >
-                    <i class="fa-solid fa-wand-magic-sparkles mr-1 text-[10px]"></i>
-                    <span>Dùng Voucher (+10đ)</span>
-                  </button>
-                ` : ''}
+                ${(() => {
+                  const targetMssv = String(
+                    (userResult && userResult.MSSV) || 
+                    options.currentMssv || 
+                    (options.currentUser && (options.currentUser.mssv || options.currentUser.MSSV)) || 
+                    myMssv || 
+                    ''
+                  ).trim().toUpperCase();
 
-                ${userResult.appliedGift2010 ? `
-                  <div class="mt-1.5">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20">
-                      <i class="fa-solid fa-check text-[9px]"></i>
-                      <span>Đã áp dụng Voucher 20/10</span>
-                    </span>
-                  </div>
-                ` : ''}
+                  const effectiveGift = claimedGift 
+                    || (options.currentUser ? getClaimedGift(options.currentUser) : null) 
+                    || (targetMssv ? getClaimedGift({ mssv: targetMssv }) : null) 
+                    || (targetMssv ? getDeterministicGiftForUser({ mssv: targetMssv }) : null);
+
+                  const effectiveGiftId = effectiveGift ? (effectiveGift.giftId || effectiveGift.id || '') : '';
+                  const isBonusVoucher = effectiveGiftId === 'BONUS_10PT' 
+                    || effectiveGiftId === 'BONUS_15PT' 
+                    || effectiveGiftId === 'BONUS_10PT_ANNI' 
+                    || (effectiveGift && effectiveGift.giftTitle && effectiveGift.giftTitle.includes('Điểm'))
+                    || (effectiveGift && effectiveGift.shortTitle && effectiveGift.shortTitle.includes('Điểm'));
+
+                  const isGiftAlreadyUsed = Boolean(userResult.appliedGift2010 || (effectiveGift && effectiveGift.used));
+
+                  if (!isGiftAlreadyUsed && isBonusVoucher) {
+                    const claimCode = (effectiveGift && effectiveGift.claimCode) || '';
+                    return `
+                      <button 
+                        type="button" 
+                        data-action="apply-quiz-bonus-voucher" 
+                        data-session-id="${escapeHTML(sessionId)}" 
+                        data-gift-code="${escapeHTML(claimCode)}"
+                        class="mt-2.5 bht-btn bht-btn-xs bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold shadow-xs active:scale-95 transition-all w-full justify-center py-1 px-2.5"
+                        title="Áp dụng Voucher 20/10 để cộng trực tiếp +10 điểm vào bài thi này"
+                      >
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1 text-[10px]"></i>
+                        <span>Dùng Voucher (+10đ)</span>
+                      </button>
+                    `;
+                  }
+
+                  if (isGiftAlreadyUsed) {
+                    return `
+                      <div class="mt-1.5">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20">
+                          <i class="fa-solid fa-check text-[9px]"></i>
+                          <span>Đã áp dụng Voucher 20/10</span>
+                        </span>
+                      </div>
+                    `;
+                  }
+
+                  return '';
+                })()}
               </div>
             </div>
           ` : ''}
