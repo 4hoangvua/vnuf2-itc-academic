@@ -305,23 +305,47 @@ export function getClaimedGift(user) {
     if (typeof rawGift === 'string' && rawGift.trim()) {
       try {
         const parsed = JSON.parse(rawGift);
-        if (parsed && parsed.claimCode) return parsed;
+        if (parsed && (parsed.claimCode || parsed.giftId)) return parsed;
       } catch (e) {}
-    } else if (typeof rawGift === 'object' && rawGift.claimCode) {
+    } else if (typeof rawGift === 'object' && (rawGift.claimCode || rawGift.giftId)) {
       return rawGift;
     }
   }
 
-  // 2. Kiểm tra trong LocalStorage cache
+  // 2. Kiểm tra trong appState.members nếu có
+  if (typeof appState !== 'undefined' && Array.isArray(appState.members) && mssv) {
+    const mem = appState.members.find(m => String(m.MSSV || '').trim().toUpperCase() === mssv);
+    if (mem) {
+      const memRaw = mem.gift2010 || mem.Gift2010;
+      if (memRaw) {
+        if (typeof memRaw === 'string' && memRaw.trim()) {
+          try {
+            const parsed = JSON.parse(memRaw);
+            if (parsed && (parsed.claimCode || parsed.giftId)) return parsed;
+          } catch (e) {}
+        } else if (typeof memRaw === 'object' && (memRaw.claimCode || memRaw.giftId)) {
+          return memRaw;
+        }
+      }
+    }
+  }
+
+  // 3. Kiểm tra trong LocalStorage cache
   try {
     if (typeof localStorage !== 'undefined' && mssv) {
       const cached = localStorage.getItem(`bht_gift_2010_${mssv}`);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed && parsed.claimCode) return parsed;
+        if (parsed && (parsed.claimCode || parsed.giftId)) return parsed;
       }
     }
   } catch (e) {}
+
+  // 4. Fallback tự động: Nếu là thành viên Nữ thì sinh quà theo thuật toán cố định
+  if (isFemaleMember(user)) {
+    const det = getDeterministicGiftForUser(user);
+    if (det && (det.claimCode || det.giftId)) return det;
+  }
 
   return null;
 }

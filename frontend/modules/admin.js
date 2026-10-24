@@ -390,6 +390,11 @@ export async function switchToMemberView(targetMssv = null) {
     if (found) {
       const initM = INITIAL_MOCK_DATA.members.find(x => x.MSSV === found.MSSV);
       const exactSex = found.Sex || (initM ? initM.Sex : 'male');
+      const rawGift = found.gift2010 || found.Gift2010 || (initM ? (initM.gift2010 || initM.Gift2010) : null) || null;
+      let parsedGift = rawGift;
+      if (typeof rawGift === 'string' && rawGift.trim()) {
+        try { parsedGift = JSON.parse(rawGift); } catch (e) {}
+      }
       targetUser = {
         mssv: found.MSSV,
         hoTen: found.HoTen,
@@ -397,7 +402,8 @@ export async function switchToMemberView(targetMssv = null) {
         role: 'MEMBER',
         sex: exactSex,
         Sex: exactSex,
-        gift2010: found.gift2010 || (initM ? initM.gift2010 : null) || null
+        gift2010: parsedGift,
+        Gift2010: parsedGift
       };
     }
   } else if (appState.user) {
@@ -405,12 +411,18 @@ export async function switchToMemberView(targetMssv = null) {
     const currentAdminMssv = appState.user.mssv;
     const found = memList.find(m => String(m.MSSV).trim().toUpperCase() === String(currentAdminMssv).trim().toUpperCase());
     const exactSex = (found && found.Sex) ? found.Sex : (appState.user.Sex || appState.user.sex || 'male');
+    const rawAdminGift = (found && (found.gift2010 || found.Gift2010)) || appState.user.gift2010 || appState.user.Gift2010 || null;
+    let parsedAdminGift = rawAdminGift;
+    if (typeof rawAdminGift === 'string' && rawAdminGift.trim()) {
+      try { parsedAdminGift = JSON.parse(rawAdminGift); } catch (e) {}
+    }
     targetUser = {
       ...appState.user,
       role: 'MEMBER',
       sex: exactSex,
       Sex: exactSex,
-      gift2010: (found && found.gift2010) ? found.gift2010 : (appState.user.gift2010 || null)
+      gift2010: parsedAdminGift,
+      Gift2010: parsedAdminGift
     };
   }
 

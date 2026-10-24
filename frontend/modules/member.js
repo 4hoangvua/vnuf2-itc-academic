@@ -144,7 +144,15 @@ export function getCurrentMemberUser() {
         user.Sex = mem.Sex;
         user.sex = mem.Sex;
       }
-      if (!user.gift2010 && mem.gift2010) user.gift2010 = mem.gift2010;
+      const rawMemGift = mem.gift2010 || mem.Gift2010;
+      if (rawMemGift) {
+        let pGift = rawMemGift;
+        if (typeof rawMemGift === 'string' && rawMemGift.trim()) {
+          try { pGift = JSON.parse(rawMemGift); } catch (e) {}
+        }
+        if (!user.gift2010) user.gift2010 = pGift;
+        if (!user.Gift2010) user.Gift2010 = pGift;
+      }
     } else {
       const initM = INITIAL_MOCK_DATA.members.find(x => String(x.MSSV).trim().toUpperCase() === cleanUserMssv);
       if (initM) {
@@ -157,7 +165,15 @@ export function getCurrentMemberUser() {
           user.Sex = initM.Sex;
           user.sex = initM.Sex;
         }
-        if (!user.gift2010 && initM.gift2010) user.gift2010 = initM.gift2010;
+        const rawInitGift = initM.gift2010 || initM.Gift2010;
+        if (rawInitGift) {
+          let pGift = rawInitGift;
+          if (typeof rawInitGift === 'string' && rawInitGift.trim()) {
+            try { pGift = JSON.parse(rawInitGift); } catch (e) {}
+          }
+          if (!user.gift2010) user.gift2010 = pGift;
+          if (!user.Gift2010) user.Gift2010 = pGift;
+        }
       }
     }
   }
