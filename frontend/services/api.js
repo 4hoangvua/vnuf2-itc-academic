@@ -640,8 +640,19 @@ export function hydrateAppFromBootstrap(bootstrapData, role, mssv) {
   if (Array.isArray(bootstrapData.docs)) {
     setCache('getAllDocuments', {}, bootstrapData.docs);
   }
-  if (bootstrapData.activeCampaign !== undefined && bootstrapData.activeCampaign !== null) {
-    setCache('getActiveCampaign', {}, bootstrapData.activeCampaign);
+  if (bootstrapData.activeCampaign !== undefined) {
+    if (bootstrapData.activeCampaign !== null) {
+      setCache('getActiveCampaign', {}, bootstrapData.activeCampaign);
+      try {
+        const campId = (typeof bootstrapData.activeCampaign === 'string') 
+          ? bootstrapData.activeCampaign 
+          : (bootstrapData.activeCampaign.id || bootstrapData.activeCampaign.campaignId || 'OCT20');
+        safeStorage.setItem('bht_active_campaign', campId);
+      } catch (e) {}
+    } else {
+      setCache('getActiveCampaign', {}, null);
+      safeStorage.setItem('bht_active_campaign', 'NONE');
+    }
   }
 
   if (cleanRole === 'ADMIN') {
