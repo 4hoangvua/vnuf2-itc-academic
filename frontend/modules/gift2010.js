@@ -670,11 +670,80 @@ export function renderGift2010Banner(user) {
   if (!user) return '';
 
   const campaign = getActiveCampaign();
-  if (!campaign) return ''; // Nếu đã tắt sự kiện (NONE) thì ẩn banner
-
-  const isFemale = isFemaleMember(user);
   const fullName = escapeHTML(user.hoTen || user.HoTen || 'Bạn');
   const claimed = getClaimedGift(user);
+
+  // 1. Chế độ thường (Không có sự kiện lễ hội): Hiển thị Hộp Quà Đặc Quyền Học Thuật Thường Trực
+  if (!campaign || campaign.id === 'NONE') {
+    let claimedBadgeHtml = '';
+    if (claimed) {
+      const giftObj = ACADEMIC_GIFTS_2010.find(g => g.id === claimed.giftId) || ACADEMIC_GIFTS_2010[0];
+      const shortTitle = escapeHTML(claimed.shortTitle || giftObj.shortTitle || claimed.giftTitle || '');
+      const code = escapeHTML(claimed.claimCode || '');
+      const isUsed = Boolean(claimed.used);
+      const statusBadge = isUsed 
+        ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20">⚪ Đã dùng</span>'
+        : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">🟢 Sẵn sàng sử dụng</span>';
+
+      claimedBadgeHtml = `
+        <div class="inline-flex flex-wrap items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface/90 border border-hairline text-xs text-ink shadow-xs">
+          <span class="font-medium text-accent">🎁 Đặc quyền: <strong>${shortTitle}</strong></span>
+          <span class="font-mono text-[11px] text-ink-muted">(Mã: <span class="font-bold text-ink">${code}</span>)</span>
+          ${statusBadge}
+        </div>
+      `;
+    }
+
+    return `
+      <div id="banner-academic-privilege" class="bht-card relative overflow-hidden p-4 sm:p-5 border border-hairline bg-gradient-to-r from-accent-soft/40 via-surface to-accent-soft/20 shadow-xs animate-fade-in">
+        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="space-y-1 max-w-2xl">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent-soft text-accent border border-accent/20">
+                <span>🎁</span>
+                <span>Hộp Quà Đặc Quyền Học Thuật</span>
+              </span>
+              <span class="text-[11px] font-mono text-ink-muted">Ban Học Thuật VNUF2</span>
+            </div>
+
+            <h3 class="bht-heading-serif text-base sm:text-lg font-bold text-ink">
+              Đặc Quyền Chuyên Môn & Hỗ Trợ Kỹ Thuật Dành Cho Thành Viên
+            </h3>
+
+            <p class="text-xs sm:text-sm text-ink-muted leading-relaxed">
+              Bạn có thể sử dụng các thẻ đặc quyền: Hỗ trợ VIP Debug 1-1 với Mentor, Gia hạn Deadline (+24h), Điểm thưởng bài tập hoặc Khiên bảo vệ Streak.
+            </p>
+          </div>
+
+          <div class="shrink-0 w-full sm:w-auto flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-2.5">
+            ${claimed ? `
+              ${claimedBadgeHtml}
+              <button 
+                type="button" 
+                data-action="open-gift-modal" 
+                class="bht-btn bht-btn-secondary text-xs sm:text-sm font-semibold py-2 px-3.5 shadow-xs w-full sm:w-auto justify-center"
+                title="Xem lại thẻ đặc quyền học thuật của bạn"
+              >
+                <span>🎟️ Xem / Đổi Thẻ Quà</span>
+              </button>
+            ` : `
+              <button 
+                type="button" 
+                data-action="open-gift-modal" 
+                class="bht-btn bht-btn-primary text-xs sm:text-sm font-bold py-2.5 px-4 shadow-sm w-full sm:w-auto justify-center active:scale-95 transition-transform"
+                title="Mở hộp quà học thuật đặc quyền"
+              >
+                <span class="animate-bounce mr-1">🎁</span>
+                <span>Mở Hộp Quà Đặc Quyền</span>
+              </button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const isFemale = isFemaleMember(user);
 
   // 1. Trường hợp sự kiện OCT20 (Bảo đảm tương thích ngược 100% cho test suites)
   if (campaign.id === 'OCT20') {
@@ -1099,6 +1168,8 @@ export function stopGiftCardShuffleAnimation() {
 export function renderGift2010ModalContent(giftData, user) {
   if (!giftData) return '';
 
+  const campaign = getActiveCampaign();
+  const isOct20 = Boolean(campaign && campaign.id === 'OCT20');
   const matched = ACADEMIC_GIFTS_2010.find(g => g.id === giftData.giftId) || ACADEMIC_GIFTS_2010[0];
   const claimCode = escapeHTML(giftData.claimCode || '');
   const userName = escapeHTML(user ? (user.hoTen || user.HoTen || 'Bạn') : 'Bạn');
@@ -1107,18 +1178,29 @@ export function renderGift2010ModalContent(giftData, user) {
   const formattedClaimDate = formatClaimDate(giftData.claimedAt) || formatClaimDate(new Date().toISOString());
 
   // Lựa chọn câu chúc ban đầu
-  const initialWish = FEMALE_IT_WISHES_2010[0];
-  const fullShareText = `🌸 [Quà 20/10 Ban Học Thuật VNUF2] Mình là ${userName}${mssv ? ` (${mssv})` : ''}, vừa nhận được đặc quyền: ${matched.title} 🎁 Mã xác nhận: ${claimCode}`;
+  const initialWish = isOct20 ? FEMALE_IT_WISHES_2010[0] : 'Chúc bạn luôn giữ vững ngọn lửa đam mê, học tập xuất sắc, code mượt mà không bug và gặt hái nhiều thành công cùng Ban Học Thuật!';
+  const fullShareText = `🎁 [Đặc quyền Ban Học Thuật VNUF2] Mình là ${userName}${mssv ? ` (${mssv})` : ''}, vừa nhận được đặc quyền: ${matched.title} 🎟️ Mã xác nhận: ${claimCode}`;
+
+  const headerBadgeText = isOct20 ? 'HỘP QUÀ HỌC THUẬT 20/10' : (campaign ? campaign.title.toUpperCase() : 'HỘP QUÀ ĐẶC QUYỀN HỌC THUẬT');
+  const greetingRecipient = isOct20 ? `Thân tặng bông hồng công nghệ: <strong class="underline decoration-rose-400 font-bold">${userName} (${mssv || 'VNUF2'})</strong>` : `Thân tặng thành viên: <strong class="underline font-bold">${userName} (${mssv || 'VNUF2'})</strong>`;
+  const terminalMsg = isOct20 ? 'Chúc bóng hồng VNUF2: Nụ cười rạng rỡ • Học tập xuất sắc • Thanh xuân như ý!' : 'Ban Học Thuật VNUF2: Đồng hành chuyên môn • Nâng bước học tập • Kết nối đam mê!';
+  const wishTitle = isOct20 ? 'Thông Điệp 20/10 Yêu Thương' : 'Thông Điệp Học Thuật';
 
   return `
     <!-- Cánh hoa rơi hiệu ứng CSS 3D & Đom đóm lấp lánh -->
     <div class="bht-petals-container pointer-events-none absolute inset-0 overflow-hidden z-0">
-      <span class="bht-petal p1">🌸</span>
-      <span class="bht-petal p2">✨</span>
-      <span class="bht-petal p3">🌸</span>
-      <span class="bht-petal p4">🌷</span>
-      <span class="bht-petal p5">✨</span>
-      <span class="bht-petal p6">🌸</span>
+      ${isOct20 ? `
+        <span class="bht-petal p1">🌸</span>
+        <span class="bht-petal p2">✨</span>
+        <span class="bht-petal p3">🌸</span>
+        <span class="bht-petal p4">🌷</span>
+        <span class="bht-petal p5">✨</span>
+        <span class="bht-petal p6">🌸</span>
+      ` : `
+        <span class="bht-petal p1">✨</span>
+        <span class="bht-petal p2">🌟</span>
+        <span class="bht-petal p3">✨</span>
+      `}
       <span class="bht-sparkle" style="top: 12px; left: 16px; animation-delay: 0.2s;">✨</span>
       <span class="bht-sparkle" style="top: 24px; right: 28px; animation-delay: 1.1s;">✨</span>
       <span class="bht-sparkle" style="bottom: 24px; left: 20px; animation-delay: 0.7s;">✨</span>
@@ -1127,39 +1209,41 @@ export function renderGift2010ModalContent(giftData, user) {
 
     <div class="relative z-10 text-center space-y-3 sm:space-y-4">
       <!-- Header Badge -->
-      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isOct20 ? 'bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30' : 'bg-accent-soft text-accent border border-accent/20'}">
         <span>🎁</span>
-        <span>HỘP QUÀ HỌC THUẬT 20/10</span>
+        <span>${escapeHTML(headerBadgeText)}</span>
       </div>
 
       <!-- PHẦN 1 - KHUNG THIỆP CÁ NHÂN HÓA (GREETING CARD) -->
-      <div class="p-3 sm:p-4 rounded-2xl bg-gradient-to-br from-rose-500/10 via-pink-500/5 to-amber-500/5 border border-rose-300/40 dark:border-rose-500/30 text-left space-y-2 shadow-xs">
-        <p class="text-xs sm:text-sm font-semibold text-rose-700 dark:text-rose-300 flex flex-wrap items-center gap-1.5 leading-snug">
-          <span>🌸</span>
-          <span>Thân tặng bông hồng công nghệ: <strong class="underline decoration-rose-400 font-bold">${userName} (${mssv || 'VNUF2'})</strong></span>
+      <div class="p-3 sm:p-4 rounded-2xl ${isOct20 ? 'bg-gradient-to-br from-rose-500/10 via-pink-500/5 to-amber-500/5 border border-rose-300/40 dark:border-rose-500/30 text-rose-700 dark:text-rose-300' : 'bg-surface/90 border border-hairline text-ink'} text-left space-y-2 shadow-xs">
+        <p class="text-xs sm:text-sm font-semibold flex flex-wrap items-center gap-1.5 leading-snug">
+          <span>${isOct20 ? '🌸' : '🎓'}</span>
+          <span>${greetingRecipient}</span>
         </p>
 
         <!-- Dòng gõ chữ phong cách terminal hiện đại -->
-        <div class="text-[10px] sm:text-[11px] font-mono text-rose-600 dark:text-rose-400 bg-rose-500/10 dark:bg-rose-500/15 px-2.5 py-1 rounded-md flex items-center gap-1.5 overflow-hidden">
-          <span class="text-rose-500 font-bold shrink-0">&gt;</span>
-          <span class="truncate">Chúc bóng hồng VNUF2: Nụ cười rạng rỡ • Học tập xuất sắc • Thanh xuân như ý!</span>
+        <div class="text-[10px] sm:text-[11px] font-mono ${isOct20 ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10' : 'text-accent bg-accent-soft'} px-2.5 py-1 rounded-md flex items-center gap-1.5 overflow-hidden">
+          <span class="font-bold shrink-0">&gt;</span>
+          <span class="truncate">${terminalMsg}</span>
           <span class="bht-typewriter-cursor shrink-0">_</span>
         </div>
 
         <!-- Greeting Box -->
-        <div class="p-2.5 sm:p-3 rounded-xl bg-surface/85 dark:bg-surface/60 border border-rose-200/50 dark:border-rose-500/20 space-y-1.5">
+        <div class="p-2.5 sm:p-3 rounded-xl bg-surface/85 dark:bg-surface/60 border border-hairline space-y-1.5">
           <div class="flex items-center justify-between gap-2">
-            <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-rose-600 dark:text-rose-300 tracking-wide uppercase font-mono">
-              <i class="fa-solid fa-heart text-[10px] text-rose-500"></i> Thông Điệp 20/10 Yêu Thương
+            <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold ${isOct20 ? 'text-rose-600 dark:text-rose-300' : 'text-accent'} tracking-wide uppercase font-mono">
+              <i class="fa-solid fa-star text-[10px] text-amber-500"></i> ${wishTitle}
             </span>
-            <button 
-              type="button" 
-              data-action="shuffle-2010-wish" 
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-semibold bg-surface hover:bg-subtle border border-rose-400/30 text-rose-600 dark:text-rose-300 shadow-xs transition-colors cursor-pointer active:scale-95"
-              title="Đổi lời chúc ngẫu nhiên khác"
-            >
-              <span>🎲 Đổi lời chúc</span>
-            </button>
+            ${isOct20 ? `
+              <button 
+                type="button" 
+                data-action="shuffle-2010-wish" 
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-semibold bg-surface hover:bg-subtle border border-rose-400/30 text-rose-600 dark:text-rose-300 shadow-xs transition-colors cursor-pointer active:scale-95"
+                title="Đổi lời chúc ngẫu nhiên khác"
+              >
+                <span>🎲 Đổi lời chúc</span>
+              </button>
+            ` : ''}
           </div>
           <p id="gift-2010-wish-text" class="text-xs sm:text-sm text-ink font-medium leading-relaxed italic transition-opacity duration-200">
             "${initialWish}"

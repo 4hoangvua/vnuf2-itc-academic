@@ -128,20 +128,19 @@ export function openSubmitModal(taskId) {
   // Khởi tạo sự kiện Kéo thả Dropzone
   initDropzoneEvents();
 
-  // Kiểm tra quà 20/10 của sinh viên để hiển thị lựa chọn đính kèm (Chỉ khi sự kiện OCT20 đang kích hoạt)
+  // Kiểm tra quà đặc quyền của sinh viên để hiển thị lựa chọn đính kèm (Luôn sử dụng được)
   const user = getCurrentMemberUser();
-  const currentCamp = getActiveCampaign();
-  const isCampaignActive = Boolean(currentCamp && currentCamp.id === 'OCT20');
   const claimedGift = getClaimedGift(user);
   const giftContainer = document.getElementById('submit-gift-2010-container');
   const giftLabel = document.getElementById('submit-gift-2010-label');
   const giftCheckbox = document.getElementById('submit-gift-2010-checkbox');
 
   if (giftContainer && giftLabel && giftCheckbox) {
-    if (isCampaignActive && claimedGift && claimedGift.claimCode) {
+    if (claimedGift && claimedGift.claimCode && !claimedGift.used) {
       giftContainer.classList.remove('hidden');
       giftContainer.classList.add('flex');
-      giftLabel.textContent = `${claimedGift.claimCode} (${claimedGift.shortTitle || claimedGift.giftTitle})`;
+      const giftName = claimedGift.shortTitle || claimedGift.giftTitle || 'Đặc quyền học thuật';
+      giftLabel.innerHTML = `🎁 Đính kèm thẻ đặc quyền: <strong class="font-mono text-accent">${escapeHtml(claimedGift.claimCode)}</strong> (${escapeHtml(giftName)}) vào bài nộp này`;
       giftCheckbox.checked = false;
     } else {
       giftContainer.classList.add('hidden');

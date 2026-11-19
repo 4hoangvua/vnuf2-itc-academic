@@ -1850,9 +1850,14 @@ assert('member.js loadMemberData fetches getActiveCampaign for real-time synchro
   memberJsSource.includes("appState.activeCampaign = campRes.data || null")
 );
 
-assert('memberSubmissions.js checks isCampaignActive before showing 20/10 gift checkbox', 
-  memberSubmissionsJsSource.includes("const isCampaignActive = Boolean(currentCamp && currentCamp.id === 'OCT20')") &&
-  memberSubmissionsJsSource.includes("if (isCampaignActive && claimedGift && claimedGift.claimCode)")
+assert('memberSubmissions.js allows attaching valid claimed gift even without active campaign', 
+  memberSubmissionsJsSource.includes("claimedGift && claimedGift.claimCode && !claimedGift.used") &&
+  memberSubmissionsJsSource.includes("giftContainer.classList.remove('hidden')")
+);
+
+assert('gift2010.js renderGift2010Banner displays permanent academic privilege box when campaign is NONE', 
+  gift2010JsSource.includes('banner-academic-privilege') &&
+  gift2010JsSource.includes('Hộp Quà Đặc Quyền Học Thuật')
 );
 
 if (failed > 0) {
