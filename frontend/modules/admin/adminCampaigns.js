@@ -13,7 +13,7 @@ import { callApi, broadcastDataSync, setActiveCampaign } from '../../services/ap
 import { appState } from '../store.js';
 import { showToast, setButtonLoading } from '../ui.js';
 import { renderAdminCampaignTabContent } from '../templates/campaignTemplates.js';
-import { renderAdminCampaignSelector } from '../gift2010.js';
+import { renderAdminCampaignSelector, syncCornerFlower } from '../gift2010.js';
 import { renderCampaignTabSkeleton } from '../skeleton.js';
 
 // Danh sách chiến dịch mặc định (Fallback an toàn trên Production khi backend chưa trả về kịp)
@@ -229,6 +229,7 @@ export async function handleSwitchAdminCampaign(campaignId, triggerBtn = null) {
         localStorage.setItem('bht_active_campaign', campaignId);
       }
       broadcastDataSync('activeCampaign');
+      syncCornerFlower();
       showToast(res.message || `Đã kích hoạt sự kiện "${campaignId}" thành công!`, 'success');
       renderAdminCampaignsView();
     } else {
@@ -264,6 +265,7 @@ export async function handleSelectAdminCampaign(campaignId, triggerBtn = null) {
           localStorage.setItem('bht_active_campaign', 'NONE');
         }
         broadcastDataSync('activeCampaign');
+        syncCornerFlower();
         showToast('Đã tắt sự kiện! Giao diện cổng trở về chế độ tiêu chuẩn.', 'success');
         renderAdminCampaignsView();
       } else {

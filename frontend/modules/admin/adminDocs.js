@@ -265,8 +265,6 @@ export async function handleSaveDocument(e) {
                            : { tenTaiLieu: title, phanLoai: category, linkDrive: link, moTa: desc };
 
     const res = await callApi(action, payload);
-    setFormControlsDisabled(form, false);
-    if (btn) setButtonLoading(btn, false);
 
     if (res && res.success) {
       showToast(res.message || 'Lưu tài liệu thành công!', 'success');
@@ -302,9 +300,10 @@ export async function handleSaveDocument(e) {
       showFormError(form, (res && res.message) ? res.message : 'Không thể lưu tài liệu!');
     }
   } catch (err) {
+    showFormError(form, 'Lỗi: ' + (err.message || err.toString()));
+  } finally {
     setFormControlsDisabled(form, false);
     if (btn) setButtonLoading(btn, false);
-    showFormError(form, 'Lỗi: ' + (err.message || err.toString()));
   }
 }
 

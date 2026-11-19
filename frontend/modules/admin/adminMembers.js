@@ -163,10 +163,6 @@ export async function handleAddMember(e) {
   try {
     const res = await callApi('addMember', { mssv, hoTen, role });
 
-    setFormControlsDisabled(form, false);
-    if (cancelBtn) cancelBtn.disabled = false;
-    if (btn) setButtonLoading(btn, false);
-
     if (res && res.success) {
       showToast(res.message, 'success');
       closeAddMemberModal();
@@ -189,10 +185,11 @@ export async function handleAddMember(e) {
       showFormError(form, (res && res.message) ? res.message : 'Không thể thêm thành viên!', mssvInput);
     }
   } catch (err) {
+    showFormError(form, 'Lỗi: ' + (err.message || err.toString()));
+  } finally {
     setFormControlsDisabled(form, false);
     if (cancelBtn) cancelBtn.disabled = false;
     if (btn) setButtonLoading(btn, false);
-    showFormError(form, 'Lỗi: ' + (err.message || err.toString()));
   }
 }
 

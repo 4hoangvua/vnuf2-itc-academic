@@ -150,10 +150,6 @@ export async function handleRequestOtp(e) {
   try {
     const res = await callApi('requestLoginOtp', { mssv: mssv, email: email });
 
-    if (btn) setButtonLoading(btn, false);
-    if (mssvInput) mssvInput.disabled = false;
-    if (emailInput) emailInput.disabled = false;
-
     if (!res) {
       showFormError('form-request-otp', 'Không nhận được phản hồi từ máy chủ!');
       return;
@@ -203,10 +199,11 @@ export async function handleRequestOtp(e) {
     }
 
   } catch (err) {
+    showFormError('form-request-otp', 'Lỗi hệ thống: ' + (err.message || err.toString()));
+  } finally {
     if (btn) setButtonLoading(btn, false);
     if (mssvInput) mssvInput.disabled = false;
     if (emailInput) emailInput.disabled = false;
-    showFormError('form-request-otp', 'Lỗi hệ thống: ' + (err.message || err.toString()));
   }
 }
 
@@ -236,9 +233,6 @@ export async function handleVerifyOtp(e) {
       otp: otp
     });
 
-    if (btn) setButtonLoading(btn, false);
-    if (otpInput) otpInput.disabled = false;
-
     if (res && res.success && res.user) {
       if (appState.otpTimer) clearInterval(appState.otpTimer);
       showToast('Xác thực OTP thành công!', 'success');
@@ -251,9 +245,10 @@ export async function handleVerifyOtp(e) {
     }
 
   } catch (err) {
+    showFormError('form-verify-otp', 'Lỗi xác thực: ' + (err.message || err.toString()), otpInput);
+  } finally {
     if (btn) setButtonLoading(btn, false);
     if (otpInput) otpInput.disabled = false;
-    showFormError('form-verify-otp', 'Lỗi xác thực: ' + (err.message || err.toString()), otpInput);
   }
 }
 

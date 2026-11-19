@@ -320,12 +320,8 @@ export async function handleUploadSubmission(e) {
 
       const res = await callApi('submitTaskAssignment', payload);
 
-      setFormControlsDisabled(form, false);
-      if (cancelBtn) cancelBtn.disabled = false;
-      if (btn) setButtonLoading(btn, false);
       if (progressBar) progressBar.style.width = '100%';
       if (progressPct) progressPct.textContent = '100%';
-      if (form) form.dataset.isSubmitting = 'false';
 
       if (res && res.success) {
         showToast(res.message || 'Nộp bài thành công!', 'success');
@@ -335,11 +331,12 @@ export async function handleUploadSubmission(e) {
         showFormError(form, (res && res.message) ? res.message : 'Lỗi khi nộp bài!');
       }
     } catch (err) {
+      showFormError(form, 'Lỗi nộp bài: ' + (err.message || err.toString()));
+    } finally {
       setFormControlsDisabled(form, false);
       if (cancelBtn) cancelBtn.disabled = false;
       if (btn) setButtonLoading(btn, false);
       if (form) form.dataset.isSubmitting = 'false';
-      showFormError(form, 'Lỗi nộp bài: ' + (err.message || err.toString()));
     }
   };
 

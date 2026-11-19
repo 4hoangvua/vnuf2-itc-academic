@@ -97,6 +97,7 @@ Trước khi triển khai action mới lên môi trường Google Apps Script th
 - [ ] 3. **Kiểm tra Cache Invalidation:** Gọi mutation xong, các truy vấn query liên quan tự động xóa cache và nạp lại dữ liệu mới nhất.
 - [ ] 4. **Kiểm tra Guard Role & Identity Injection:** Router thật tự tiêm `currentUser.mssv` cho Member, và chặn 403 Forbidden đối với Admin actions.
 - [ ] 5. **Chạy Test Tự Động:** Chạy `node test_core.mjs` đảm bảo 100% test suites vượt qua (0 failure).
+- [ ] 6. **Kiểm Tra Chống Spam & Button Loading State:** 100% các thao tác submit mutation gửi dữ liệu lên API backend bắt buộc phải có cơ chế chống spam (khóa cờ `isSubmitting`/`isActionBusy`), hiển thị icon spinner loading (`setButtonLoading(btn, true)`) và phục hồi trạng thái nút trong khối `finally`.
 
 ---
 

@@ -153,11 +153,17 @@ Nhằm mang lại trải nghiệm chuyên nghiệp và không gian thao tác r�
      ```
    - Luôn có icon học thuật mờ nhạt và câu thông điệp hướng dẫn rõ ràng.
 
-4. **Trạng Thái Loading Cho Nút Bấm (Button Loading Feedback & Anti-Spam):**
-   - Khi người dùng bấm nút thực hiện tác vụ ghi/thay đổi dữ liệu (Điểm danh, Nộp bài, Tạo buổi học, Duyệt bài, Lưu thông tin):
-     - Lập tức vô hiệu hóa nút (`btn.disabled = true;`) để chống gửi request nhiều lần (Double-submit / Spamming).
-     - Hiển thị spinner quay tròn: `btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i> Đang xử lý...';`.
-     - Phục hồi lại trạng thái và icon ban đầu trong khối `finally` hoặc sau khi nhận phản hồi từ Backend.
+4. **Quy Tắc Bắt Buộc 100%: Chống Spam Submit & Trạng Thái Loading Cho Mọi Tác Vụ Gửi API Backend (Mandatory Anti-Spam & Loading Rule):**
+   - **Bảo Vệ Đa Tầng (Two-Tier Anti-Spam & Loading Architecture):**
+     1. **Tầng Động Cơ (Engine-Level - `attachFormDelegation` & `attachEventDelegation`):**
+        - Mọi form khi submit tự động gắn cờ `formEl.dataset.isSubmitting = 'true'`. Nếu người dùng ấn Enter hoặc click liên tiếp khi request đang xử lý, hệ thống lập tức drop/bỏ qua sự kiện submit trùng lặp.
+        - Tự động nhận diện nút submit (`button[type="submit"]` hoặc nút bấm chính) và kích hoạt `setButtonLoading(submitBtn, true)`.
+        - Khi handler hoàn tất (dù thành công hay thất bại), khối `finally` của engine tự động giải phóng `formEl.dataset.isSubmitting = 'false'` và hoàn trả trạng thái nút.
+        - Mọi nút bấm bất đồng bộ trong `attachEventDelegation` tự động khóa cờ `actionEl.dataset.isActionBusy = 'true'` để triệt tiêu hiện tượng spam click.
+     2. **Tầng Nghiệp Vụ (Handler-Level - Controllers & Sub-modules):**
+        - Mọi hàm gọi `callApi` thực hiện Mutation (Điểm danh, Gửi đơn vắng, Duyệt đơn, Nộp bài lab, Thêm/Sửa/Xóa buổi học/nhiệm vụ/tài liệu/đề thi, Thao tác tài khoản, Lưu chiến dịch, Gửi email hàng loạt) **BẮT BUỘC** bọc trong khối `try ... finally`.
+        - Khối `finally` **BẮT BUỘC** gọi `setButtonLoading(btn, false)` và mở lại các input (`disabled = false`) để đảm bảo giao diện không bao giờ bị đơ/treo vĩnh viễn nếu mạng rớt hoặc backend báo lỗi.
+        - Tuyệt đối cấm viết code gọi API mutation mà không có loading spinner (`fa-circle-notch fa-spin`) và không có cơ chế vô hiệu hóa nút bấm chống double-submit.
 
 5. **Chuẩn Hóa Thư Viện UI Components (`frontend/modules/templates.js` & Sub-Templates):**
    - **TUYỆT ĐỐI CẤM** viết chuỗi HTML trực tiếp bên trong các Controller (`admin/*.js` và `member/*.js`).

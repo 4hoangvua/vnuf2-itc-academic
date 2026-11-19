@@ -24,6 +24,7 @@ import {
   handleSearchAdminAttendance, 
   renderAdminAttendanceGrid 
 } from './admin/adminSessions.js';
+import { syncCornerFlower } from './gift2010.js';
 import { INITIAL_MOCK_DATA } from '../services/mockData.js';
 
 /**
@@ -187,6 +188,7 @@ export async function loadAdminData(silent = true, skipCache = false) {
     }
 
     renderAdminDashboard();
+    syncCornerFlower();
 
     // Hỗ trợ khôi phục view chi tiết hoặc mở Deep Link URL (#attendance/MEET_...)
     if (currentAdminActiveSessionId) {

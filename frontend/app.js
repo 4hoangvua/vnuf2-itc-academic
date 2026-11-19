@@ -189,6 +189,8 @@ import {
   handleDismissZaloBanner
 } from './modules/zaloHelper.js';
 
+import { syncCornerFlower } from './modules/gift2010.js';
+
 // ====================================================================
 // BẢN ĐỒ ĐIỀU PHỐI EVENT DELEGATION TẬP TRUNG (CENTRAL ACTIONS DISPATCHER)
 // ====================================================================
@@ -518,6 +520,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 5. Nạp động các phân hệ View HTML từ views/ (auth.html, member.html, admin.html)
   await loadAllViews();
+  syncCornerFlower();
   initSidebar();
   initHorizontalDragScroll();
 

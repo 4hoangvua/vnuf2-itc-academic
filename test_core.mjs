@@ -1860,6 +1860,34 @@ assert('gift2010.js renderGift2010Banner displays permanent academic privilege b
   gift2010JsSource.includes('Hộp Quà Đặc Quyền Học Thuật')
 );
 
+console.log('\n--- 30. Testing Logo Corner Flower Dynamic Isolation & Universal Anti-Spam Delegation ---');
+const domJsSource = fs.readFileSync('./frontend/utils/dom.js', 'utf8');
+const adminHtmlSource = fs.readFileSync('./frontend/views/admin.html', 'utf8');
+const memberHtmlSource = fs.readFileSync('./frontend/views/member.html', 'utf8');
+
+assert('admin.html hides corner flower by default', 
+  adminHtmlSource.includes('class="bht-oct20-corner-flower js-campaign-corner-flower hidden"')
+);
+
+assert('member.html hides corner flower by default', 
+  memberHtmlSource.includes('class="bht-oct20-corner-flower js-campaign-corner-flower hidden"')
+);
+
+assert('gift2010.js exports syncCornerFlower', 
+  gift2010JsSource.includes('export function syncCornerFlower()')
+);
+
+assert('dom.js attachFormDelegation implements automatic anti-spam and button loading', 
+  domJsSource.includes("formEl.dataset.isSubmitting === 'true'") &&
+  domJsSource.includes("setButtonLoading(submitBtn, true)") &&
+  domJsSource.includes("setButtonLoading(submitBtn, false)")
+);
+
+assert('dom.js attachEventDelegation implements automatic anti-spam click lock', 
+  domJsSource.includes("actionEl.dataset.isActionBusy === 'true'") &&
+  domJsSource.includes("actionEl.dataset.isActionBusy = 'false'")
+);
+
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
   process.exit(1);

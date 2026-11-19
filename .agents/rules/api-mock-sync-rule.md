@@ -103,6 +103,7 @@ Trước khi triển khai action mới lên môi trường Google Apps Script th
 - [ ] 4. **Kiểm tra Guard Role & Identity Injection:** Router thật tự tiêm `currentUser.mssv` cho Member, và chặn 403 Forbidden đối với Admin actions.
 - [ ] 5. **Kiểm tra Đối Xứng Payload Xác Thực (Symmetric Auth Payload):** Đối tượng `user` trả về từ `getAuthStatus` (cả Backend GAS lẫn `mockData.js`) phải chứa đầy đủ 100% các thuộc tính định danh cá nhân hoá (`sex`, `Sex`, `gift2010`, `lop`, `ban`...) giống như trong `verifyLoginOtp`. Ngăn ngừa tuyệt đối việc F5 / reload trang làm mất giới tính hay quà tặng của người dùng.
 - [ ] 6. **Chạy Test Tự Động:** Chạy `node test_core.mjs` đảm bảo 100% test suites vượt qua (0 failure).
+- [ ] 7. **Kiểm Tra Chống Spam & Button Loading State:** 100% các thao tác submit mutation gửi dữ liệu lên API backend bắt buộc phải có cơ chế chống spam (khóa cờ `isSubmitting`/`isActionBusy`), hiển thị icon spinner loading (`setButtonLoading(btn, true)`) và phục hồi trạng thái nút trong khối `finally`.
 
 ---
 

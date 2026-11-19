@@ -662,12 +662,38 @@ export function triggerClickBlossom(targetEl, event) {
 }
 
 /**
+ * Đồng bộ hoa / biểu tượng góc logo theo sự kiện đang kích hoạt
+ * Tự động ẩn hoàn toàn nếu không có sự kiện nào đang chạy (campaign === 'NONE')
+ */
+export function syncCornerFlower() {
+  if (typeof document === 'undefined') return;
+  const flowers = document.querySelectorAll('.bht-oct20-corner-flower, .js-campaign-corner-flower');
+  if (!flowers || flowers.length === 0) return;
+
+  const campaign = getActiveCampaign();
+  if (campaign && campaign.cornerIcon && campaign.id !== 'NONE') {
+    flowers.forEach(el => {
+      el.textContent = campaign.cornerIcon;
+      el.title = campaign.badgeText || campaign.title || 'Sự kiện CLB';
+      el.classList.remove('hidden');
+    });
+  } else {
+    flowers.forEach(el => {
+      el.textContent = '';
+      el.classList.add('hidden');
+    });
+  }
+}
+
+/**
  * Render Banner Sự Kiện & Đặc Quyền trên Member Dashboard
  * @param {Object} user Người dùng hiện tại
  * @returns {string} Chuỗi HTML
  */
 export function renderGift2010Banner(user) {
   if (!user) return '';
+
+  syncCornerFlower();
 
   const campaign = getActiveCampaign();
   const fullName = escapeHTML(user.hoTen || user.HoTen || 'Bạn');

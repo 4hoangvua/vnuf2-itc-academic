@@ -440,10 +440,6 @@ export async function handleCreateAttendanceSession(e) {
       linkTaiLieu: link
     });
 
-    setFormControlsDisabled(form, false);
-    if (cancelBtn) cancelBtn.disabled = false;
-    if (btn) setButtonLoading(btn, false);
-
     if (res && res.success) {
       closeCreateAttendanceModal();
 
@@ -473,10 +469,11 @@ export async function handleCreateAttendanceSession(e) {
       showToast((res && res.message) ? res.message : 'Không thể tạo buổi sinh hoạt!', 'error');
     }
   } catch (err) {
+    showToast('Lỗi: ' + (err.message || err.toString()), 'error');
+  } finally {
     setFormControlsDisabled(form, false);
     if (cancelBtn) cancelBtn.disabled = false;
     if (btn) setButtonLoading(btn, false);
-    showToast('Lỗi: ' + (err.message || err.toString()), 'error');
   }
 }
 

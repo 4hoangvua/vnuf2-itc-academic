@@ -891,11 +891,6 @@ export async function handleSubmitQuickAbsenceModal(e) {
       minhChungLink: minhChungLink
     });
 
-    if (btn) setButtonLoading(btn, false);
-    if (detailInput) detailInput.disabled = false;
-    if (reasonSelect) reasonSelect.disabled = false;
-    if (proofInput) proofInput.disabled = false;
-
     if (res && res.success) {
       showToast(res.message || 'Đã gửi thư xin vắng mặt thành công!', 'success');
       closeQuickAbsenceModal();
@@ -907,11 +902,12 @@ export async function handleSubmitQuickAbsenceModal(e) {
       showFormError('form-quick-absence-modal', (res && res.message) ? res.message : 'Gửi thư không thành công!', detailInput);
     }
   } catch (err) {
+    showFormError('form-quick-absence-modal', 'Lỗi gửi thư: ' + (err.message || err.toString()), detailInput);
+  } finally {
     if (btn) setButtonLoading(btn, false);
     if (detailInput) detailInput.disabled = false;
     if (reasonSelect) reasonSelect.disabled = false;
     if (proofInput) proofInput.disabled = false;
-    showFormError('form-quick-absence-modal', 'Lỗi gửi thư: ' + (err.message || err.toString()), detailInput);
   }
 }
 
@@ -934,7 +930,6 @@ export async function handleCancelAbsenceRequest(absenceId, buttonEl = null) {
       mssv: user.mssv
     });
 
-    if (btn) setButtonLoading(btn, false);
     if (res && res.success) {
       showToast(res.message || 'Đã hủy đơn xin vắng thành công!', 'success');
       await loadMemberData(true, true);
@@ -945,7 +940,8 @@ export async function handleCancelAbsenceRequest(absenceId, buttonEl = null) {
       showToast((res && res.message) ? res.message : 'Không thể hủy đơn!', 'error');
     }
   } catch (err) {
-    if (btn) setButtonLoading(btn, false);
     showToast('Lỗi hủy đơn: ' + (err.message || err.toString()), 'error');
+  } finally {
+    if (btn) setButtonLoading(btn, false);
   }
 }

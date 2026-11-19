@@ -141,7 +141,7 @@ export function attachEventDelegation(container, actionMap, eventType = 'click')
     return () => {};
   }
 
-  const listener = (event) => {
+  const listener = async (event) => {
     // Tìm phần tử gần nhất có thuộc tính data-action
     const actionEl = event.target.closest('[data-action]');
     if (!actionEl || !rootEl.contains(actionEl)) return;
@@ -150,6 +150,13 @@ export function attachEventDelegation(container, actionMap, eventType = 'click')
     // bỏ qua ngay lập tức để tránh việc click vào dropdown/form làm kích hoạt nhầm action click!
     // Mọi hành động của form xử lý qua 'submit', dropdown xử lý qua 'change'.
     if (eventType === 'click' && (actionEl.tagName === 'FORM' || actionEl.tagName === 'SELECT')) {
+      return;
+    }
+
+    // CHỐNG SPAM CLICK: Nếu phần tử đang bận hoặc disabled, chặn ngay lập tức
+    if (actionEl.dataset.isActionBusy === 'true' || actionEl.disabled) {
+      event.preventDefault();
+      event.stopPropagation();
       return;
     }
 
@@ -173,10 +180,16 @@ export function attachEventDelegation(container, actionMap, eventType = 'click')
         ...actionEl.dataset
       };
 
+      actionEl.dataset.isActionBusy = 'true';
       try {
-        handler(actionEl, event, dataset);
+        const result = handler(actionEl, event, dataset);
+        if (result && typeof result.then === 'function') {
+          await result;
+        }
       } catch (err) {
         console.error(`[EventDelegation] Lỗi khi xử lý action "${actionName}":`, err);
+      } finally {
+        actionEl.dataset.isActionBusy = 'false';
       }
     } else {
       console.warn(`[EventDelegation] Chưa có handler cho action "${actionName}"`);
@@ -189,6 +202,7 @@ export function attachEventDelegation(container, actionMap, eventType = 'click')
 
 /**
  * Event Delegation chuyên dụng cho các thẻ Form submit ([data-action])
+ * Tự động khóa chống Double-submit / Spam và đặt trạng thái Button Loading đồng bộ
  * @param {HTMLElement|string} container Container bao bọc các form
  * @param {Object} formActionMap Bản đồ các handler: { [actionName]: (formEl, event, formData) => void }
  * @returns {Function}
@@ -201,12 +215,17 @@ export function attachFormDelegation(container, formActionMap) {
   const forms = rootEl.querySelectorAll ? rootEl.querySelectorAll('form') : [];
   forms.forEach(f => { f.noValidate = true; });
 
-  const submitListener = (event) => {
+  const submitListener = async (event) => {
     const formEl = event.target.closest('form[data-action]');
     if (!formEl || !rootEl.contains(formEl)) return;
 
     formEl.noValidate = true;
     event.preventDefault();
+
+    // CHỐNG SPAM SUBMIT: Nếu form đang gửi, drop sự kiện submit kế tiếp
+    if (formEl.dataset.isSubmitting === 'true') {
+      return;
+    }
 
     // Xóa thông báo lỗi cũ của form trước khi xử lý submit
     clearFormError(formEl);
@@ -216,10 +235,25 @@ export function attachFormDelegation(container, formActionMap) {
 
     if (typeof handler === 'function') {
       const formData = new FormData(formEl);
+      const submitBtn = formEl.querySelector('button[type="submit"]') || formEl.querySelector('button:not([type="button"])');
+
+      formEl.dataset.isSubmitting = 'true';
+      if (submitBtn) {
+        setButtonLoading(submitBtn, true);
+      }
+
       try {
-        handler(formEl, event, formData);
+        const result = handler(formEl, event, formData);
+        if (result && typeof result.then === 'function') {
+          await result;
+        }
       } catch (err) {
         console.error(`[FormDelegation] Lỗi khi submit form "${actionName}":`, err);
+      } finally {
+        formEl.dataset.isSubmitting = 'false';
+        if (submitBtn) {
+          setButtonLoading(submitBtn, false);
+        }
       }
     }
   };
