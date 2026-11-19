@@ -145,7 +145,7 @@ export function renderMemberSessions(filteredSessions) {
 
     const absences = appState.absences || [];
     const cleanUserMssv = String(user.mssv || '').trim().toUpperCase();
-    const userAbsence = absences.find(a => a.SessionID === s.SessionID && a.MSSV === cleanUserMssv && a.TrangThaiDuyet !== 'Cancelled') || null;
+    const userAbsence = absences.find(a => a.SessionID === s.SessionID && String(a.MSSV || '').trim().toUpperCase() === cleanUserMssv && a.TrangThaiDuyet !== 'Cancelled') || null;
 
     // Tìm bài tập gắn với buổi học này (chuẩn hóa SessionID tránh lệch hoa/thường)
     const sid = String(s.SessionID || '').trim().toUpperCase();
@@ -263,7 +263,7 @@ export function openMemberSessionDetail(sessionId, updateHash = true, targetSubT
 
   const absences = appState.absences || [];
   const cleanMssv = String(user.mssv || '').trim().toUpperCase();
-  const userAbsence = absences.find(a => a.SessionID === sessionId && a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled') || null;
+  const userAbsence = absences.find(a => a.SessionID === sessionId && String(a.MSSV || '').trim().toUpperCase() === cleanMssv && a.TrangThaiDuyet !== 'Cancelled') || null;
 
   const bannerAbsenceBtn = document.getElementById('member-detail-banner-absence-btn');
   if (bannerAbsenceBtn) {
@@ -799,7 +799,7 @@ export function openQuickAbsenceModal(sessionId) {
 
   // 3. Chặn nếu sinh viên đã có đơn xin vắng đang có hiệu lực
   const allAbs = appState.absences || [];
-  const existingAbs = allAbs.find(a => a.SessionID === sessionId && a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
+  const existingAbs = allAbs.find(a => a.SessionID === sessionId && String(a.MSSV || '').trim().toUpperCase() === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
   if (existingAbs) {
     const isApproved = existingAbs.TrangThaiDuyet === 'Approved' || existingAbs.TrangThai === 'Approved';
     showToast(isApproved ? 'Đơn xin vắng của bạn đã được phê duyệt cho buổi học này!' : 'Bạn đã gửi đơn xin vắng và đang chờ Ban tổ chức duyệt!', 'info');
@@ -918,10 +918,14 @@ export async function handleSubmitQuickAbsenceModal(e) {
 /**
  * Xử lý hủy đơn xin vắng mặt (khi đang ở trạng thái Pending)
  * @param {string} absenceId
+ * @param {HTMLElement} [buttonEl=null]
  */
-export async function handleCancelAbsenceRequest(absenceId) {
+export async function handleCancelAbsenceRequest(absenceId, buttonEl = null) {
   if (!absenceId) return;
   if (!confirm('Bạn có chắc chắn muốn hủy đơn xin vắng mặt này không?')) return;
+
+  const btn = buttonEl || (typeof window !== 'undefined' && window.event && window.event.target ? window.event.target.closest('button') : null);
+  if (btn) setButtonLoading(btn, true);
 
   const user = getCurrentMemberUser();
   try {
@@ -930,6 +934,7 @@ export async function handleCancelAbsenceRequest(absenceId) {
       mssv: user.mssv
     });
 
+    if (btn) setButtonLoading(btn, false);
     if (res && res.success) {
       showToast(res.message || 'Đã hủy đơn xin vắng thành công!', 'success');
       await loadMemberData(true, true);
@@ -940,6 +945,7 @@ export async function handleCancelAbsenceRequest(absenceId) {
       showToast((res && res.message) ? res.message : 'Không thể hủy đơn!', 'error');
     }
   } catch (err) {
+    if (btn) setButtonLoading(btn, false);
     showToast('Lỗi hủy đơn: ' + (err.message || err.toString()), 'error');
   }
 }

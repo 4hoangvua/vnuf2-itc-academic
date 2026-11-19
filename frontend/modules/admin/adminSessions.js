@@ -796,7 +796,9 @@ export function renderDetailAbsenceList(session) {
   const allMembers = appState.members || [];
 
   tbody.innerHTML = pagedItems.map(a => {
-    const mem = allMembers.find(m => m.MSSV === a.MSSV) || { MSSV: a.MSSV, HoTen: 'Sinh viên ' + a.MSSV };
+    const cleanMssv = String(a.MSSV || '').trim().toUpperCase();
+    const mem = allMembers.find(m => String(m.MSSV || '').trim().toUpperCase() === cleanMssv);
+    const studentName = (mem && (mem.HoTen || mem.hoTen)) || a.HoTen || a.hoTen || ('Sinh viên ' + cleanMssv);
     const reasonLabel = ABSENCE_REASON_LABELS[a.LyDo] || a.LyDo || 'Lý do khác';
     const status = a.TrangThaiDuyet || a.TrangThai || 'Pending';
 
@@ -820,7 +822,7 @@ export function renderDetailAbsenceList(session) {
     return `
       <tr class="hover:bg-subtle/30 transition-colors">
         <td class="font-mono text-accent font-semibold">${escapeHtml(a.MSSV)}</td>
-        <td class="font-medium text-ink">${escapeHtml(mem.HoTen)}</td>
+        <td class="font-medium text-ink">${escapeHtml(studentName)}</td>
         <td>
           <span class="bht-badge bg-subtle text-ink-muted text-[10px]">${escapeHtml(reasonLabel)}</span>
         </td>
@@ -888,7 +890,13 @@ export function openAdminReviewAbsenceModal(absenceId) {
   }
 
   const allMembers = appState.members || [];
-  const member = allMembers.find(m => m.MSSV === absence.MSSV) || { MSSV: absence.MSSV, HoTen: 'Sinh viên ' + absence.MSSV, Lop: '—', Email: '—' };
+  const cleanMssv = String(absence.MSSV || '').trim().toUpperCase();
+  const member = allMembers.find(m => String(m.MSSV || '').trim().toUpperCase() === cleanMssv) || { 
+    MSSV: cleanMssv, 
+    HoTen: absence.HoTen || absence.hoTen || ('Sinh viên ' + cleanMssv), 
+    Lop: '—', 
+    Email: absence.Email || absence.email || '—' 
+  };
   const allSessions = appState.attendance || [];
   const session = allSessions.find(s => s.SessionID === absence.SessionID) || {};
 
@@ -907,7 +915,7 @@ export function openAdminReviewAbsenceModal(absenceId) {
 
   if (idEl) idEl.textContent = absence.AbsenceID;
   if (targetIdEl) targetIdEl.value = absence.AbsenceID;
-  if (nameEl) nameEl.textContent = member.HoTen || member.hoTen || member.MSSV;
+  if (nameEl) nameEl.textContent = member.HoTen || member.hoTen || ('Sinh viên ' + cleanMssv);
   if (mssvEl) mssvEl.textContent = member.MSSV;
   if (classEl) classEl.textContent = member.Lop || member.lop || '—';
   if (emailEl) emailEl.textContent = member.Email || member.email || '—';
@@ -975,7 +983,22 @@ export async function handleSubmitAdminReviewAbsenceModal(status) {
     return;
   }
 
-  await handleAdminReviewAbsence(absenceId, status, feedback);
+  const btnApprove = document.getElementById('btn-review-absence-approve');
+  const btnReject = document.getElementById('btn-review-absence-reject');
+  const activeBtn = status === 'Approved' ? btnApprove : btnReject;
+  const otherBtn = status === 'Approved' ? btnReject : btnApprove;
+
+  if (activeBtn) setButtonLoading(activeBtn, true);
+  if (otherBtn) otherBtn.disabled = true;
+  if (feedbackEl) feedbackEl.disabled = true;
+
+  try {
+    await handleAdminReviewAbsence(absenceId, status, feedback, activeBtn);
+  } finally {
+    if (activeBtn) setButtonLoading(activeBtn, false);
+    if (otherBtn) otherBtn.disabled = false;
+    if (feedbackEl) feedbackEl.disabled = false;
+  }
 }
 
 /**
@@ -983,9 +1006,16 @@ export async function handleSubmitAdminReviewAbsenceModal(status) {
  * @param {string} absenceId
  * @param {'Approved'|'Rejected'} status
  * @param {string} [feedback='']
+ * @param {HTMLElement} [triggerBtn=null]
  */
-export async function handleAdminReviewAbsence(absenceId, status, feedback = '') {
+export async function handleAdminReviewAbsence(absenceId, status, feedback = '', triggerBtn = null) {
   if (!absenceId || !status) return;
+
+  const btn = triggerBtn || (typeof window !== 'undefined' && window.event && window.event.target ? window.event.target.closest('button') : null);
+  if (btn) {
+    if (btn.disabled && btn.dataset.isBtnBusy === 'true') return; // Chống spam click
+    setButtonLoading(btn, true);
+  }
 
   try {
     const res = await callApi('reviewAbsenceRequest', {
@@ -1016,6 +1046,8 @@ export async function handleAdminReviewAbsence(absenceId, status, feedback = '')
     }
   } catch (err) {
     showToast('Lỗi cập nhật đơn: ' + (err.message || err.toString()), 'error');
+  } finally {
+    if (btn) setButtonLoading(btn, false);
   }
 }
 

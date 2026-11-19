@@ -119,6 +119,15 @@ export function openSubmitModal(taskId) {
   const progress = document.getElementById('submit-upload-progress');
   if (progress) progress.classList.add('hidden');
 
+  const form = document.getElementById('form-submit-file') || document.getElementById('form-submit-assignment');
+  if (form) {
+    form.dataset.isSubmitting = 'false';
+    clearFormError(form);
+  }
+
+  // Khởi tạo sự kiện Kéo thả Dropzone
+  initDropzoneEvents();
+
   // Kiểm tra quà 20/10 của sinh viên để hiển thị lựa chọn đính kèm
   const user = getCurrentMemberUser();
   const claimedGift = getClaimedGift(user);
@@ -147,27 +156,94 @@ export function closeSubmitModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-export function handleFileSelected(input) {
+/**
+ * Cập nhật giao diện khi người dùng chọn hoặc kéo thả tệp
+ * @param {HTMLInputElement|File|Event} inputOrFile
+ */
+export function handleFileSelected(inputOrFile) {
   const display = document.getElementById('file-chosen-name') || document.getElementById('submit-file-name');
-  if (display && input.files && input.files.length > 0) {
-    const file = input.files[0];
+  let file = null;
+  if (!inputOrFile) return;
+
+  if (inputOrFile instanceof File) {
+    file = inputOrFile;
+  } else if (inputOrFile.files && inputOrFile.files.length > 0) {
+    file = inputOrFile.files[0];
+  } else if (inputOrFile.target && inputOrFile.target.files && inputOrFile.target.files.length > 0) {
+    file = inputOrFile.target.files[0];
+  }
+
+  if (display && file) {
     display.innerHTML = `
-      <span class="text-accent font-semibold">${file.name}</span>
+      <span class="text-accent font-semibold">${escapeHtml(file.name)}</span>
       <span class="text-[11px] text-ink-muted block mt-0.5">(${Math.round(file.size / 1024)} KB)</span>
     `;
+    const form = document.getElementById('form-submit-file') || document.getElementById('form-submit-assignment');
+    if (form) clearFormError(form);
   }
 }
 
 /**
- * Xử lý nộp bài tập (Base64)
+ * Khởi tạo sự kiện Kéo thả file (Drag & Drop) vào Dropzone
+ */
+export function initDropzoneEvents() {
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-upload-input') || document.getElementById('submit-file-input');
+  if (!dropzone || dropzone._dragBound) return;
+  dropzone._dragBound = true;
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+  });
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => {
+      dropzone.classList.add('border-accent', 'bg-accent-soft/30', 'scale-[1.01]');
+    }, false);
+  });
+
+  ['dragleave', 'dragend'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => {
+      dropzone.classList.remove('border-accent', 'bg-accent-soft/30', 'scale-[1.01]');
+    }, false);
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    dropzone.classList.remove('border-accent', 'bg-accent-soft/30', 'scale-[1.01]');
+    const dt = e.dataTransfer;
+    if (dt && dt.files && dt.files.length > 0) {
+      const file = dt.files[0];
+      if (fileInput) {
+        try {
+          fileInput.files = dt.files;
+        } catch (_) {
+          try {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+          } catch (e2) {}
+        }
+      }
+      handleFileSelected(file);
+    }
+  }, false);
+}
+
+/**
+ * Xử lý nộp bài tập (Base64) có chống spam và hiệu ứng xoay loading
  */
 export async function handleUploadSubmission(e) {
   if (e && e.preventDefault) e.preventDefault();
 
+  const form = document.getElementById('form-submit-file') || document.getElementById('form-submit-assignment');
+  if (form && form.dataset.isSubmitting === 'true') return; // Chống double submit / spam click
+
   const taskIdInput = document.getElementById('submit-task-id');
   const taskId = taskIdInput ? taskIdInput.value : '';
   const fileInput = document.getElementById('file-upload-input') || document.getElementById('submit-file-input');
-  const form = document.getElementById('form-submit-file') || document.getElementById('form-submit-assignment');
   const btn = document.getElementById('btn-confirm-upload') || document.getElementById('btn-submit-file-action');
   const cancelBtn = document.getElementById('btn-cancel-upload') || document.getElementById('btn-submit-file-cancel');
   const progressBox = document.getElementById('submit-upload-progress');
@@ -183,7 +259,7 @@ export async function handleUploadSubmission(e) {
   }
 
   if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-    showFormError(form, 'Vui lòng chọn một tệp để nộp bài!', dropzoneEl);
+    showFormError(form, 'Vui lòng chọn hoặc kéo thả một tệp để nộp bài!', dropzoneEl);
     return;
   }
 
@@ -206,6 +282,7 @@ export async function handleUploadSubmission(e) {
     return;
   }
 
+  if (form) form.dataset.isSubmitting = 'true';
   setFormControlsDisabled(form, true);
   if (cancelBtn) cancelBtn.disabled = true;
   if (btn) setButtonLoading(btn, true);
@@ -247,6 +324,7 @@ export async function handleUploadSubmission(e) {
       if (btn) setButtonLoading(btn, false);
       if (progressBar) progressBar.style.width = '100%';
       if (progressPct) progressPct.textContent = '100%';
+      if (form) form.dataset.isSubmitting = 'false';
 
       if (res && res.success) {
         showToast(res.message || 'Nộp bài thành công!', 'success');
@@ -259,6 +337,7 @@ export async function handleUploadSubmission(e) {
       setFormControlsDisabled(form, false);
       if (cancelBtn) cancelBtn.disabled = false;
       if (btn) setButtonLoading(btn, false);
+      if (form) form.dataset.isSubmitting = 'false';
       showFormError(form, 'Lỗi nộp bài: ' + (err.message || err.toString()));
     }
   };
@@ -267,6 +346,7 @@ export async function handleUploadSubmission(e) {
     setFormControlsDisabled(form, false);
     if (cancelBtn) cancelBtn.disabled = false;
     if (btn) setButtonLoading(btn, false);
+    if (form) form.dataset.isSubmitting = 'false';
     showFormError(form, 'Không thể đọc file từ thiết bị!', dropzoneEl);
   };
 

@@ -35,9 +35,9 @@ Hệ thống lưu trữ trên Google Spreadsheet thông qua các sheet tiêu chu
 | `NhiemVu` | Danh mục bài tập | `TaskID`, `TieuDe`, `MoTa`, `NguoiNhan` (ALL hoặc MSSV), `Deadline`, `FolderID`, `TrangThai` (Open/Closed), `SessionID` |
 | `BaiNop` | Danh sách nộp bài | `SubID`, `TaskID`, `MSSV`, `HoTen`, `Email`, `TenFile`, `DriveLink`, `ThoiGianNop`, `TrangThaiDuyet` (Pending/Approved/Rejected), `Feedback` |
 | `TaiLieu` | Kho học liệu CLB | `DocID`, `TenTaiLieu`, `PhanLoai`, `LinkDrive`, `MoTa` |
-| `TracNghiem` | Ngân hàng đề thi trắc nghiệm | `QuizID`, `SessionID`, `TieuDe`, `ThoiGianLamBai`, `TrangThai` (Open/Closed), `DanhSachCauHoi` (JSON), `DiemToiDa`, `NgayTao` |
-| `KetQuaQuiz` | Lịch sử nộp bài & Bảng điểm | `ResultID`, `QuizID`, `MSSV`, `HoTen`, `DiemSo`, `CauDung`, `TongCau`, `ChiTietTraLoi` (JSON), `ThoiGianNop`, `TrangThai` (Pass/Fail) |
-| `HoSoQuiz` | Hồ sơ gamification & Ôn luyện | `MSSV`, `WrongQuestionIds` (JSON), `BookmarkedQuestionIds` (JSON), `StreakDays`, `LastActiveDate` |
+| `TracNghiem` | Ngân hàng đề thi trắc nghiệm | `QuizID`, `SessionID`, `TieuDe`, `MoTa`, `ThoiGianPhut`, `TrangThai` (Draft/Open/Closed), `NgayTao`, `DanhSachCauHoi` (JSON), `SoCauThi` |
+| `KetQuaTracNghiem` | Lịch sử nộp bài & Bảng điểm | `ResultID`, `QuizID`, `SessionID`, `MSSV`, `HoTen`, `DiemSo`, `SoCauDung`, `TongSoCau`, `ChiTietTraLoi` (JSON), `ThoiGianNop`, `ThoiGianLamGiay`, `IsOfficial` |
+| `HoSoTracNghiem` | Hồ sơ gamification & Ôn luyện | `MSSV`, `StreakDays`, `LastActiveDate`, `TotalQuestionsAnswered`, `TotalCorrect`, `Badges` (JSON), `WrongQuestionIds` (JSON), `BookmarkedQuestionIds` (JSON) |
 | `DonXinVang` | Đơn xin vắng sinh hoạt & duyệt phép | `AbsenceID`, `SessionID`, `MSSV`, `HoTen`, `Email`, `LyDo`, `ChiTiet`, `MinhChungLink`, `ThoiGianGui`, `TrangThaiDuyet` (Pending/Approved/Rejected/Cancelled), `Feedback`, `NguoiDuyet`, `ThoiGianDuyet` |
 
 ---

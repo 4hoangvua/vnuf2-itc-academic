@@ -499,8 +499,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 4. Lắng nghe sự kiện nạp file cho input file upload
   document.body.addEventListener('change', (ev) => {
-    if (ev.target && ev.target.id === 'file-upload-input') {
-      handleFileSelected(ev);
+    if (ev.target && (ev.target.id === 'file-upload-input' || ev.target.id === 'submit-file-input')) {
+      handleFileSelected(ev.target);
     }
   });
 

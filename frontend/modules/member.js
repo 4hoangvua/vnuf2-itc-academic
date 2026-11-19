@@ -543,7 +543,7 @@ export function renderMemberDashboard() {
       }
       const allAbs = appState.absences || [];
       const cleanUserMssv = String(user.mssv || '').trim().toUpperCase();
-      userAbsence = allAbs.find(a => a.SessionID === targetSession.SessionID && a.MSSV === cleanUserMssv && a.TrangThaiDuyet !== 'Cancelled') || null;
+      userAbsence = allAbs.find(a => a.SessionID === targetSession.SessionID && String(a.MSSV || '').trim().toUpperCase() === cleanUserMssv && a.TrangThaiDuyet !== 'Cancelled') || null;
     }
 
     spotlightContainer.innerHTML = renderMemberSpotlightCard(targetSession, userAttended, userAbsence);
@@ -684,13 +684,14 @@ function renderMemberStats() {
 
     // Đếm số buổi vắng có phép và không phép
     if (!isAttended) {
-      const userAbs = allAbs.find(a => a.SessionID === s.SessionID && a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
+      const userAbs = allAbs.find(a => a.SessionID === s.SessionID && String(a.MSSV || '').trim().toUpperCase() === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
       if (userAbs) {
-        if (userAbs.TrangThaiDuyet === 'Approved' || userAbs.TrangThai === 'Approved') {
+        const absStatus = String(userAbs.TrangThaiDuyet || userAbs.TrangThai || '').trim();
+        if (absStatus === 'Approved') {
           excusedCount++;
-        } else if (userAbs.TrangThaiDuyet === 'Pending' || userAbs.TrangThai === 'Pending') {
+        } else if (absStatus === 'Pending') {
           pendingAbsenceCount++;
-        } else if (userAbs.TrangThaiDuyet === 'Rejected' || userAbs.TrangThai === 'Rejected') {
+        } else if (absStatus === 'Rejected') {
           unexcusedCount++;
         }
       } else if (isClosed) {

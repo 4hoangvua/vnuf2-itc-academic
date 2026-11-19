@@ -1805,6 +1805,39 @@ assert('app.js registers open-admin-review-absence-modal action', appManualCheck
 assert('app.js registers close-admin-review-absence-modal action', appManualCheckin.includes("'close-admin-review-absence-modal'"));
 assert('app.js registers submit-admin-review-absence-modal action', appManualCheckin.includes("'submit-admin-review-absence-modal'"));
 
+console.log('\n--- 28. Testing MSSV Normalization, Drag & Drop Dropzone, and Anti-Spam Button States ---');
+const memberJsSource = fs.readFileSync('./frontend/modules/member.js', 'utf8');
+const adminSessionsJsSource = fs.readFileSync('./frontend/modules/admin/adminSessions.js', 'utf8');
+const memberSubmissionsJsSource = fs.readFileSync('./frontend/modules/member/memberSubmissions.js', 'utf8');
+
+assert('member.js normalizes MSSV safely with String().trim().toUpperCase() for excused calculation', 
+  memberJsSource.includes("String(a.MSSV || '').trim().toUpperCase() === cleanMssv")
+);
+
+assert('adminSessions.js normalizes MSSV and falls back to a.HoTen for student name display', 
+  adminSessionsJsSource.includes("const cleanMssv = String(a.MSSV || '').trim().toUpperCase()") &&
+  adminSessionsJsSource.includes("(mem && (mem.HoTen || mem.hoTen)) || a.HoTen || a.hoTen")
+);
+
+assert('adminSessions.js implements button loading and disabled state during review', 
+  adminSessionsJsSource.includes("setButtonLoading(activeBtn, true)") &&
+  adminSessionsJsSource.includes("otherBtn.disabled = true")
+);
+
+assert('memberSubmissions.js exports initDropzoneEvents', 
+  memberSubmissionsJsSource.includes("export function initDropzoneEvents()")
+);
+
+assert('memberSubmissions.js implements drag & drop dropzone handling', 
+  memberSubmissionsJsSource.includes("dropzone.addEventListener('drop'") &&
+  memberSubmissionsJsSource.includes("'dragover'")
+);
+
+assert('memberSubmissions.js implements anti-double-submission flag', 
+  memberSubmissionsJsSource.includes("form.dataset.isSubmitting === 'true'") &&
+  memberSubmissionsJsSource.includes("form.dataset.isSubmitting = 'true'")
+);
+
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
   process.exit(1);

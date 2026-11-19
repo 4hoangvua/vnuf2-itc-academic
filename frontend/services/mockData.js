@@ -1118,8 +1118,8 @@ export async function handleMockAction(action, payload) {
               tasks: state.tasks || [],
               attendance: state.attendance || [],
               docs: state.documents || [],
-              submissions: isAdmin ? (state.submissions || []) : (state.submissions || []).filter(s => s.MSSV === member.MSSV),
-              absences: isAdmin ? (state.absences || []) : (state.absences || []).filter(a => a.MSSV === member.MSSV),
+              submissions: isAdmin ? (state.submissions || []) : (state.submissions || []).filter(s => String(s.MSSV || '').trim().toUpperCase() === String(member.MSSV || '').trim().toUpperCase()),
+              absences: isAdmin ? (state.absences || []) : (state.absences || []).filter(a => String(a.MSSV || '').trim().toUpperCase() === String(member.MSSV || '').trim().toUpperCase()),
               members: isAdmin ? (state.members || []) : [],
               activeCampaign: (state.campaigns || []).find(c => c.id === state.activeCampaignId) || null
             };
@@ -1180,8 +1180,8 @@ export async function handleMockAction(action, payload) {
           tasks: state.tasks || [],
           attendance: state.attendance || [],
           docs: state.documents || [],
-          submissions: isAdmin ? (state.submissions || []) : (state.submissions || []).filter(s => s.MSSV === currentMssv),
-          absences: isAdmin ? (state.absences || []) : (state.absences || []).filter(a => a.MSSV === currentMssv),
+          submissions: isAdmin ? (state.submissions || []) : (state.submissions || []).filter(s => String(s.MSSV || '').trim().toUpperCase() === String(currentMssv || '').trim().toUpperCase()),
+          absences: isAdmin ? (state.absences || []) : (state.absences || []).filter(a => String(a.MSSV || '').trim().toUpperCase() === String(currentMssv || '').trim().toUpperCase()),
           members: isAdmin ? (state.members || []) : [],
           activeCampaign: (state.campaigns || []).find(c => c.id === state.activeCampaignId) || null
         }
@@ -1460,7 +1460,7 @@ export async function handleMockAction(action, payload) {
 
       // Nếu có đơn vắng trước đó, tự động chuyển thành Cancelled vì sinh viên đã có mặt thực tế
       state.absences = state.absences || [];
-      const userAbs = state.absences.find(a => a.SessionID === sid && a.MSSV === cleanMssv);
+      const userAbs = state.absences.find(a => a.SessionID === sid && String(a.MSSV || '').trim().toUpperCase() === cleanMssv);
       if (userAbs) {
         userAbs.TrangThaiDuyet = 'Cancelled';
         userAbs.TrangThai = 'Cancelled';
@@ -1468,7 +1468,7 @@ export async function handleMockAction(action, payload) {
 
       saveLocalMockState(state);
 
-      const mem = (state.members || []).find(m => m.MSSV === cleanMssv);
+      const mem = (state.members || []).find(m => String(m.MSSV || '').trim().toUpperCase() === cleanMssv);
       const hoTen = mem ? mem.HoTen : `Sinh viên ${cleanMssv}`;
 
       return {
@@ -1517,12 +1517,12 @@ export async function handleMockAction(action, payload) {
 
       // 2. Kiểm tra trùng lặp: Sinh viên đã gửi đơn xin vắng cho buổi này chưa
       state.absences = state.absences || [];
-      const existing = state.absences.find(a => a.SessionID === sid && a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
+      const existing = state.absences.find(a => a.SessionID === sid && String(a.MSSV || '').trim().toUpperCase() === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
       if (existing) {
         return { success: false, message: 'Bạn đã gửi đơn xin vắng cho buổi học này rồi!' };
       }
 
-      const mem = (state.members || []).find(m => m.MSSV === cleanMssv);
+      const mem = (state.members || []).find(m => String(m.MSSV || '').trim().toUpperCase() === cleanMssv);
       const now = new Date();
       const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
@@ -1558,7 +1558,7 @@ export async function handleMockAction(action, payload) {
         cleanMssv = String(localStorage.getItem('bht_mssv') || '').trim().toUpperCase();
       }
       state.absences = state.absences || [];
-      const list = state.absences.filter(a => a.MSSV === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
+      const list = state.absences.filter(a => String(a.MSSV || '').trim().toUpperCase() === cleanMssv && a.TrangThaiDuyet !== 'Cancelled');
       return { success: true, data: list };
     }
 
@@ -1612,7 +1612,7 @@ export async function handleMockAction(action, payload) {
       if (!abs) {
         return { success: false, message: 'Không tìm thấy đơn xin vắng cần hủy!' };
       }
-      if (cleanMssv && abs.MSSV !== cleanMssv) {
+      if (cleanMssv && String(abs.MSSV || '').trim().toUpperCase() !== cleanMssv) {
         return { success: false, message: 'Bạn không có quyền hủy đơn của thành viên khác!' };
       }
       if (abs.TrangThaiDuyet !== 'Pending') {
