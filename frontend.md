@@ -28,19 +28,19 @@ frontend/
 │   ├── auth.js                 # Xử lý xác thực OTP, đếm ngược 300s, Quản lý Token & Dọn sạch cache khi đăng xuất
 │   ├── member.js               # Barrel module Thành viên (Re-export các sub-modules bên dưới)
 │   ├── member/                 # Phân hệ thành viên tách nhỏ (Single Responsibility)
-│   │   ├── memberSessions.js   # Dòng thời gian, Master-Detail chi tiết, Điểm danh PIN, Lộ trình học
+│   │   ├── memberSessions.js   # Dòng thời gian, Master-Detail chi tiết, Điểm danh PIN, Đơn xin vắng, Lộ trình học
 │   │   ├── memberQuiz.js       # Phòng thi trắc nghiệm Zen Focus Arena, Bookmark, Luyện sai, Leaderboard
 │   │   ├── memberDocs.js       # Kho tài liệu, Lọc phân loại chuyên đề học thuật
-│   │   └── memberSubmissions.js# Danh sách bài nộp, Trạng thái chấm, Giới hạn nộp tối đa 3 lần
+│   │   └── memberSubmissions.js# Danh sách bài nộp, Dropzone kéo thả file, Đính kèm thẻ đặc quyền, Chống spam
 │   ├── admin.js                # Barrel module Quản trị viên (Re-export các sub-modules bên dưới)
 │   ├── admin/                  # Phân hệ quản trị tách nhỏ (Single Responsibility)
 │   │   ├── adminMembers.js     # Quản lý danh sách thành viên, thêm mới, reset Gmail, toggle active
-│   │   ├── adminSessions.js    # Master-Detail buổi học, tạo/sửa session, chiếu PIN, quản lý bài tập
+│   │   ├── adminSessions.js    # Master-Detail buổi học, tạo/sửa session, chiếu PIN, điểm danh tay, duyệt đơn vắng
 │   │   ├── adminQuiz.js        # Ngân hàng câu hỏi trắc nghiệm, tạo đề thi, reset lượt thi, thống kê
 │   │   ├── adminDocs.js        # Quản lý kho học liệu, phân loại tài liệu
 │   │   ├── adminSubmissions.js # Duyệt bài nộp, nhập điểm, feedback nhận xét cho sinh viên
 │   │   └── adminCampaigns.js   # Điều hành sự kiện mẫu, hẹn giờ tự động, gửi email có chọn lọc người nhận
-│   ├── gift2010.js             # Bộ chọn sự kiện Admin, 3D Card Shuffle Unboxing Arena, Particle Confetti, âm thanh
+│   ├── gift2010.js             # Hộp Quà Đặc Quyền Học Thuật thường trực, 3D Card Shuffle Unboxing Arena, Particle Confetti
 │   ├── skeleton.js             # Động cơ Skeleton Shimmer nạp mượt mà, chống giật layout (Anti-FOUC)
 │   ├── pagination.js           # Bộ quản lý phân trang độc lập đa thực thể (Multi-instance pagination)
 │   └── projector.js            # Chế độ máy chiếu PIN toàn màn hình (Chiếu hội trường)
@@ -79,11 +79,12 @@ Thay vì dùng popup modal chật chội khiến giao diện bị phình to (blo
    - Nút **"Tạo buổi sinh hoạt"**: Mở form tinh gọn (nhập Tên, Ngày, Link Slide, Tóm tắt; mã PIN được sinh ngẫu nhiên tự động).
 2. **Màn hình Sub-view Chi tiết Buổi học (`admin-tab-session-detail`):**
    - Chuyển thành trang toàn màn hình với thanh **Breadcrumb** ("Quay lại danh sách") và nút **"Xem PIN & Chiếu"**.
-   - **4 Sub-tabs chuyên dụng:**
+   - **5 Sub-tabs chuyên dụng:**
      - `Nội dung & Slide`: Nhập link Google Drive slide, ghi chú mục tiêu kiến thức.
-     - `Danh sách Điểm danh`: Hiển thị PIN hiện tại, nút đổi PIN, bảng sinh viên đã điểm danh kèm tìm kiếm.
+     - `Danh sách Điểm danh`: Hiển thị PIN hiện tại, nút đổi PIN, bảng sinh viên đã điểm danh kèm tìm kiếm và điểm danh thủ công (Manual Check-In).
      - `Bài tập & Chấm bài`: Thiết lập bài tập thực hành (Tiêu đề, Hạn nộp, Mô tả) và bảng chấm bài trực tiếp tại chỗ.
-     - `Trắc nghiệm & Ôn tập`: Mở rộng cho các bài test nhanh.
+     - `Trắc nghiệm & Ôn tập`: Mở rộng cho các bài test nhanh, bảng xếp hạng và thống kê kết quả.
+     - `Đơn xin vắng mặt`: Tiếp nhận, xem minh chứng, duyệt/từ chối đơn xin phép vắng mặt (hiển thị họ tên chuẩn, chống spam nút bấm).
 3. **Popup PIN Chuyên dụng (`modal-admin-pin-quickview`):**
    - Mở cửa sổ PIN kích thước siêu lớn (Font 5xl, tracking rộng) để trình chiếu hoặc đọc cho sinh viên trong phòng sinh hoạt.
 
