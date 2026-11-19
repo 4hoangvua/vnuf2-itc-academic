@@ -20,7 +20,7 @@ import {
 } from '../ui.js';
 import { emptyStateTemplate } from '../templates.js';
 import { refreshMemberData, getCurrentMemberUser } from '../member.js';
-import { getClaimedGift } from '../gift2010.js';
+import { getClaimedGift, getActiveCampaign } from '../gift2010.js';
 
 /**
  * Lấy danh sách bài nộp của thành viên cho một task, sắp xếp mới nhất lên đầu
@@ -128,15 +128,17 @@ export function openSubmitModal(taskId) {
   // Khởi tạo sự kiện Kéo thả Dropzone
   initDropzoneEvents();
 
-  // Kiểm tra quà 20/10 của sinh viên để hiển thị lựa chọn đính kèm
+  // Kiểm tra quà 20/10 của sinh viên để hiển thị lựa chọn đính kèm (Chỉ khi sự kiện OCT20 đang kích hoạt)
   const user = getCurrentMemberUser();
+  const currentCamp = getActiveCampaign();
+  const isCampaignActive = Boolean(currentCamp && currentCamp.id === 'OCT20');
   const claimedGift = getClaimedGift(user);
   const giftContainer = document.getElementById('submit-gift-2010-container');
   const giftLabel = document.getElementById('submit-gift-2010-label');
   const giftCheckbox = document.getElementById('submit-gift-2010-checkbox');
 
   if (giftContainer && giftLabel && giftCheckbox) {
-    if (claimedGift && claimedGift.claimCode) {
+    if (isCampaignActive && claimedGift && claimedGift.claimCode) {
       giftContainer.classList.remove('hidden');
       giftContainer.classList.add('flex');
       giftLabel.textContent = `${claimedGift.claimCode} (${claimedGift.shortTitle || claimedGift.giftTitle})`;

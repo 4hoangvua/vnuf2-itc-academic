@@ -1838,6 +1838,23 @@ assert('memberSubmissions.js implements anti-double-submission flag',
   memberSubmissionsJsSource.includes("form.dataset.isSubmitting = 'true'")
 );
 
+console.log('\n--- 29. Testing Universal Campaign Isolation & Safe Deactivation ---');
+const gift2010JsSource = fs.readFileSync('./frontend/modules/gift2010.js', 'utf8');
+
+assert('gift2010.js getActiveCampaignId defaults to NONE instead of hardcoded OCT20', 
+  gift2010JsSource.includes("return 'NONE';")
+);
+
+assert('member.js loadMemberData fetches getActiveCampaign for real-time synchronization', 
+  memberJsSource.includes("callApi('getActiveCampaign', {}, { skipCache })") &&
+  memberJsSource.includes("appState.activeCampaign = campRes.data || null")
+);
+
+assert('memberSubmissions.js checks isCampaignActive before showing 20/10 gift checkbox', 
+  memberSubmissionsJsSource.includes("const isCampaignActive = Boolean(currentCamp && currentCamp.id === 'OCT20')") &&
+  memberSubmissionsJsSource.includes("if (isCampaignActive && claimedGift && claimedGift.claimCode)")
+);
+
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
   process.exit(1);

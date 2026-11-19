@@ -324,12 +324,13 @@ export async function loadMemberData(silent = true, skipCache = false) {
   if (!silent) showGlobalLoading('Đang tải dữ liệu học thuật...');
 
   try {
-    const [tasksRes, subsRes, attRes, docsRes, absRes] = await Promise.all([
+    const [tasksRes, subsRes, attRes, docsRes, absRes, campRes] = await Promise.all([
       callApi('getAllTasks', {}, { skipCache }),
       callApi('getMemberSubmissions', { mssv: user.mssv }, { skipCache }),
       callApi('getAttendanceSessions', {}, { skipCache }),
       callApi('getAllDocuments', {}, { skipCache }),
-      callApi('getMemberAbsenceRequests', { mssv: user.mssv }, { skipCache })
+      callApi('getMemberAbsenceRequests', { mssv: user.mssv }, { skipCache }),
+      callApi('getActiveCampaign', {}, { skipCache })
     ]);
 
     hideGlobalLoading();
@@ -339,6 +340,13 @@ export async function loadMemberData(silent = true, skipCache = false) {
     if (attRes && attRes.success) appState.attendance = attRes.data || [];
     if (docsRes && docsRes.success) appState.docs = docsRes.data || [];
     if (absRes && absRes.success) appState.absences = absRes.data || [];
+    if (campRes && campRes.success) {
+      appState.activeCampaign = campRes.data || null;
+      const campId = (campRes.data && campRes.data.id) ? campRes.data.id : (campRes.activeCampaignId || 'NONE');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('bht_active_campaign', campId);
+      }
+    }
 
     renderMemberDashboard();
 

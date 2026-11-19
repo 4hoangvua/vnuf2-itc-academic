@@ -182,18 +182,29 @@ export const CAMPAIGNS_CATALOG = {
  * @returns {string} OCT20 | TET | MARCH8 | ANNIVERSARY | NONE
  */
 export function getActiveCampaignId() {
+  // 1. Ưu tiên kiểm tra appState nếu đã có dữ liệu từ Server / Bootstrap
+  if (typeof appState !== 'undefined' && appState.activeCampaign !== undefined) {
+    if (appState.activeCampaign === null) return 'NONE';
+    if (typeof appState.activeCampaign === 'string') return appState.activeCampaign.trim().toUpperCase();
+    if (appState.activeCampaign.id) return String(appState.activeCampaign.id).trim().toUpperCase();
+  }
+
+  // 2. Tiếp theo kiểm tra LocalStorage bht_active_campaign
   if (typeof localStorage !== 'undefined') {
+    const localAct = localStorage.getItem('bht_active_campaign');
+    if (localAct) return localAct.trim().toUpperCase();
+
     const storeStr = localStorage.getItem('bht_mock_store');
     if (storeStr) {
       try {
         const parsed = JSON.parse(storeStr);
-        if (parsed && parsed.activeCampaignId) return parsed.activeCampaignId;
+        if (parsed && parsed.activeCampaignId) return String(parsed.activeCampaignId).trim().toUpperCase();
       } catch (e) {}
     }
-    const localAct = localStorage.getItem('bht_active_campaign');
-    if (localAct) return localAct;
   }
-  return 'OCT20';
+
+  // 3. Mặc định là NONE (Hệ thống ở chế độ tiêu chuẩn, không tự kích hoạt sự kiện)
+  return 'NONE';
 }
 
 /**
@@ -202,7 +213,7 @@ export function getActiveCampaignId() {
  */
 export function getActiveCampaign() {
   const id = getActiveCampaignId();
-  if (id === 'NONE') return null;
+  if (!id || id === 'NONE') return null;
 
   // Kiểm tra thời gian bắt đầu & kết thúc nếu có cấu hình
   if (typeof localStorage !== 'undefined') {
