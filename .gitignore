@@ -27,3 +27,6 @@ build_full_document.py
 docs_diagrams/
 *.docx
 *.wbk
+
+# Video production artifacts
+video_production/
