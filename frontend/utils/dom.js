@@ -146,15 +146,14 @@ export function attachEventDelegation(container, actionMap, eventType = 'click')
     const actionEl = event.target.closest('[data-action]');
     if (!actionEl || !rootEl.contains(actionEl)) return;
 
-    // QUAN TRỌNG: Nếu sự kiện là 'click' mà phần tử khớp data-action là thẻ FORM hoặc SELECT,
-    // hoặc sự kiện click phát sinh từ thẻ input[type="file"], bỏ qua ngay lập tức để tránh
-    // chặn nhầm default action mở hộp thoại chọn file của trình duyệt.
-    // Mọi hành động của form xử lý qua 'submit', dropdown xử lý qua 'change'.
-    if (eventType === 'click' && (
+    // QUAN TRỌNG: Thẻ FORM có data-action chỉ dùng cho submit delegation (attachFormDelegation).
+    // Bỏ qua tuyệt đối đối với các sự kiện click, change, input... để không kích hoạt nhầm action click
+    // hoặc cảnh báo thiếu handler khi người dùng tương tác với form/checkbox/dropdown.
+    if (
       actionEl.tagName === 'FORM' || 
-      actionEl.tagName === 'SELECT' || 
+      (eventType === 'click' && actionEl.tagName === 'SELECT') || 
       (event.target && event.target.tagName === 'INPUT' && event.target.type === 'file')
-    )) {
+    ) {
       return;
     }
 

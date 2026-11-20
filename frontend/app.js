@@ -221,6 +221,14 @@ const CENTRAL_ACTION_MAP = {
   'checkin-from-detail': () => handleCheckInFromDetail(),
   'open-submit-modal': (el, ev, ds) => openSubmitModal(ds.id),
   'close-submit-modal': () => closeSubmitModal(),
+  'submit-assignment': (el, ev) => {
+    const form = el.tagName === 'FORM' ? el : el.closest('form');
+    if (form && typeof form.requestSubmit === 'function') {
+      form.requestSubmit();
+    } else if (form) {
+      form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+  },
   'trigger-file-select': (el, ev) => {
     if (ev && ev.target && ev.target.id === 'file-upload-input') return;
     const input = document.getElementById('file-upload-input');

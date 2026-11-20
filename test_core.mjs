@@ -1888,6 +1888,22 @@ assert('dom.js attachEventDelegation implements automatic anti-spam click lock',
   domJsSource.includes("actionEl.dataset.isActionBusy = 'false'")
 );
 
+console.log('\n--- 31. Testing Form Submission & Event Delegation Isolation ---');
+const appJsSource = fs.readFileSync('./frontend/app.js', 'utf8');
+
+assert('dom.js attachEventDelegation unconditionally ignores FORM elements', 
+  domJsSource.includes("actionEl.tagName === 'FORM'")
+);
+
+assert('app.js CENTRAL_ACTION_MAP provides fallback for submit-assignment', 
+  appJsSource.includes("'submit-assignment': (el, ev) =>")
+);
+
+assert('memberSubmissions.js wraps upload in Promise and prevents duplicate submit during active upload', 
+  memberSubmissionsJsSource.includes("new Promise((resolve) =>") &&
+  memberSubmissionsJsSource.includes("form._uploadInProgress === true")
+);
+
 if (failed > 0) {
   console.error('\nFAILED TESTS:', failed);
   process.exit(1);

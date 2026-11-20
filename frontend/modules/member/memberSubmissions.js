@@ -122,6 +122,7 @@ export function openSubmitModal(taskId) {
   const form = document.getElementById('form-submit-file') || document.getElementById('form-submit-assignment');
   if (form) {
     form.dataset.isSubmitting = 'false';
+    form._uploadInProgress = false;
     clearFormError(form);
   }
 
@@ -246,7 +247,7 @@ export async function handleUploadSubmission(e) {
   if (e && e.preventDefault) e.preventDefault();
 
   const form = document.getElementById('form-submit-file') || document.getElementById('form-submit-assignment');
-  if (form && form.dataset.isSubmitting === 'true') return; // Chống double submit / spam click
+  if (form && form.dataset.isSubmitting === 'true' && form._uploadInProgress === true) return; // Chống double submit / spam click
 
   const taskIdInput = document.getElementById('submit-task-id');
   const taskId = taskIdInput ? taskIdInput.value : '';
@@ -289,7 +290,10 @@ export async function handleUploadSubmission(e) {
     return;
   }
 
-  if (form) form.dataset.isSubmitting = 'true';
+  if (form) {
+    form.dataset.isSubmitting = 'true';
+    form._uploadInProgress = true;
+  }
   setFormControlsDisabled(form, true);
   if (cancelBtn) cancelBtn.disabled = true;
   if (btn) setButtonLoading(btn, true);
@@ -298,61 +302,72 @@ export async function handleUploadSubmission(e) {
   if (progressPct) progressPct.textContent = '40%';
 
   const user = appState.user || {};
-  const reader = new FileReader();
 
-  reader.onload = async function(event) {
-    try {
-      if (progressBar) progressBar.style.width = '70%';
-      if (progressPct) progressPct.textContent = '70%';
+  return new Promise((resolve) => {
+    const reader = new FileReader();
 
-      const base64Data = event.target.result.split(',')[1];
-      const giftCheckbox = document.getElementById('submit-gift-2010-checkbox');
-      const claimedGift = getClaimedGift(user);
-      const isAttachingGift = giftCheckbox && giftCheckbox.checked && claimedGift && claimedGift.claimCode;
+    reader.onload = async function(event) {
+      try {
+        if (progressBar) progressBar.style.width = '70%';
+        if (progressPct) progressPct.textContent = '70%';
 
-      const payload = {
-        taskId: taskId,
-        mssv: user.mssv,
-        hoTen: user.hoTen,
-        email: user.email,
-        fileName: file.name,
-        mimeType: file.type || 'application/octet-stream',
-        base64Data: base64Data,
-        ...(isAttachingGift ? {
-          giftCode: claimedGift.claimCode,
-          feedback: `[🎁 Quà 20/10: ${claimedGift.claimCode}]`
-        } : {})
-      };
+        const base64Data = event.target.result.split(',')[1];
+        const giftCheckbox = document.getElementById('submit-gift-2010-checkbox');
+        const claimedGift = getClaimedGift(user);
+        const isAttachingGift = giftCheckbox && giftCheckbox.checked && claimedGift && claimedGift.claimCode;
 
-      const res = await callApi('submitTaskAssignment', payload);
+        const payload = {
+          taskId: taskId,
+          mssv: user.mssv,
+          hoTen: user.hoTen,
+          email: user.email,
+          fileName: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          base64Data: base64Data,
+          ...(isAttachingGift ? {
+            giftCode: claimedGift.claimCode,
+            feedback: `[🎁 Quà 20/10: ${claimedGift.claimCode}]`
+          } : {})
+        };
 
-      if (progressBar) progressBar.style.width = '100%';
-      if (progressPct) progressPct.textContent = '100%';
+        const res = await callApi('submitTaskAssignment', payload);
 
-      if (res && res.success) {
-        showToast(res.message || 'Nộp bài thành công!', 'success');
-        closeSubmitModal();
-        refreshMemberData();
-      } else {
-        showFormError(form, (res && res.message) ? res.message : 'Lỗi khi nộp bài!');
+        if (progressBar) progressBar.style.width = '100%';
+        if (progressPct) progressPct.textContent = '100%';
+
+        if (res && res.success) {
+          showToast(res.message || 'Nộp bài thành công!', 'success');
+          closeSubmitModal();
+          refreshMemberData();
+        } else {
+          showFormError(form, (res && res.message) ? res.message : 'Lỗi khi nộp bài!');
+        }
+      } catch (err) {
+        showFormError(form, 'Lỗi nộp bài: ' + (err.message || err.toString()));
+      } finally {
+        setFormControlsDisabled(form, false);
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (btn) setButtonLoading(btn, false);
+        if (form) {
+          form.dataset.isSubmitting = 'false';
+          form._uploadInProgress = false;
+        }
+        resolve();
       }
-    } catch (err) {
-      showFormError(form, 'Lỗi nộp bài: ' + (err.message || err.toString()));
-    } finally {
+    };
+
+    reader.onerror = function() {
       setFormControlsDisabled(form, false);
       if (cancelBtn) cancelBtn.disabled = false;
       if (btn) setButtonLoading(btn, false);
-      if (form) form.dataset.isSubmitting = 'false';
-    }
-  };
+      if (form) {
+        form.dataset.isSubmitting = 'false';
+        form._uploadInProgress = false;
+      }
+      showFormError(form, 'Không thể đọc file từ thiết bị!', dropzoneEl);
+      resolve();
+    };
 
-  reader.onerror = function() {
-    setFormControlsDisabled(form, false);
-    if (cancelBtn) cancelBtn.disabled = false;
-    if (btn) setButtonLoading(btn, false);
-    if (form) form.dataset.isSubmitting = 'false';
-    showFormError(form, 'Không thể đọc file từ thiết bị!', dropzoneEl);
-  };
-
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  });
 }
