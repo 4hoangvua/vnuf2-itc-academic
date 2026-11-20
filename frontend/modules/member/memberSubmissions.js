@@ -193,6 +193,12 @@ export function initDropzoneEvents() {
   if (!dropzone || dropzone._dragBound) return;
   dropzone._dragBound = true;
 
+  if (fileInput) {
+    fileInput.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  }
+
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     dropzone.addEventListener(eventName, (e) => {
       e.preventDefault();

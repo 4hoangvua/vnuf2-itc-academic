@@ -221,7 +221,8 @@ const CENTRAL_ACTION_MAP = {
   'checkin-from-detail': () => handleCheckInFromDetail(),
   'open-submit-modal': (el, ev, ds) => openSubmitModal(ds.id),
   'close-submit-modal': () => closeSubmitModal(),
-  'trigger-file-select': () => {
+  'trigger-file-select': (el, ev) => {
+    if (ev && ev.target && ev.target.id === 'file-upload-input') return;
     const input = document.getElementById('file-upload-input');
     if (input) input.click();
   },

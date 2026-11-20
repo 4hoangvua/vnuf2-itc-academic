@@ -147,9 +147,14 @@ export function attachEventDelegation(container, actionMap, eventType = 'click')
     if (!actionEl || !rootEl.contains(actionEl)) return;
 
     // QUAN TRỌNG: Nếu sự kiện là 'click' mà phần tử khớp data-action là thẻ FORM hoặc SELECT,
-    // bỏ qua ngay lập tức để tránh việc click vào dropdown/form làm kích hoạt nhầm action click!
+    // hoặc sự kiện click phát sinh từ thẻ input[type="file"], bỏ qua ngay lập tức để tránh
+    // chặn nhầm default action mở hộp thoại chọn file của trình duyệt.
     // Mọi hành động của form xử lý qua 'submit', dropdown xử lý qua 'change'.
-    if (eventType === 'click' && (actionEl.tagName === 'FORM' || actionEl.tagName === 'SELECT')) {
+    if (eventType === 'click' && (
+      actionEl.tagName === 'FORM' || 
+      actionEl.tagName === 'SELECT' || 
+      (event.target && event.target.tagName === 'INPUT' && event.target.type === 'file')
+    )) {
       return;
     }
 
